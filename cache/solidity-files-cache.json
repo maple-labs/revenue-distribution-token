@@ -1,0 +1,75 @@
+{
+  "_format": "ethers-rs-sol-cache-1",
+  "files": {
+    "/Users/lucasmanuel/code/xMPL/src/test/xMPL.t.sol": {
+      "lastModificationDate": 1642448747971,
+      "contentHash": "faa9f5687fb6478ed23d31bcb7942b63",
+      "sourceName": "src/test/xMPL.t.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ]
+            }
+          },
+          "evmVersion": "london"
+        }
+      },
+      "imports": [
+        "lib/ds-test/src/test.sol"
+      ],
+      "versionPragmas": [
+        "0.8.7"
+      ],
+      "artifacts": [
+        "xMPLTest"
+      ]
+    },
+    "/Users/lucasmanuel/code/xMPL/src/xMPL.sol": {
+      "lastModificationDate": 1642448727308,
+      "contentHash": "abfd5f4f4b99679c374e706fa8415803",
+      "sourceName": "src/xMPL.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ]
+            }
+          },
+          "evmVersion": "london"
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.7"
+      ],
+      "artifacts": [
+        "xMPL"
+      ]
+    }
+  }
+}

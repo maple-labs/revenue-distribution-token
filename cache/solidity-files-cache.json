@@ -38,8 +38,8 @@
       ]
     },
     "/Users/lucasmanuel/code/xMPL/src/xMPL.sol": {
-      "lastModificationDate": 1642448727308,
-      "contentHash": "abfd5f4f4b99679c374e706fa8415803",
+      "lastModificationDate": 1642598642565,
+      "contentHash": "cc42ddbdad24ec6db2a4bda173991c9b",
       "sourceName": "src/xMPL.sol",
       "solcConfig": {
         "settings": {
@@ -63,7 +63,10 @@
           "evmVersion": "london"
         }
       },
-      "imports": [],
+      "imports": [
+        "lib/erc20/src/ERC20.sol",
+        "lib/erc20-helper/src/ERC20Helper.sol"
+      ],
       "versionPragmas": [
         "0.8.7"
       ],

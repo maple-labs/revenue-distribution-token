@@ -6,9 +6,9 @@ import { ERC20Helper } from "lib/erc20-helper/src/ERC20Helper.sol";
 
 contract RevenueDistributionToken is ERC20 {
 
-    address public underlying;
+    uint256 internal constant WAD = 10 ** 18;
 
-    uint256 constant WAD = 10 ** 18;
+    address public immutable underlying;
 
     uint256 public freeUnderlying;       // Amount of underlying unlocked regardless of time passed
     uint256 public issuanceRate;         // underlying/second rate dependent on aggregate vesting schedule
@@ -92,7 +92,10 @@ contract RevenueDistributionToken is ERC20 {
     }
 
     function totalHoldings() public view returns (uint256 totalHoldings_) {
-        uint256 vestingTimePassed = block.timestamp > vestingPeriodFinish ? 0 : lastUpdated - block.timestamp;
+        uint256 vestingTimePassed =
+            block.timestamp > vestingPeriodFinish ?
+                vestingPeriodFinish - lastUpdated :
+                block.timestamp - lastUpdated;
         return unlockedBalance(issuanceRate, vestingTimePassed, freeUnderlying);
     }
 

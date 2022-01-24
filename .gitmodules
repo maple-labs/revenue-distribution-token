@@ -1,6 +1,3 @@
-[submodule "lib/ds-test"]
-	path = lib/ds-test
-	url = https://github.com/dapphub/ds-test
 [submodule "lib/erc20"]
 	path = lib/erc20
 	url = https://github.com/maple-labs/erc20

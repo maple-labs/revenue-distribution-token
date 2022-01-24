@@ -135,13 +135,10 @@ contract RevenueStreamingTest is DSTest {
         uint256 depositAmount = 0;
         uint256 vestingAmount = 0;
         uint256 vestingPeriod = 1;
+
         depositAmount = constrictToRange(depositAmount, 10,         1e45);
         vestingAmount = constrictToRange(vestingAmount, 10,         1e45);
         vestingPeriod = constrictToRange(vestingPeriod, 10 seconds, 10_000_000 days);  // TODO: Add a zero case test
-
-        emit log_named_uint("depositAmount", depositAmount);
-        emit log_named_uint("vestingAmount", vestingAmount);
-        emit log_named_uint("vestingPeriod", vestingPeriod);
 
         Staker staker = new Staker();
 
@@ -169,7 +166,7 @@ contract RevenueStreamingTest is DSTest {
         underlying.approve(address(rdToken), vestingAmount);
         rdToken.depositVestingEarnings(vestingAmount, vestingPeriod);
 
-        uint256 expectedRate = vestingAmount / vestingPeriod;
+        uint256 expectedRate = vestingAmount * 1e27 / vestingPeriod;
 
         assertEq(rdToken.freeUnderlying(),      depositAmount);
         assertEq(rdToken.totalHoldings(),       depositAmount);
@@ -180,21 +177,15 @@ contract RevenueStreamingTest is DSTest {
 
         // Warp and assert vesting in 10% increments
         for (uint256 i = 1; i < 10; ++i) {
-            emit log_named_uint("i", i);
             vm.warp(start + vestingPeriod * i / 10);  // 10% intervals of vesting schedule
 
-            uint256 expectedTotalHoldings = expectedRate * (block.timestamp - start) + depositAmount;
-
-            emit log_named_uint("vestingAmount", vestingAmount);
-            emit log_named_uint("vestingPeriod", vestingPeriod);
-            emit log_named_uint("expectedRate", expectedRate);
-            emit log_named_uint("expectedTotalHoldings", expectedTotalHoldings);
+            uint256 expectedTotalHoldings = depositAmount + expectedRate * (block.timestamp - start) / 1e27;
 
             assertEq(rdToken.totalHoldings(), expectedTotalHoldings);
             assertEq(rdToken.exchangeRate(),  expectedTotalHoldings * 1e18 / depositAmount);
         }
 
-        vm.warp(start + vestingPeriod);
+        vm.warp(start + vestingPeriod + 1000);
 
         assertEq(rdToken.totalHoldings(), depositAmount + vestingAmount);
         assertEq(rdToken.exchangeRate(), (depositAmount + vestingAmount) * 1e18 / depositAmount);

@@ -6,12 +6,13 @@ import { ERC20Helper } from "lib/erc20-helper/src/ERC20Helper.sol";
 
 contract RevenueDistributionToken is ERC20 {
 
-    uint256 internal constant WAD = 10 ** 18;
+    uint256 internal constant WAD = 1e18;
+    uint256 internal constant RAY = 1e27;
 
     address public immutable underlying;
 
     uint256 public freeUnderlying;       // Amount of underlying unlocked regardless of time passed
-    uint256 public issuanceRate;         // underlying/second rate dependent on aggregate vesting schedule
+    uint256 public issuanceRate;         // underlying/second rate dependent on aggregate vesting schedule (needs increased precision)
     uint256 public lastUpdated;          // Timestamp of when issuance equation was last updated
     uint256 public vestingPeriodFinish;  // Timestamp when current vesting schedule ends
 
@@ -42,7 +43,7 @@ contract RevenueDistributionToken is ERC20 {
         }
 
         // Calculate slope and update timestamp
-        issuanceRate = (totalUnlockedAtEndOfPeriod - _freeUnderlying) / (vestingPeriodFinish - block.timestamp);
+        issuanceRate = (totalUnlockedAtEndOfPeriod - _freeUnderlying) * RAY / (vestingPeriodFinish - block.timestamp);
         lastUpdated  = block.timestamp;
 
         require(ERC20Helper.transferFrom(address(underlying), msg.sender, address(this), vestingAmount_), "RDT:DVE:TRANSFER_FROM");
@@ -106,7 +107,7 @@ contract RevenueDistributionToken is ERC20 {
     function unlockedBalance(uint256 vestingTime, uint256 issuanceRate_, uint256 freeUnderlying_)
         public pure returns (uint256 unlockedBalance_)
     {
-        return issuanceRate_ * vestingTime + freeUnderlying_;
+        return issuanceRate_ * vestingTime / RAY + freeUnderlying_;
     }
 
     /*********************************/

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.7;
 
-import { ERC20 }       from "lib/erc20/src/ERC20.sol";
-import { ERC20Helper } from "lib/erc20-helper/src/ERC20Helper.sol";
+import { ERC20 }       from "../lib/erc20/src/ERC20.sol";
+import { ERC20Helper } from "../lib/erc20-helper/src/ERC20Helper.sol";
 
-contract RevenueDistributionToken is ERC20 {
+import { IERC4626 } from "./interfaces/IERC4626.sol";
+
+contract RevenueDistributionToken is IERC4626, ERC20 {
 
     uint256 internal constant WAD = 1e18;
     uint256 internal constant RAY = 1e27;

@@ -55,37 +55,29 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
     /*** Staker Functions ***/
     /************************/
 
-    function deposit(address depositor_, uint256 value_) public virtual override returns (uint256 shares_) {
-        require(value_ != 0, "RDT:D:AMOUNT");
-        _mint(depositor_, shares_ = value_ * WAD / exchangeRate());
-        freeUnderlying += value_;
+    function deposit(address depositor_, uint256 underlyingAmount_) public virtual override returns (uint256 shares_) {
+        require(underlyingAmount_ != 0, "RDT:D:AMOUNT");
+        _mint(depositor_, shares_ = underlyingAmount_ * WAD / exchangeRate());
+        freeUnderlying += underlyingAmount_;
         _updateIssuanceParams();
-        require(ERC20Helper.transferFrom(address(underlying), depositor_, address(this), value_), "RDT:D:TRANSFER_FROM");
+        require(ERC20Helper.transferFrom(address(underlying), depositor_, address(this), underlyingAmount_), "RDT:D:TRANSFER_FROM");
     }
 
-    function withdraw(address sharesOwner_, address destination_, uint256 value_) public virtual override returns (uint256 shares_) {
-        require(value_ != 0, "RDT:W:AMOUNT");
-        _burn(sharesOwner_, shares_ = value_ * exchangeRate() / WAD);
-        freeUnderlying -= value_;
-        _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(underlying), destination_, value_), "RDT:D:TRANSFER");
-    }
-
-    function redeem(uint256 rdTokenAmount_) external {
-        require(rdTokenAmount_ != 0, "RDT:W:AMOUNT");
-        _burn(msg.sender, rdTokenAmount_);
-        uint256 underlyingAmount = rdTokenAmount_ * exchangeRate() / WAD;
-        freeUnderlying -= underlyingAmount;
-        _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(underlying), msg.sender, underlyingAmount), "RDT:D:TRANSFER");
-    }
-
-    function withdraw(uint256 underlyingAmount_) external {
+    function withdraw(address sharesOwner_, address destination_, uint256 underlyingAmount_) public virtual override returns (uint256 shares_) {
         require(underlyingAmount_ != 0, "RDT:W:AMOUNT");
-        _burn(msg.sender, underlyingAmount_ * exchangeRate() / WAD);
+        _burn(sharesOwner_, shares_ = underlyingAmount_ * exchangeRate() / WAD);
         freeUnderlying -= underlyingAmount_;
         _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(underlying), msg.sender, underlyingAmount_), "RDT:D:TRANSFER");
+        require(ERC20Helper.transfer(address(underlying), destination_, underlyingAmount_), "RDT:D:TRANSFER");
+    }
+
+    function redeem(address redeemer_, address destination_, uint256 shares_) public virtual override returns (uint256 underlyingAmount_) {
+        require(shares_ != 0, "RDT:W:AMOUNT");
+        _burn(redeemer_, shares_);
+        underlyingAmount_ = shares_ * exchangeRate() / WAD;
+        freeUnderlying -= underlyingAmount_;
+        _updateIssuanceParams();
+        require(ERC20Helper.transfer(address(underlying), destination_, underlyingAmount_), "RDT:D:TRANSFER");
     }
 
     /**********************/

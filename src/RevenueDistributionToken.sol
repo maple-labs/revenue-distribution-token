@@ -55,12 +55,13 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
     /*** Staker Functions ***/
     /************************/
 
-    function deposit(uint256 amount_) external {
-        require(amount_ != 0, "RDT:D:AMOUNT");
-        _mint(msg.sender, amount_ * WAD / exchangeRate());
-        freeUnderlying += amount_;
+    function deposit(address to_, uint256 value_) public virtual override returns (uint256 shares_) {
+        require(value_ != 0, "RDT:D:AMOUNT");
+        _mint(to_, shares_ = value_ * WAD / exchangeRate());
+        freeUnderlying += value_;
         _updateIssuanceParams();
-        require(ERC20Helper.transferFrom(address(underlying), msg.sender, address(this), amount_), "RDT:D:TRANSFER_FROM");
+        require(ERC20Helper.transferFrom(address(underlying), to_, address(this), value_), "RDT:D:TRANSFER_FROM");
+    }
     }
 
     function redeem(uint256 rdTokenAmount_) external {

@@ -57,7 +57,7 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
 
     function deposit(address depositor_, uint256 underlyingAmount_) public virtual override returns (uint256 shares_) {
         require(underlyingAmount_ != 0, "RDT:D:AMOUNT");
-        _mint(depositor_, shares_ = underlyingAmount_ * WAD / exchangeRate());
+        _mint(depositor_, shares_ = previewDeposit(underlyingAmount_));
         freeUnderlying += underlyingAmount_;
         _updateIssuanceParams();
         require(ERC20Helper.transferFrom(address(underlying), depositor_, address(this), underlyingAmount_), "RDT:D:TRANSFER_FROM");
@@ -71,7 +71,7 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
 
     function withdraw(address sharesOwner_, address destination_, uint256 underlyingAmount_) public virtual override returns (uint256 shares_) {
         require(underlyingAmount_ != 0, "RDT:W:AMOUNT");
-        _burn(sharesOwner_, shares_ = underlyingAmount_ * exchangeRate() / WAD);
+        _burn(sharesOwner_, shares_ = previewWithdraw(underlyingAmount_));
         freeUnderlying -= underlyingAmount_;
         _updateIssuanceParams();
         require(ERC20Helper.transfer(address(underlying), destination_, underlyingAmount_), "RDT:D:TRANSFER");
@@ -81,7 +81,7 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
     function redeem(address redeemer_, address destination_, uint256 shares_) public virtual override returns (uint256 underlyingAmount_) {
         require(shares_ != 0, "RDT:W:AMOUNT");
         _burn(redeemer_, shares_);
-        underlyingAmount_ = shares_ * exchangeRate() / WAD;
+        underlyingAmount_ = previewRedeem(shares_);
         freeUnderlying -= underlyingAmount_;
         _updateIssuanceParams();
         require(ERC20Helper.transfer(address(underlying), destination_, underlyingAmount_), "RDT:D:TRANSFER");
@@ -107,7 +107,7 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
     }
 
     function previewDeposit(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
-        // TODO: implement
+        shareAmount_ = underlyingAmount_ * WAD / exchangeRate();
     }
 
     function previewMint(uint256 shareAmount_) public view override returns (uint256 underlyingAmount_) {
@@ -115,11 +115,11 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
     }
 
     function previewWithdraw(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
-        // TODO: implement
+        shareAmount_ = underlyingAmount_ * exchangeRate() / WAD;
     }
 
     function previewRedeem(uint256 shareAmount_) public view override returns (uint256 underlyingAmount_) {
-        // TODO: implement
+        underlyingAmount_ = shareAmount_ * exchangeRate() / WAD;
     }
 
     function totalUnlockedHoldings() public view returns (uint256 totalHoldings_) {

@@ -1,0 +1,9 @@
+[submodule "lib/erc20"]
+	path = lib/erc20
+	url = https://github.com/maple-labs/erc20
+[submodule "lib/erc20-helper"]
+	path = lib/erc20-helper
+	url = https://github.com/maple-labs/erc20-helper
+[submodule "lib/contract-test-utils"]
+	path = lib/contract-test-utils
+	url = https://github.com/maple-labs/contract-test-utils

@@ -61,10 +61,12 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
         freeUnderlying += underlyingAmount_;
         _updateIssuanceParams();
         require(ERC20Helper.transferFrom(address(underlying), depositor_, address(this), underlyingAmount_), "RDT:D:TRANSFER_FROM");
+        emit Deposit(depositor_, depositor_, underlyingAmount_);
     }
 
     function mint(address to_, uint256 shares_) public virtual override returns (uint256 value_) {
         // TODO: implement
+        // emit Deposit(depositor_, depositor_, underlyingAmount_);
     }
 
     function withdraw(address sharesOwner_, address destination_, uint256 underlyingAmount_) public virtual override returns (uint256 shares_) {
@@ -73,6 +75,7 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
         freeUnderlying -= underlyingAmount_;
         _updateIssuanceParams();
         require(ERC20Helper.transfer(address(underlying), destination_, underlyingAmount_), "RDT:D:TRANSFER");
+        emit Withdraw(sharesOwner_, destination_, underlyingAmount_);
     }
 
     function redeem(address redeemer_, address destination_, uint256 shares_) public virtual override returns (uint256 underlyingAmount_) {
@@ -82,6 +85,7 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
         freeUnderlying -= underlyingAmount_;
         _updateIssuanceParams();
         require(ERC20Helper.transfer(address(underlying), destination_, underlyingAmount_), "RDT:D:TRANSFER");
+        emit Withdraw(redeemer_, destination_, underlyingAmount_);
     }
 
     /**********************/

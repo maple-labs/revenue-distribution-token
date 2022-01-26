@@ -11,7 +11,7 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
     uint256 internal constant WAD = 1e18;
     uint256 internal constant RAY = 1e27;
 
-    address public immutable underlying;
+    address public immutable override underlying;
 
     uint256 public freeUnderlying;       // Amount of underlying unlocked regardless of time passed
     uint256 public issuanceRate;         // underlying/second rate dependent on aggregate vesting schedule (needs increased precision)
@@ -31,7 +31,7 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
     //       and essentially set the `issuanceRate` to zero.
     function depositVestingEarnings(uint256 vestingAmount_, uint256 vestingPeriod_) external {
         // Update "y-intercept" to reflect current available underlying
-        uint256 _freeUnderlying = freeUnderlying = totalHoldings();
+        uint256 _freeUnderlying = freeUnderlying = totalUnlockedHoldings();
 
         uint256 _vestingPeriodFinish = vestingPeriodFinish;  // Cache to memory
 
@@ -63,6 +63,10 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
         require(ERC20Helper.transferFrom(address(underlying), depositor_, address(this), underlyingAmount_), "RDT:D:TRANSFER_FROM");
     }
 
+    function mint(address to_, uint256 shares_) public virtual override returns (uint256 value_) {
+        // TODO: implement
+    }
+
     function withdraw(address sharesOwner_, address destination_, uint256 underlyingAmount_) public virtual override returns (uint256 shares_) {
         require(underlyingAmount_ != 0, "RDT:W:AMOUNT");
         _burn(sharesOwner_, shares_ = underlyingAmount_ * exchangeRate() / WAD);
@@ -84,17 +88,37 @@ contract RevenueDistributionToken is IERC4626, ERC20 {
     /*** View Functions ***/
     /**********************/
 
-    function balanceOfUnderlying(address account_) external view returns (uint256 balanceOfUnderlying_) {
+    function totalUnderlying() public view override returns (uint256 totalUnderlying_) {
+        return ERC20(underlying).balanceOf(address(this));
+    }
+
+    function balanceOfUnderlying(address account_) public view override returns (uint256 balanceOfUnderlying_) {
         return balanceOf[account_] * exchangeRate() / WAD;
     }
 
-    function exchangeRate() public view returns (uint256 exchangeRate_) {
+    function exchangeRate() public view override returns (uint256 exchangeRate_) {
         uint256 _totalSupply = totalSupply;
         if (_totalSupply == uint256(0)) return WAD;
-        return totalHoldings() * WAD / _totalSupply;
+        return totalUnlockedHoldings() * WAD / _totalSupply;
     }
 
-    function totalHoldings() public view returns (uint256 totalHoldings_) {
+    function previewDeposit(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
+        // TODO: implement
+    }
+
+    function previewMint(uint256 shareAmount_) public view override returns (uint256 underlyingAmount_) {
+        // TODO: implement
+    }
+
+    function previewWithdraw(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
+        // TODO: implement
+    }
+
+    function previewRedeem(uint256 shareAmount_) public view override returns (uint256 underlyingAmount_) {
+        // TODO: implement
+    }
+
+    function totalUnlockedHoldings() public view returns (uint256 totalHoldings_) {
         uint256 vestingTimePassed =
             block.timestamp > vestingPeriodFinish ?
                 vestingPeriodFinish - lastUpdated :

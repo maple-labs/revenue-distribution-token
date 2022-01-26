@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.7;
 
-import { DSTest }    from "lib/ds-test/src/test.sol";
-import { MockERC20 } from "lib/erc20/src/test/mocks/MockERC20.sol";
+import { DSTest }    from "../../lib/ds-test/src/test.sol";
+import { MockERC20 } from "../../lib/erc20/src/test/mocks/MockERC20.sol";
 
 import { Staker } from "./accounts/Staker.sol";
 

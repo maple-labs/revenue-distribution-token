@@ -8,15 +8,15 @@ import { IRevenueDistributionToken } from "../../interfaces/IRevenueDistribution
 contract Staker is ERC20User {
 
     function rdToken_deposit(address pool, uint256 amount) external {
-        IRevenueDistributionToken(pool).deposit(amount);
+        IRevenueDistributionToken(pool).deposit(address(this), amount);
     }
 
     function rdToken_redeem(address pool, uint256 amount) external {
-        IRevenueDistributionToken(pool).redeem(amount);
+        IRevenueDistributionToken(pool).redeem(address(this), address(this), amount);
     }
 
     function rdToken_withdraw(address pool, uint256 amount) external {
-        IRevenueDistributionToken(pool).withdraw(amount);
+        IRevenueDistributionToken(pool).withdraw(address(this), address(this), amount);
     }
 
 }

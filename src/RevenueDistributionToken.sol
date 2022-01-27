@@ -64,15 +64,6 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         emit Deposit(msg.sender, amount_);
     }
 
-    function withdraw(uint256 underlyingAmount_) public virtual override returns (uint256 shares_) {
-        require(underlyingAmount_ != 0, "RDT:W:AMOUNT");
-        _burn(msg.sender, shares_ = previewWithdraw(underlyingAmount_));
-        freeUnderlying -= underlyingAmount_;
-        _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(underlying), msg.sender, underlyingAmount_), "RDT:D:TRANSFER");
-        emit Withdraw(msg.sender, underlyingAmount_);
-    }
-
     function redeem(uint256 rdTokenAmount_) public virtual override returns (uint256 underlyingAmount_) {
         require(rdTokenAmount_ != 0, "RDT:W:AMOUNT");
         _burn(msg.sender, rdTokenAmount_);
@@ -83,17 +74,18 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         emit Withdraw(msg.sender, underlyingAmount_);
     }
 
+    function withdraw(uint256 underlyingAmount_) public virtual override returns (uint256 shares_) {
+        require(underlyingAmount_ != 0, "RDT:W:AMOUNT");
+        _burn(msg.sender, shares_ = previewWithdraw(underlyingAmount_));
+        freeUnderlying -= underlyingAmount_;
+        _updateIssuanceParams();
+        require(ERC20Helper.transfer(address(underlying), msg.sender, underlyingAmount_), "RDT:D:TRANSFER");
+        emit Withdraw(msg.sender, underlyingAmount_);
+    }
+
     /**********************/
     /*** View Functions ***/
     /**********************/
-
-    function totalHoldings() public view override returns (uint256 totalHoldings_) {
-        uint256 vestingTimePassed =
-            block.timestamp > vestingPeriodFinish ?
-                vestingPeriodFinish - lastUpdated :
-                block.timestamp - lastUpdated;
-        return unlockedBalance(issuanceRate, vestingTimePassed, freeUnderlying);
-    }
 
     function balanceOfUnderlying(address account_) public view override returns (uint256 balanceOfUnderlying_) {
         return balanceOf[account_] * exchangeRate() / WAD;
@@ -115,6 +107,14 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     function previewRedeem(uint256 shareAmount_) public view override returns (uint256 underlyingAmount_) {
         underlyingAmount_ = shareAmount_ * exchangeRate() / WAD;
+    }
+
+    function totalHoldings() public view override returns (uint256 totalHoldings_) {
+        uint256 vestingTimePassed =
+            block.timestamp > vestingPeriodFinish ?
+                vestingPeriodFinish - lastUpdated :
+                block.timestamp - lastUpdated;
+        return unlockedBalance(issuanceRate, vestingTimePassed, freeUnderlying);
     }
 
     /**********************/

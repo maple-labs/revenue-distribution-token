@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.7;
 
-import { ERC20 }       from "lib/erc20/src/ERC20.sol";
-import { ERC20Helper } from "lib/erc20-helper/src/ERC20Helper.sol";
+import { ERC20 }       from "../lib/erc20/src/ERC20.sol";
+import { ERC20Helper } from "../lib/erc20-helper/src/ERC20Helper.sol";
 
-contract RevenueDistributionToken is ERC20 {
+import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
+
+contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     uint256 internal constant WAD = 1e18;
     uint256 internal constant RAY = 1e27;
 
-    address public immutable underlying;
+    address public immutable override underlying;
 
     uint256 public freeUnderlying;       // Amount of underlying unlocked regardless of time passed
     uint256 public issuanceRate;         // underlying/second rate dependent on aggregate vesting schedule (needs increased precision)
@@ -53,46 +55,61 @@ contract RevenueDistributionToken is ERC20 {
     /*** Staker Functions ***/
     /************************/
 
-    function deposit(uint256 amount_) external {
+    function deposit(uint256 amount_) public virtual override returns (uint256 shares_) {
         require(amount_ != 0, "RDT:D:AMOUNT");
-        _mint(msg.sender, amount_ * WAD / exchangeRate());
+        _mint(msg.sender, shares_ = previewDeposit(amount_));
         freeUnderlying += amount_;
         _updateIssuanceParams();
         require(ERC20Helper.transferFrom(address(underlying), msg.sender, address(this), amount_), "RDT:D:TRANSFER_FROM");
+        emit Deposit(msg.sender, amount_);
     }
 
-    function redeem(uint256 rdTokenAmount_) external {
+    function redeem(uint256 rdTokenAmount_) public virtual override returns (uint256 underlyingAmount_) {
         require(rdTokenAmount_ != 0, "RDT:W:AMOUNT");
         _burn(msg.sender, rdTokenAmount_);
-        uint256 underlyingAmount = rdTokenAmount_ * exchangeRate() / WAD;
-        freeUnderlying -= underlyingAmount;
-        _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(underlying), msg.sender, underlyingAmount), "RDT:D:TRANSFER");
-    }
-
-    function withdraw(uint256 underlyingAmount_) external {
-        require(underlyingAmount_ != 0, "RDT:W:AMOUNT");
-        _burn(msg.sender, underlyingAmount_ * exchangeRate() / WAD);
+        underlyingAmount_ = previewRedeem(rdTokenAmount_);
         freeUnderlying -= underlyingAmount_;
         _updateIssuanceParams();
         require(ERC20Helper.transfer(address(underlying), msg.sender, underlyingAmount_), "RDT:D:TRANSFER");
+        emit Withdraw(msg.sender, underlyingAmount_);
+    }
+
+    function withdraw(uint256 underlyingAmount_) public virtual override returns (uint256 shares_) {
+        require(underlyingAmount_ != 0, "RDT:W:AMOUNT");
+        _burn(msg.sender, shares_ = previewWithdraw(underlyingAmount_));
+        freeUnderlying -= underlyingAmount_;
+        _updateIssuanceParams();
+        require(ERC20Helper.transfer(address(underlying), msg.sender, underlyingAmount_), "RDT:D:TRANSFER");
+        emit Withdraw(msg.sender, underlyingAmount_);
     }
 
     /**********************/
     /*** View Functions ***/
     /**********************/
 
-    function balanceOfUnderlying(address account_) external view returns (uint256 balanceOfUnderlying_) {
+    function balanceOfUnderlying(address account_) external view override returns (uint256 balanceOfUnderlying_) {
         return balanceOf[account_] * exchangeRate() / WAD;
     }
 
-    function exchangeRate() public view returns (uint256 exchangeRate_) {
+    function exchangeRate() public view override returns (uint256 exchangeRate_) {
         uint256 _totalSupply = totalSupply;
         if (_totalSupply == uint256(0)) return WAD;
         return totalHoldings() * WAD / _totalSupply;
     }
 
-    function totalHoldings() public view returns (uint256 totalHoldings_) {
+    function previewDeposit(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
+        shareAmount_ = underlyingAmount_ * WAD / exchangeRate();
+    }
+
+    function previewWithdraw(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
+        shareAmount_ = underlyingAmount_ * exchangeRate() / WAD;
+    }
+
+    function previewRedeem(uint256 shareAmount_) public view override returns (uint256 underlyingAmount_) {
+        underlyingAmount_ = shareAmount_ * exchangeRate() / WAD;
+    }
+
+    function totalHoldings() public view override returns (uint256 totalHoldings_) {
         uint256 vestingTimePassed =
             block.timestamp > vestingPeriodFinish ?
                 vestingPeriodFinish - lastUpdated :

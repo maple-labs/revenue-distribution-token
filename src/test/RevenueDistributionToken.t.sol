@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.7;
 
-import { DSTest }    from "lib/ds-test/src/test.sol";
+import { TestUtils } from "lib/contract-test-utils/contracts/test.sol";
 import { MockERC20 } from "lib/erc20/src/test/mocks/MockERC20.sol";
 
 import { Staker } from "./accounts/Staker.sol";
@@ -13,7 +13,7 @@ interface Vm {
     function warp(uint256 timestamp) external;
 }
 
-contract EntryExitTest is DSTest {
+contract EntryExitTest is TestUtils {
 
     MockERC20 underlying;
 
@@ -26,10 +26,6 @@ contract EntryExitTest is DSTest {
     function setUp() public {
         underlying = new MockERC20("MockToken", "MT", 18);
         rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(underlying));
-    }
-
-    function constrictToRange(uint256 input, uint256 min, uint256 max) internal pure returns (uint256 output) {
-        return min == max ? max : input % (max - min) + min;
     }
 
     // TODO: Add lastUpdated/issuanceRate assertions
@@ -113,7 +109,7 @@ contract EntryExitTest is DSTest {
     }
 }
 
-contract RevenueStreamingTest is DSTest {
+contract RevenueStreamingTest is TestUtils {
 
     MockERC20 underlying;
     RevenueDistributionToken rdToken;
@@ -127,17 +123,13 @@ contract RevenueStreamingTest is DSTest {
         rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(underlying));
     }
 
-    function constrictToRange(uint256 input, uint256 min, uint256 max) internal pure returns (uint256 output) {
-        return min == max ? max : input % (max - min) + min;
-    }
-
     function test_vesting_singleSchedule(/*uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod*/) public {
         uint256 depositAmount = 0;
         uint256 vestingAmount = 0;
         uint256 vestingPeriod = 1;
 
-        depositAmount = constrictToRange(depositAmount, 10,         1e45);
-        vestingAmount = constrictToRange(vestingAmount, 10,         1e45);
+        depositAmount = constrictToRange(depositAmount, 1e6,        1e45);
+        vestingAmount = constrictToRange(vestingAmount, 1e6,        1e45);
         vestingPeriod = constrictToRange(vestingPeriod, 10 seconds, 10_000_000 days);  // TODO: Add a zero case test
 
         Staker staker = new Staker();
@@ -185,9 +177,32 @@ contract RevenueStreamingTest is DSTest {
             assertEq(rdToken.exchangeRate(),  expectedTotalHoldings * 1e18 / depositAmount);
         }
 
-        vm.warp(start + vestingPeriod + 1000);
+        vm.warp(start + vestingPeriod);
 
-        assertEq(rdToken.totalHoldings(), depositAmount + vestingAmount);
-        assertEq(rdToken.exchangeRate(), (depositAmount + vestingAmount) * 1e18 / depositAmount);
+        assertWithinDiff(rdToken.totalHoldings(), depositAmount + vestingAmount,                  1);
+        assertWithinDiff(rdToken.exchangeRate(),  rdToken.totalHoldings() * 1e18 / depositAmount, 1);  // Using totalHoldings because of rounding
+
+        assertWithinDiff(underlying.balanceOf(address(rdToken)),       depositAmount + vestingAmount, 1);
+        assertWithinDiff(rdToken.balanceOfUnderlying(address(staker)), depositAmount + vestingAmount, 1);
+
+        assertEq(underlying.balanceOf(address(staker)), 0);
+        assertEq(rdToken.balanceOf(address(staker)),    depositAmount);
+
+        assertEq(rdToken.exchangeRate(), 1);
+
+        staker.rdToken_redeem(address(rdToken), depositAmount);  // Use `redeem` so rdToken amount can be used to burn 100% of tokens
+
+        assertEq(rdToken.freeUnderlying(),      0);
+        assertEq(rdToken.totalHoldings(),       0);
+        assertEq(rdToken.exchangeRate(),        1 ether);                // Exchange rate returns to zero when empty
+        assertEq(rdToken.issuanceRate(),        expectedRate);           // TODO: Investigate implications of non-zero issuanceRate here
+        assertEq(rdToken.lastUpdated(),         start + vestingPeriod);  // This makes issuanceRate * time zero
+        assertEq(rdToken.vestingPeriodFinish(), start + vestingPeriod);
+
+        assertEq(underlying.balanceOf(address(rdToken)),       0);
+        assertEq(rdToken.balanceOfUnderlying(address(staker)), 0);
+
+        assertEq(underlying.balanceOf(address(staker)), depositAmount + vestingAmount);
+        assertEq(rdToken.balanceOf(address(staker)),    0);
     }
 }

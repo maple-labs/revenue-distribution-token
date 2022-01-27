@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.7;
 
+// TODO: add natspec + inherit from IERC4626 once spec is well defined.
 interface IRevenueDistributionToken {
     event Deposit(address indexed from, uint256 value);
     event Withdraw(address indexed to, uint256 value);

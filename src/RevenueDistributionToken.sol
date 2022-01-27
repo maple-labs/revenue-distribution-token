@@ -87,7 +87,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** View Functions ***/
     /**********************/
 
-    function balanceOfUnderlying(address account_) public view override returns (uint256 balanceOfUnderlying_) {
+    function balanceOfUnderlying(address account_) external view override returns (uint256 balanceOfUnderlying_) {
         return balanceOf[account_] * exchangeRate() / WAD;
     }
 

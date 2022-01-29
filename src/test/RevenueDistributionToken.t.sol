@@ -247,7 +247,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.vestingPeriodFinish(), start + vestingPeriod);
 
         // Warp and assert vesting in 10% increments
-        for (uint256 i = 1; i < 10; ++i) {
+        for (uint256 i = 1; i < 2; ++i) {
             vm.warp(start + vestingPeriod * i / 10);  // 10% intervals of vesting schedule
 
             uint256 expectedTotalHoldings = depositAmount + expectedRate * (block.timestamp - start) / 1e27;
@@ -276,7 +276,6 @@ contract RevenueStreamingTest is TestUtils {
 
         assertWithinDiff(rdToken.freeUnderlying(), 0, 1);
         assertWithinDiff(rdToken.totalHoldings(),  0, 1);
-
         assertEq(rdToken.exchangeRate(),        1e27);                   // Exchange rate returns to zero when empty
         assertEq(rdToken.issuanceRate(),        expectedRate);           // TODO: Investigate implications of non-zero issuanceRate here
         assertEq(rdToken.lastUpdated(),         start + vestingPeriod);  // This makes issuanceRate * time zero

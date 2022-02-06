@@ -110,6 +110,8 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function totalHoldings() public view override returns (uint256 totalHoldings_) {
+        if (issuanceRate == 0) return freeUnderlying;
+
         uint256 vestingTimePassed =
             block.timestamp > vestingPeriodFinish ?
                 vestingPeriodFinish - lastUpdated :

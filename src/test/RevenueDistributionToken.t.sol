@@ -181,8 +181,8 @@ contract RevenueStreamingTest is TestUtils {
         _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
         assertEq(rdToken.issuanceRate(), 10e27);
 
-        _mintAndDepositVesting(1000, 50 seconds);  // 20 tokens per second
-        assertEq(rdToken.issuanceRate(), 20e27);   // (1000 + 1000) / 100 seconds
+        _mintAndDepositVesting(1000, 20 seconds);  // 50 tokens per second
+        assertEq(rdToken.issuanceRate(), 20e27);   // (1000 + 1000) / 100 seconds = 20 tokens per second
 
         assertEq(rdToken.totalHoldings(), 0);
 

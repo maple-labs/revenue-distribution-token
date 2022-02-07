@@ -37,6 +37,7 @@ jobs:
           sudo snap install solc
           python -m pip install --upgrade pip
           pip install slither-analyzer==0.8.2 solc-select==0.2.1
+          solc-select install 0.8.7
           solc-select use 0.8.7
       - name: Summary of static ananlysis
         run: |

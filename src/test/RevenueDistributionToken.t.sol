@@ -177,7 +177,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalHoldings(), 999);  // 999 < 1000
     }
 
-    function test_depositVestingEarnings_double_sameTimeRaiseRate_shorterVestingPeriod() external {
+    function test_depositVestingEarnings_sameTime_raiseRate_shorterVestingPeriod() external {
         _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
         assertEq(rdToken.issuanceRate(), 10e27);
 
@@ -191,7 +191,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalHoldings(), 2000);
     }
 
-    function test_depositVestingEarnings_double_sameTimeRaiseRate_longerVestingPeriod() external {
+    function test_depositVestingEarnings_sameTime_raiseRate_longerVestingPeriod() external {
         _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
         assertEq(rdToken.issuanceRate(), 10e27);
 

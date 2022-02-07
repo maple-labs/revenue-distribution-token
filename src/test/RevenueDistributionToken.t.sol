@@ -129,6 +129,10 @@ contract RevenueStreamingTest is TestUtils {
         rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(underlying));
     }
 
+    /*************************************/
+    /*** Single depositVestingEarnings ***/
+    /*************************************/
+
     function test_depositVestingEarnings_single() external {
         assertEq(rdToken.freeUnderlying(),      0);
         assertEq(rdToken.totalHoldings(),       0);
@@ -177,7 +181,11 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalHoldings(), 999);  // 999 < 1000
     }
 
-    function test_depositVestingEarnings_sameTime_raiseRate_shorterVestingPeriod() external {
+    /**************************************************/
+    /*** Multiple depositVestingEarnings, same time ***/
+    /**************************************************/
+
+    function test_depositVestingEarnings_sameTime_shorterVesting() external {
         _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
         assertEq(rdToken.issuanceRate(), 10e27);
 
@@ -191,7 +199,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalHoldings(), 2000);
     }
 
-    function test_depositVestingEarnings_sameTime_raiseRate_longerVestingPeriod() external {
+    function test_depositVestingEarnings_sameTime_longerVesting_higherRate() external {
         _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
         assertEq(rdToken.issuanceRate(), 10e27);
 
@@ -204,6 +212,94 @@ contract RevenueStreamingTest is TestUtils {
 
         assertEq(rdToken.totalHoldings(), 4000);
     }
+
+    function test_depositVestingEarnings_sameTime_longerVesting_lowerRate() external {
+        _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
+        assertEq(rdToken.issuanceRate(), 10e27);
+
+        _mintAndDepositVesting(1000, 500 seconds);  // 2 tokens per second
+        assertEq(rdToken.issuanceRate(), 4e27);   // (1000 + 1000) / 500 seconds = 4 tokens per second
+
+        assertEq(rdToken.totalHoldings(), 0);
+
+        vm.warp(start + 500 seconds);
+
+        assertEq(rdToken.totalHoldings(), 2000);
+    }
+
+    /********************************************************/
+    /*** Multiple depositVestingEarnings, different times ***/
+    /********************************************************/
+
+    function test_depositVestingEarnings_diffTime_shorterVesting() external {
+        _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
+
+        vm.warp(start + 60 seconds);
+
+        assertEq(rdToken.issuanceRate(),   10e27);
+        assertEq(rdToken.totalHoldings(),  600);
+        assertEq(rdToken.freeUnderlying(), 0);
+
+        _mintAndDepositVesting(1000, 20 seconds);  // 50 tokens per second
+
+        assertEq(rdToken.issuanceRate(),   35e27);  // (400 + 1000) / 40 seconds = 35 tokens per second
+        assertEq(rdToken.totalHoldings(),  600);
+        assertEq(rdToken.freeUnderlying(), 600);
+
+        vm.warp(start + 100 seconds);
+
+        assertEq(rdToken.issuanceRate(),   35e27);
+        assertEq(rdToken.totalHoldings(),  2000);
+        assertEq(rdToken.freeUnderlying(), 600);
+    }
+
+    function test_depositVestingEarnings_diffTime_longerVesting_higherRate() external {
+        _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
+
+        vm.warp(start + 60 seconds);
+
+        assertEq(rdToken.issuanceRate(),   10e27);
+        assertEq(rdToken.totalHoldings(),  600);
+        assertEq(rdToken.freeUnderlying(), 0);
+
+        _mintAndDepositVesting(3000, 200 seconds);  // 15 tokens per second
+
+        assertEq(rdToken.issuanceRate(),   17e27);  // (400 + 3000) / 200 seconds = 17 tokens per second
+        assertEq(rdToken.totalHoldings(),  600);
+        assertEq(rdToken.freeUnderlying(), 600);
+
+        vm.warp(start + 60 seconds + 200 seconds);
+
+        assertEq(rdToken.issuanceRate(),   17e27);
+        assertEq(rdToken.totalHoldings(),  4000);
+        assertEq(rdToken.freeUnderlying(), 600);
+    }
+
+    function test_depositVestingEarnings_diffTime_longerVesting_lowerRate() external {
+        _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
+
+        vm.warp(start + 60 seconds);
+
+        assertEq(rdToken.issuanceRate(),   10e27);
+        assertEq(rdToken.totalHoldings(),  600);
+        assertEq(rdToken.freeUnderlying(), 0);
+
+        _mintAndDepositVesting(1000, 200 seconds);  // 5 tokens per second
+
+        assertEq(rdToken.issuanceRate(),   7e27);  // (400 + 1000) / 200 seconds = 7 tokens per second
+        assertEq(rdToken.totalHoldings(),  600);
+        assertEq(rdToken.freeUnderlying(), 600);
+
+        vm.warp(start + 60 seconds + 200 seconds);
+
+        assertEq(rdToken.issuanceRate(),   7e27);
+        assertEq(rdToken.totalHoldings(),  2000);
+        assertEq(rdToken.freeUnderlying(), 600);
+    }
+
+    /********************************/
+    /*** End to end vesting tests ***/
+    /********************************/
 
     function test_vesting_singleSchedule_explicit_vals() public {
         uint256 depositAmount = 1_000_000 ether;

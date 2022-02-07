@@ -2,13 +2,6 @@ name: Static Analysis
 on:
   push:
     branches: [sc-4672-update-ci-and-readme]
-  #   paths:
-  #     - "contracts/**"
-  #     - ".github/workflows/slither.yaml"
-  # pull_request:
-  #   branches: [main]
-  #   paths:
-  #     - "contracts/**"
 
 jobs:
   build:
@@ -21,11 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
     #   - name: Use Node.js ${{ matrix.node-version }}
-    #     uses: actions/setup-node@v1
-    #     with:
-    #       node-version: ${{ matrix.node-version }}
-    #   - run: yarn install
-    #   - run: yarn compile
+
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -39,6 +28,10 @@ jobs:
           pip install slither-analyzer==0.8.2 solc-select==0.2.1
           solc-select install 0.8.7
           solc-select use 0.8.7
+      - name: Install submoduules
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git submodule update --init --recursive
       - name: Summary of static ananlysis
         run: |
           slither src --print human-summary

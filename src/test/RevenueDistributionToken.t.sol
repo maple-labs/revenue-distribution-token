@@ -209,7 +209,7 @@ contract RevenueStreamingTest is TestUtils {
     function test_vesting_singleSchedule_fuzz(uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod) public {
         depositAmount = constrictToRange(depositAmount, 1e6,        1e27);                    // 1 billion at WAD precision
         vestingAmount = constrictToRange(vestingAmount, 1e6,        1e27);                    // 1 billion at WAD precision
-        vestingPeriod = constrictToRange(vestingPeriod, 10 seconds, 100_000 days) / 10 * 10;  // Divisible by 10 for for loop // TODO: Add a zero case test
+        vestingPeriod = constrictToRange(vestingPeriod, 10 seconds, 100_000 days) / 10 * 10;  // Must be divisible by 10 for for loop 10% increment calculations // TODO: Add a zero case test
 
         Staker staker = new Staker();
 

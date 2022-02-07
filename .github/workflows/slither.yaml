@@ -1,0 +1,54 @@
+name: Static Analysis
+on:
+  push:
+    branches: [sc-4672-update-ci-and-readme]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        run: |
+          sudo snap install solc
+          python -m pip install --upgrade pip
+          pip install slither-analyzer==0.8.2 solc-select==0.2.1
+          solc-select install 0.8.7
+          solc-select use 0.8.7
+
+      - name: Install submodules
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git submodule update --init --recursive
+
+      - name: Summary of static analysis
+        run: |
+          slither src --print human-summary
+
+      - name: Contract summary of static analysis
+        run: |
+          slither src --print contract-summary
+
+      - name: Function summary
+        run: |
+          slither src --print function-summary
+
+      - name: Inheritance
+        run: |
+          slither src --print inheritance
+
+      - name: Data dependency
+        run: |
+          slither src --print data-dependency
+
+      - name: Static Analysis
+        run: |
+          slither src
+        continue-on-error: true

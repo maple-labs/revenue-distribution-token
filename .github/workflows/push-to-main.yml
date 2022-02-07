@@ -1,0 +1,23 @@
+name: 50k fuzz run test on push to main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Foundry
+        uses: onbjerg/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Pull library deps
+        run: forge update
+
+      - name: Run forge tests
+        run: ./test.sh -r 50000

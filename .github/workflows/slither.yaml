@@ -32,10 +32,6 @@ jobs:
         run: |
           slither src --print human-summary
 
-      - name: Static Analysis
-        run: |
-          slither src
-
       - name: Contract summary of static analysis
         run: |
           slither src --print contract-summary
@@ -51,3 +47,7 @@ jobs:
       - name: Data dependency
         run: |
           slither src --print data-dependency
+
+      - name: Static Analysis
+        run: |
+          slither src

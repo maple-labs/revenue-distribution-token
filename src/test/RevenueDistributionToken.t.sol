@@ -207,8 +207,8 @@ contract RevenueStreamingTest is TestUtils {
     }
 
     function test_vesting_singleSchedule_fuzz(uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod) public {
-        depositAmount = constrictToRange(depositAmount, 1e6,        1e27);                    // 1b at WAD precision
-        vestingAmount = constrictToRange(vestingAmount, 1e6,        1e27);                    // 1b at WAD precision
+        depositAmount = constrictToRange(depositAmount, 1e6,        1e27);                    // 1 billion at WAD precision
+        vestingAmount = constrictToRange(vestingAmount, 1e6,        1e27);                    // 1 billion at WAD precision
         vestingPeriod = constrictToRange(vestingPeriod, 10 seconds, 100_000 days) / 10 * 10;  // Divisible by 10 for for loop // TODO: Add a zero case test
 
         Staker staker = new Staker();
@@ -247,7 +247,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.vestingPeriodFinish(), start + vestingPeriod);
 
         // Warp and assert vesting in 10% increments
-        for (uint256 i = 1; i < 2; ++i) {
+        for (uint256 i = 1; i < 10; ++i) {
             vm.warp(start + vestingPeriod * i / 10);  // 10% intervals of vesting schedule
 
             uint256 expectedTotalHoldings = depositAmount + expectedRate * (block.timestamp - start) / 1e27;

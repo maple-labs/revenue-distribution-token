@@ -18,14 +18,14 @@ jobs:
         python-version: [3.8, 3.9]
         node-version: [14.x]
 
-    steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - run: yarn install
-      - run: yarn compile
+    # steps:
+    #   - uses: actions/checkout@v2
+    #   - name: Use Node.js ${{ matrix.node-version }}
+    #     uses: actions/setup-node@v1
+    #     with:
+    #       node-version: ${{ matrix.node-version }}
+    #   - run: yarn install
+    #   - run: yarn compile
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2

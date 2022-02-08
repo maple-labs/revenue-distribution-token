@@ -1,7 +1,7 @@
 name: Static Analysis
 on:
   push:
-    branches: [sc-4672-update-ci-and-readme]
+    branches: "*"
 
 jobs:
   build:

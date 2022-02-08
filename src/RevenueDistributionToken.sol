@@ -18,6 +18,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     uint256 public lastUpdated;          // Timestamp of when issuance equation was last updated
     uint256 public vestingPeriodFinish;  // Timestamp when current vesting schedule ends
 
+    // TODO: Set decimals to underlying.decimals()
     constructor(string memory name, string memory symbol, address earningsToken) ERC20(name, symbol, 18) {
         underlying = earningsToken;
     }
@@ -29,26 +30,17 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     // TODO: Investigate implications of making this open vs permissioned.
     //       Currently a malicious user can deposit a small amount over a large vestingPeriod
     //       and essentially set the `issuanceRate` to zero.
-    function depositVestingEarnings(uint256 vestingAmount_, uint256 vestingPeriod_) external {
+    // TODO: Update to always use input vestingPeriod so that backdoor fix exists
+    // TODO: Make ownable
+    // TODO: Use difference in balance and use a transfer
+    function updateVestingSchedule(uint256 vestingPeriod_) external {
         // Update "y-intercept" to reflect current available underlying
         uint256 _freeUnderlying = freeUnderlying = totalHoldings();
 
-        uint256 _vestingPeriodFinish = vestingPeriodFinish;  // Cache to memory
-
-        // Calculate y value at the end of the line
-        uint256 vestingTimeRemaining       = block.timestamp > _vestingPeriodFinish ? 0 : _vestingPeriodFinish - block.timestamp;
-        uint256 totalUnlockedAtEndOfPeriod = vestingAmount_ + unlockedBalance(vestingTimeRemaining, issuanceRate, _freeUnderlying);
-
-        // Calculate x value of end of the line, else use existing `vestingPeriodFinish`
-        if ((block.timestamp + vestingPeriod_) > _vestingPeriodFinish) {
-            vestingPeriodFinish = block.timestamp + vestingPeriod_;  // TODO: Gas-optimize storage use of `vestingPeriodFinish`
-        }
-
-        // Calculate slope and update timestamp
-        issuanceRate = (totalUnlockedAtEndOfPeriod - _freeUnderlying) * RAY / (vestingPeriodFinish - block.timestamp);
-        lastUpdated  = block.timestamp;
-
-        require(ERC20Helper.transferFrom(address(underlying), msg.sender, address(this), vestingAmount_), "RDT:DVE:TRANSFER_FROM");
+        // Calculate slope, update timestamp and period finish
+        issuanceRate        = (ERC20(underlying).balanceOf(address(this)) - _freeUnderlying) * RAY / vestingPeriod_;
+        lastUpdated         = block.timestamp;
+        vestingPeriodFinish = block.timestamp + vestingPeriod_;
     }
 
     /************************/

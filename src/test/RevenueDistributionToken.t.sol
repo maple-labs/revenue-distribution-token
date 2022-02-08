@@ -417,7 +417,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.vestingPeriodFinish(), start + vestingPeriod);
 
         // Warp and assert vesting in 10% increments
-        for (uint256 i = 1; i < 2; ++i) {
+        for (uint256 i = 1; i < 10; ++i) {
             vm.warp(start + vestingPeriod * i / 10);  // 10% intervals of vesting schedule
 
             uint256 expectedTotalHoldings = depositAmount + expectedRate * (block.timestamp - start) / 1e27;

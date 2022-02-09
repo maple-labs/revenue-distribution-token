@@ -252,7 +252,7 @@ contract RevenueStreamingTest is TestUtils {
 
     function test_updateVestingSchedule_sameTime_shorterVesting() external {
         _depositAndUpdateVesting(1000, 100 seconds);
-        assertEq(rdToken.issuanceRate(),        10e27);                // 100 / 100 seconds = 10 tokens per second
+        assertEq(rdToken.issuanceRate(),        10e27);                // 1000 / 100 seconds = 10 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);  // Always updates to latest vesting schedule
 
         _depositAndUpdateVesting(1000, 20 seconds);
@@ -268,7 +268,7 @@ contract RevenueStreamingTest is TestUtils {
 
     function test_updateVestingSchedule_sameTime_longerVesting_higherRate() external {
         _depositAndUpdateVesting(1000, 100 seconds);
-        assertEq(rdToken.issuanceRate(),        10e27);                // 100 / 100 seconds = 10 tokens per second
+        assertEq(rdToken.issuanceRate(),        10e27);                // 1000 / 100 seconds = 10 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);  // Always updates to latest vesting schedule
 
         _depositAndUpdateVesting(3000, 200 seconds);
@@ -284,11 +284,11 @@ contract RevenueStreamingTest is TestUtils {
 
     function test_updateVestingSchedule_sameTime_longerVesting_lowerRate() external {
         _depositAndUpdateVesting(1000, 100 seconds);
-        assertEq(rdToken.issuanceRate(),        10e27);                // 100 / 100 seconds = 10 tokens per second
+        assertEq(rdToken.issuanceRate(),        10e27);                // 1000 / 100 seconds = 10 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);  // Always updates to latest vesting schedule
 
         _depositAndUpdateVesting(1000, 500 seconds);
-        assertEq(rdToken.issuanceRate(),        4e27);                // (1000 + 1000) / 500 seconds = 4 tokens per second
+        assertEq(rdToken.issuanceRate(),        4e27);                 // (1000 + 1000) / 500 seconds = 4 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), start + 500 seconds);  // Always updates to latest vesting schedule
 
         assertEq(rdToken.totalHoldings(), 0);

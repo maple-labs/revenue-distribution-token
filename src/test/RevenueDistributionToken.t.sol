@@ -30,7 +30,7 @@ contract AuthTest is TestUtils {
         rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(owner), address(underlying));
     }
 
-    function test_setPendingOwner() external {
+    function test_setPendingOwner_acl() external {
         vm.expectRevert("RDT:SPO:NOT_OWNER");
         notOwner.rdToken_setPendingOwner(address(rdToken), address(1));
 
@@ -39,7 +39,7 @@ contract AuthTest is TestUtils {
         assertEq(rdToken.pendingOwner(), address(1));
     }
 
-    function test_acceptOwner() external {
+    function test_acceptOwner_acl() external {
         owner.rdToken_setPendingOwner(address(rdToken), address(notOwner));
 
         vm.expectRevert("RDT:AO:NOT_PO");
@@ -52,6 +52,28 @@ contract AuthTest is TestUtils {
 
         assertEq(rdToken.pendingOwner(), address(0));
         assertEq(rdToken.owner(),        address(notOwner));
+    }
+
+    function test_updateVestingSchedule_acl() external {
+        // Use non-zero timestamp
+        vm.warp(10_000);
+
+        underlying.mint(address(rdToken), 1000);
+
+        vm.expectRevert("RDT:UVS:NOT_OWNER");
+        notOwner.rdToken_updateVestingSchedule(address(rdToken), 100 seconds);
+
+        assertEq(rdToken.freeUnderlying(),      0);
+        assertEq(rdToken.issuanceRate(),        0);
+        assertEq(rdToken.lastUpdated(),         0);
+        assertEq(rdToken.vestingPeriodFinish(), 0);
+
+        owner.rdToken_updateVestingSchedule(address(rdToken), 100 seconds);
+
+        assertEq(rdToken.freeUnderlying(),      0);
+        assertEq(rdToken.issuanceRate(),        10e27);
+        assertEq(rdToken.lastUpdated(),         10_000);
+        assertEq(rdToken.vestingPeriodFinish(), 10_100);
     }
 
 }

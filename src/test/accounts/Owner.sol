@@ -5,12 +5,16 @@ import { IRevenueDistributionToken } from "../../interfaces/IRevenueDistribution
 
 contract Owner {
 
+    function rdToken_acceptOwner(address rdt_) external {
+        IRevenueDistributionToken(rdt_).acceptOwner();
+    }
+
     function rdToken_setPendingOwner(address rdt_, address pendingOwner_) external {
         IRevenueDistributionToken(rdt_).setPendingOwner(pendingOwner_);
     }
 
-    function rdToken_acceptOwner(address rdt_) external {
-        IRevenueDistributionToken(rdt_).acceptOwner();
+    function rdToken_updateVestingSchedule(address rdt_, uint256 vestingPeriod_) external {
+        IRevenueDistributionToken(rdt_).updateVestingSchedule(vestingPeriod_);
     }
 
 }

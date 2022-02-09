@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.7;
 
 import { ERC20 }       from "../lib/erc20/src/ERC20.sol";
@@ -8,32 +8,41 @@ import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToke
 
 contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
-    uint256 internal constant WAD = 1e18;
     uint256 internal constant RAY = 1e27;
 
     address public immutable override underlying;
 
-    uint256 public freeUnderlying;       // Amount of underlying unlocked regardless of time passed
-    uint256 public issuanceRate;         // underlying/second rate dependent on aggregate vesting schedule (needs increased precision)
-    uint256 public lastUpdated;          // Timestamp of when issuance equation was last updated
-    uint256 public vestingPeriodFinish;  // Timestamp when current vesting schedule ends
+    address public override owner;
+    address public override pendingOwner;
 
-    // TODO: Set decimals to underlying.decimals()
-    constructor(string memory name, string memory symbol, address earningsToken) ERC20(name, symbol, 18) {
-        underlying = earningsToken;
+    uint256 public override freeUnderlying;       // Amount of underlying unlocked regardless of time passed
+    uint256 public override issuanceRate;         // underlying/second rate dependent on aggregate vesting schedule (needs increased precision)
+    uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated
+    uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends
+
+    constructor(string memory name_, string memory symbol_, address owner_, address underlying_)
+        ERC20(name_, symbol_, ERC20(underlying_).decimals())
+    {
+        owner      = owner_;
+        underlying = underlying_;
     }
 
     /********************************/
     /*** Administrative Functions ***/
     /********************************/
 
-    // TODO: Investigate implications of making this open vs permissioned.
-    //       Currently a malicious user can deposit a small amount over a large vestingPeriod
-    //       and essentially set the `issuanceRate` to zero.
-    // TODO: Update to always use input vestingPeriod so that backdoor fix exists
-    // TODO: Make ownable
-    // TODO: Use difference in balance and use a transfer
-    function updateVestingSchedule(uint256 vestingPeriod_) external {
+    function acceptOwner() external override {
+        require(msg.sender == pendingOwner, "RDT:AO:NOT_PO");
+        owner        = msg.sender;
+        pendingOwner = address(0);
+    }
+
+    function setPendingOwner(address pendingOwner_) external override {
+        require(msg.sender == owner, "RDT:SPO:NOT_OWNER");
+        pendingOwner = pendingOwner_;
+    }
+
+    function updateVestingSchedule(uint256 vestingPeriod_) external override {
         // Update "y-intercept" to reflect current available underlying
         uint256 _freeUnderlying = freeUnderlying = totalHoldings();
 
@@ -79,7 +88,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** View Functions ***/
     /**********************/
 
-    function APR() external view /*override*/ returns (uint256 apr_) {
+    function APR() external view override returns (uint256 apr_) {
         return issuanceRate * 365 days * ERC20(underlying).decimals() / totalSupply / RAY;
     }
 

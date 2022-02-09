@@ -1,9 +1,10 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.7;
 
 import { TestUtils } from "lib/contract-test-utils/contracts/test.sol";
 import { MockERC20 } from "lib/erc20/src/test/mocks/MockERC20.sol";
 
+import { Owner }  from "./accounts/Owner.sol";
 import { Staker } from "./accounts/Staker.sol";
 
 import { RevenueDistributionToken } from "../RevenueDistributionToken.sol";
@@ -11,6 +12,48 @@ import { RevenueDistributionToken } from "../RevenueDistributionToken.sol";
 interface Vm {
     function expectRevert(bytes calldata error) external;
     function warp(uint256 timestamp) external;
+}
+
+contract AuthTest is TestUtils {
+
+    MockERC20                underlying;
+    Owner                    notOwner;
+    Owner                    owner;
+    RevenueDistributionToken rdToken;
+
+    Vm vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+
+    function setUp() public {
+        notOwner   = new Owner();
+        owner      = new Owner();
+        underlying = new MockERC20("MockToken", "MT", 18);
+        rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(owner), address(underlying));
+    }
+
+    function test_setPendingOwner() external {
+        vm.expectRevert("RDT:SPO:NOT_OWNER");
+        notOwner.rdToken_setPendingOwner(address(rdToken), address(1));
+
+        assertEq(rdToken.pendingOwner(), address(0));
+        owner.rdToken_setPendingOwner(address(rdToken), address(1));
+        assertEq(rdToken.pendingOwner(), address(1));
+    }
+
+    function test_acceptOwner() external {
+        owner.rdToken_setPendingOwner(address(rdToken), address(notOwner));
+
+        vm.expectRevert("RDT:AO:NOT_PO");
+        owner.rdToken_acceptOwner(address(rdToken));
+
+        assertEq(rdToken.pendingOwner(), address(notOwner));
+        assertEq(rdToken.owner(),        address(owner));
+
+        notOwner.rdToken_acceptOwner(address(rdToken));
+
+        assertEq(rdToken.pendingOwner(), address(0));
+        assertEq(rdToken.owner(),        address(notOwner));
+    }
+
 }
 
 contract EntryExitTest is TestUtils {
@@ -25,7 +68,7 @@ contract EntryExitTest is TestUtils {
 
     function setUp() public {
         underlying = new MockERC20("MockToken", "MT", 18);
-        rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(underlying));
+        rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(this), address(underlying));
     }
 
     // TODO: Add lastUpdated/issuanceRate assertions
@@ -126,7 +169,7 @@ contract RevenueStreamingTest is TestUtils {
         vm.warp(start);
 
         underlying = new MockERC20("MockToken", "MT", 18);
-        rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(underlying));
+        rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(this), address(underlying));
     }
 
     /*************************************/

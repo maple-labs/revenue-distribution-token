@@ -18,3 +18,17 @@ contract Owner {
     }
 
 }
+
+contract InvariantOwner {
+
+    address rdToken;
+
+    constructor(address rdToken_) {
+        rdToken = rdToken_;
+    }
+
+    function rdToken_updateVestingSchedule(uint256 vestingPeriod_) external {
+        IRevenueDistributionToken(rdToken).updateVestingSchedule(vestingPeriod_);
+    }
+
+}

@@ -1,9 +1,10 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.7;
 
 import { TestUtils } from "lib/contract-test-utils/contracts/test.sol";
 import { MockERC20 } from "lib/erc20/src/test/mocks/MockERC20.sol";
 
+import { Owner }  from "./accounts/Owner.sol";
 import { Staker } from "./accounts/Staker.sol";
 
 import { RevenueDistributionToken } from "../RevenueDistributionToken.sol";
@@ -11,6 +12,70 @@ import { RevenueDistributionToken } from "../RevenueDistributionToken.sol";
 interface Vm {
     function expectRevert(bytes calldata error) external;
     function warp(uint256 timestamp) external;
+}
+
+contract AuthTest is TestUtils {
+
+    MockERC20                underlying;
+    Owner                    notOwner;
+    Owner                    owner;
+    RevenueDistributionToken rdToken;
+
+    Vm vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+
+    function setUp() public {
+        notOwner   = new Owner();
+        owner      = new Owner();
+        underlying = new MockERC20("MockToken", "MT", 18);
+        rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(owner), address(underlying));
+    }
+
+    function test_setPendingOwner_acl() external {
+        vm.expectRevert("RDT:SPO:NOT_OWNER");
+        notOwner.rdToken_setPendingOwner(address(rdToken), address(1));
+
+        assertEq(rdToken.pendingOwner(), address(0));
+        owner.rdToken_setPendingOwner(address(rdToken), address(1));
+        assertEq(rdToken.pendingOwner(), address(1));
+    }
+
+    function test_acceptOwnership_acl() external {
+        owner.rdToken_setPendingOwner(address(rdToken), address(notOwner));
+
+        vm.expectRevert("RDT:AO:NOT_PO");
+        owner.rdToken_acceptOwnership(address(rdToken));
+
+        assertEq(rdToken.pendingOwner(), address(notOwner));
+        assertEq(rdToken.owner(),        address(owner));
+
+        notOwner.rdToken_acceptOwnership(address(rdToken));
+
+        assertEq(rdToken.pendingOwner(), address(0));
+        assertEq(rdToken.owner(),        address(notOwner));
+    }
+
+    function test_updateVestingSchedule_acl() external {
+        // Use non-zero timestamp
+        vm.warp(10_000);
+
+        underlying.mint(address(rdToken), 1000);
+
+        vm.expectRevert("RDT:UVS:NOT_OWNER");
+        notOwner.rdToken_updateVestingSchedule(address(rdToken), 100 seconds);
+
+        assertEq(rdToken.freeUnderlying(),      0);
+        assertEq(rdToken.issuanceRate(),        0);
+        assertEq(rdToken.lastUpdated(),         0);
+        assertEq(rdToken.vestingPeriodFinish(), 0);
+
+        owner.rdToken_updateVestingSchedule(address(rdToken), 100 seconds);
+
+        assertEq(rdToken.freeUnderlying(),      0);
+        assertEq(rdToken.issuanceRate(),        10e27);
+        assertEq(rdToken.lastUpdated(),         10_000);
+        assertEq(rdToken.vestingPeriodFinish(), 10_100);
+    }
+
 }
 
 contract EntryExitTest is TestUtils {
@@ -25,7 +90,7 @@ contract EntryExitTest is TestUtils {
 
     function setUp() public {
         underlying = new MockERC20("MockToken", "MT", 18);
-        rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(underlying));
+        rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(this), address(underlying));
     }
 
     // TODO: Add lastUpdated/issuanceRate assertions
@@ -126,14 +191,14 @@ contract RevenueStreamingTest is TestUtils {
         vm.warp(start);
 
         underlying = new MockERC20("MockToken", "MT", 18);
-        rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(underlying));
+        rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(this), address(underlying));
     }
 
-    /*************************************/
-    /*** Single depositVestingEarnings ***/
-    /*************************************/
+    /************************************/
+    /*** Single updateVestingSchedule ***/
+    /************************************/
 
-    function test_depositVestingEarnings_single() external {
+    function test_updateVestingSchedule_single() external {
         assertEq(rdToken.freeUnderlying(),      0);
         assertEq(rdToken.totalHoldings(),       0);
         assertEq(rdToken.issuanceRate(),        0);
@@ -142,7 +207,7 @@ contract RevenueStreamingTest is TestUtils {
 
         assertEq(underlying.balanceOf(address(rdToken)), 0);
 
-        _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
+        _depositAndUpdateVesting(1000, 100 seconds);  // 10 tokens per second
 
         assertEq(underlying.balanceOf(address(rdToken)), 1000);
 
@@ -158,8 +223,8 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalHoldings(), 1000);  // All tokens vested
     }
 
-    function test_depositVestingEarnings_single_roundingDown() external {
-        _mintAndDepositVesting(1000, 30 seconds);  // 33.3333... tokens per second
+    function test_updateVestingSchedule_single_roundingDown() external {
+        _depositAndUpdateVesting(1000, 30 seconds);  // 33.3333... tokens per second
 
         assertEq(rdToken.totalHoldings(), 0);
         assertEq(rdToken.issuanceRate(),  33333333333333333333333333333);  // 3.33e27
@@ -181,30 +246,34 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalHoldings(), 999);  // 999 < 1000
     }
 
-    /**************************************************/
-    /*** Multiple depositVestingEarnings, same time ***/
-    /**************************************************/
+    /*************************************************/
+    /*** Multiple updateVestingSchedule, same time ***/
+    /*************************************************/
 
-    function test_depositVestingEarnings_sameTime_shorterVesting() external {
-        _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
-        assertEq(rdToken.issuanceRate(), 10e27);
+    function test_updateVestingSchedule_sameTime_shorterVesting() external {
+        _depositAndUpdateVesting(1000, 100 seconds);
+        assertEq(rdToken.issuanceRate(),        10e27);                // 1000 / 100 seconds = 10 tokens per second
+        assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);  // Always updates to latest vesting schedule
 
-        _mintAndDepositVesting(1000, 20 seconds);  // 50 tokens per second
-        assertEq(rdToken.issuanceRate(), 20e27);   // (1000 + 1000) / 100 seconds = 20 tokens per second
+        _depositAndUpdateVesting(1000, 20 seconds);
+        assertEq(rdToken.issuanceRate(),        100e27);              // (1000 + 1000) / 20 seconds = 100 tokens per second
+        assertEq(rdToken.vestingPeriodFinish(), start + 20 seconds);  // Always updates to latest vesting schedule
 
         assertEq(rdToken.totalHoldings(), 0);
 
-        vm.warp(start + 100 seconds);
+        vm.warp(start + 20 seconds);
 
         assertEq(rdToken.totalHoldings(), 2000);
     }
 
-    function test_depositVestingEarnings_sameTime_longerVesting_higherRate() external {
-        _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
-        assertEq(rdToken.issuanceRate(), 10e27);
+    function test_updateVestingSchedule_sameTime_longerVesting_higherRate() external {
+        _depositAndUpdateVesting(1000, 100 seconds);
+        assertEq(rdToken.issuanceRate(),        10e27);                // 1000 / 100 seconds = 10 tokens per second
+        assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);  // Always updates to latest vesting schedule
 
-        _mintAndDepositVesting(3000, 200 seconds);  // 15 tokens per second
-        assertEq(rdToken.issuanceRate(), 20e27);   // (1000 + 3000) / 200 seconds
+        _depositAndUpdateVesting(3000, 200 seconds);
+        assertEq(rdToken.issuanceRate(),        20e27);                // (3000 + 1000) / 200 seconds = 20 tokens per second
+        assertEq(rdToken.vestingPeriodFinish(), start + 200 seconds);  // Always updates to latest vesting schedule
 
         assertEq(rdToken.totalHoldings(), 0);
 
@@ -213,56 +282,61 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalHoldings(), 4000);
     }
 
-    function test_depositVestingEarnings_sameTime_longerVesting_lowerRate() external {
-        _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
-        assertEq(rdToken.issuanceRate(), 10e27);
+    function test_updateVestingSchedule_sameTime_longerVesting_lowerRate() external {
+        _depositAndUpdateVesting(1000, 100 seconds);
+        assertEq(rdToken.issuanceRate(),        10e27);                // 1000 / 100 seconds = 10 tokens per second
+        assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);  // Always updates to latest vesting schedule
 
-        _mintAndDepositVesting(1000, 500 seconds);  // 2 tokens per second
-        assertEq(rdToken.issuanceRate(), 4e27);   // (1000 + 1000) / 500 seconds = 4 tokens per second
+        _depositAndUpdateVesting(1000, 500 seconds);
+        assertEq(rdToken.issuanceRate(),        4e27);                 // (1000 + 1000) / 500 seconds = 4 tokens per second
+        assertEq(rdToken.vestingPeriodFinish(), start + 500 seconds);  // Always updates to latest vesting schedule
 
         assertEq(rdToken.totalHoldings(), 0);
 
-        vm.warp(start + 500 seconds);
+        vm.warp(start + 5000 seconds);
 
         assertEq(rdToken.totalHoldings(), 2000);
     }
 
-    /********************************************************/
-    /*** Multiple depositVestingEarnings, different times ***/
-    /********************************************************/
+    /*******************************************************/
+    /*** Multiple updateVestingSchedule, different times ***/
+    /*******************************************************/
 
-    function test_depositVestingEarnings_diffTime_shorterVesting() external {
-        _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
+    function test_updateVestingSchedule_diffTime_shorterVesting() external {
+        _depositAndUpdateVesting(1000, 100 seconds);  // 10 tokens per second
 
         vm.warp(start + 60 seconds);
 
-        assertEq(rdToken.issuanceRate(),   10e27);
-        assertEq(rdToken.totalHoldings(),  600);
-        assertEq(rdToken.freeUnderlying(), 0);
+        assertEq(rdToken.issuanceRate(),        10e27);
+        assertEq(rdToken.totalHoldings(),       600);
+        assertEq(rdToken.freeUnderlying(),      0);
+        assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);
 
-        _mintAndDepositVesting(1000, 20 seconds);  // 50 tokens per second
+        _depositAndUpdateVesting(1000, 20 seconds);  // 50 tokens per second
 
-        assertEq(rdToken.issuanceRate(),   35e27);  // (400 + 1000) / 40 seconds = 35 tokens per second
-        assertEq(rdToken.totalHoldings(),  600);
-        assertEq(rdToken.freeUnderlying(), 600);
+        assertEq(rdToken.issuanceRate(),        70e27);  // (400 + 1000) / 20 seconds = 70 tokens per second
+        assertEq(rdToken.totalHoldings(),       600);
+        assertEq(rdToken.freeUnderlying(),      600);
+        assertEq(rdToken.vestingPeriodFinish(), start + 60 seconds + 20 seconds);
 
-        vm.warp(start + 100 seconds);
+        vm.warp(start + 60 seconds + 20 seconds);
 
-        assertEq(rdToken.issuanceRate(),   35e27);
+        assertEq(rdToken.issuanceRate(),   70e27);
         assertEq(rdToken.totalHoldings(),  2000);
         assertEq(rdToken.freeUnderlying(), 600);
     }
 
-    function test_depositVestingEarnings_diffTime_longerVesting_higherRate() external {
-        _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
+    function test_updateVestingSchedule_diffTime_longerVesting_higherRate() external {
+        _depositAndUpdateVesting(1000, 100 seconds);  // 10 tokens per second
 
         vm.warp(start + 60 seconds);
 
-        assertEq(rdToken.issuanceRate(),   10e27);
-        assertEq(rdToken.totalHoldings(),  600);
-        assertEq(rdToken.freeUnderlying(), 0);
+        assertEq(rdToken.issuanceRate(),        10e27);
+        assertEq(rdToken.totalHoldings(),       600);
+        assertEq(rdToken.freeUnderlying(),      0);
+        assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);
 
-        _mintAndDepositVesting(3000, 200 seconds);  // 15 tokens per second
+        _depositAndUpdateVesting(3000, 200 seconds);  // 15 tokens per second
 
         assertEq(rdToken.issuanceRate(),   17e27);  // (400 + 3000) / 200 seconds = 17 tokens per second
         assertEq(rdToken.totalHoldings(),  600);
@@ -275,8 +349,8 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.freeUnderlying(), 600);
     }
 
-    function test_depositVestingEarnings_diffTime_longerVesting_lowerRate() external {
-        _mintAndDepositVesting(1000, 100 seconds);  // 10 tokens per second
+    function test_updateVestingSchedule_diffTime_longerVesting_lowerRate() external {
+        _depositAndUpdateVesting(1000, 100 seconds);  // 10 tokens per second
 
         vm.warp(start + 60 seconds);
 
@@ -284,7 +358,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalHoldings(),  600);
         assertEq(rdToken.freeUnderlying(), 0);
 
-        _mintAndDepositVesting(1000, 200 seconds);  // 5 tokens per second
+        _depositAndUpdateVesting(1000, 200 seconds);  // 5 tokens per second
 
         assertEq(rdToken.issuanceRate(),   7e27);  // (400 + 1000) / 200 seconds = 7 tokens per second
         assertEq(rdToken.totalHoldings(),  600);
@@ -326,7 +400,7 @@ contract RevenueStreamingTest is TestUtils {
 
         vm.warp(start);  // Warp back after demonstrating totalHoldings is not time-dependent before vesting starts
 
-        _mintAndDepositVesting(vestingAmount, vestingPeriod);
+        _depositAndUpdateVesting(vestingAmount, vestingPeriod);
 
         assertEq(rdToken.freeUnderlying(),      1_000_000 ether);
         assertEq(rdToken.totalHoldings(),       1_000_000 ether);
@@ -405,7 +479,7 @@ contract RevenueStreamingTest is TestUtils {
 
         vm.warp(start);  // Warp back after demonstrating totalHoldings is not time-dependent before vesting starts
 
-        _mintAndDepositVesting(vestingAmount, vestingPeriod);
+        _depositAndUpdateVesting(vestingAmount, vestingPeriod);
 
         uint256 expectedRate = vestingAmount * 1e27 / vestingPeriod;
 
@@ -446,6 +520,7 @@ contract RevenueStreamingTest is TestUtils {
 
         assertWithinDiff(rdToken.freeUnderlying(), 0, 1);
         assertWithinDiff(rdToken.totalHoldings(),  0, 1);
+
         assertEq(rdToken.exchangeRate(),        1e27);                   // Exchange rate returns to zero when empty
         assertEq(rdToken.issuanceRate(),        expectedRate);           // TODO: Investigate implications of non-zero issuanceRate here
         assertEq(rdToken.lastUpdated(),         start + vestingPeriod);  // This makes issuanceRate * time zero
@@ -459,9 +534,9 @@ contract RevenueStreamingTest is TestUtils {
         assertWithinDiff(rdToken.balanceOf(address(staker)),    0,                             1);
     }
 
-    function _mintAndDepositVesting(uint256 vestingAmount_, uint256 vestingPeriod_) internal {
+    function _depositAndUpdateVesting(uint256 vestingAmount_, uint256 vestingPeriod_) internal {
         underlying.mint(address(this), vestingAmount_);
-        underlying.approve(address(rdToken), vestingAmount_);
-        rdToken.depositVestingEarnings(vestingAmount_, vestingPeriod_);
+        underlying.transfer(address(rdToken), vestingAmount_);
+        rdToken.updateVestingSchedule(vestingPeriod_);
     }
 }

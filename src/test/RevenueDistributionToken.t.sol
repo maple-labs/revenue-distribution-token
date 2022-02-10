@@ -39,16 +39,16 @@ contract AuthTest is TestUtils {
         assertEq(rdToken.pendingOwner(), address(1));
     }
 
-    function test_acceptOwner_acl() external {
+    function test_acceptOwnership_acl() external {
         owner.rdToken_setPendingOwner(address(rdToken), address(notOwner));
 
         vm.expectRevert("RDT:AO:NOT_PO");
-        owner.rdToken_acceptOwner(address(rdToken));
+        owner.rdToken_acceptOwnership(address(rdToken));
 
         assertEq(rdToken.pendingOwner(), address(notOwner));
         assertEq(rdToken.owner(),        address(owner));
 
-        notOwner.rdToken_acceptOwner(address(rdToken));
+        notOwner.rdToken_acceptOwnership(address(rdToken));
 
         assertEq(rdToken.pendingOwner(), address(0));
         assertEq(rdToken.owner(),        address(notOwner));
@@ -194,9 +194,9 @@ contract RevenueStreamingTest is TestUtils {
         rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(this), address(underlying));
     }
 
-    /*************************************/
+    /************************************/
     /*** Single updateVestingSchedule ***/
-    /*************************************/
+    /************************************/
 
     function test_updateVestingSchedule_single() external {
         assertEq(rdToken.freeUnderlying(),      0);
@@ -246,9 +246,9 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalHoldings(), 999);  // 999 < 1000
     }
 
-    /**************************************************/
+    /*************************************************/
     /*** Multiple updateVestingSchedule, same time ***/
-    /**************************************************/
+    /*************************************************/
 
     function test_updateVestingSchedule_sameTime_shorterVesting() external {
         _depositAndUpdateVesting(1000, 100 seconds);
@@ -298,9 +298,9 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalHoldings(), 2000);
     }
 
-    /********************************************************/
+    /*******************************************************/
     /*** Multiple updateVestingSchedule, different times ***/
-    /********************************************************/
+    /*******************************************************/
 
     function test_updateVestingSchedule_diffTime_shorterVesting() external {
         _depositAndUpdateVesting(1000, 100 seconds);  // 10 tokens per second

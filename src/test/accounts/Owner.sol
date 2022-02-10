@@ -5,8 +5,8 @@ import { IRevenueDistributionToken } from "../../interfaces/IRevenueDistribution
 
 contract Owner {
 
-    function rdToken_acceptOwner(address rdt_) external {
-        IRevenueDistributionToken(rdt_).acceptOwner();
+    function rdToken_acceptOwnership(address rdt_) external {
+        IRevenueDistributionToken(rdt_).acceptOwnership();
     }
 
     function rdToken_setPendingOwner(address rdt_, address pendingOwner_) external {

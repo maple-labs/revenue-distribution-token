@@ -27,9 +27,9 @@ interface IRevenueDistributionToken {
     /*** Administrative Functions ***/
     /********************************/
 
-    function acceptOwner() external;
+    function acceptOwnership() external;
     function setPendingOwner(address pendingOwner_) external;
-    function updateVestingSchedule(uint256 vestingPeriod_) external;
+    function updateVestingSchedule(uint256 vestingPeriod_) external returns (uint256 issuanceRate_, uint256 freeUnderlying_);
 
     /************************/
     /*** Staker Functions ***/

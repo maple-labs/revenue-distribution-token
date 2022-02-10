@@ -31,7 +31,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** Administrative Functions ***/
     /********************************/
 
-    function acceptOwner() external override {
+    function acceptOwnership() external override {
         require(msg.sender == pendingOwner, "RDT:AO:NOT_PO");
         owner        = msg.sender;
         pendingOwner = address(0);
@@ -42,14 +42,15 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         pendingOwner = pendingOwner_;
     }
 
-    function updateVestingSchedule(uint256 vestingPeriod_) external override {
+    // TODO: Revisit returns
+    function updateVestingSchedule(uint256 vestingPeriod_) external override returns (uint256 issuanceRate_, uint256 freeUnderlying_) {
         require(msg.sender == owner, "RDT:UVS:NOT_OWNER");
 
         // Update "y-intercept" to reflect current available underlying
-        uint256 _freeUnderlying = freeUnderlying = totalHoldings();
+        freeUnderlying = freeUnderlying_ = totalHoldings();
 
         // Calculate slope, update timestamp and period finish
-        issuanceRate        = (ERC20(underlying).balanceOf(address(this)) - _freeUnderlying) * RAY / vestingPeriod_;
+        issuanceRate        = issuanceRate_ = (ERC20(underlying).balanceOf(address(this)) - freeUnderlying_) * RAY / vestingPeriod_;
         lastUpdated         = block.timestamp;
         vestingPeriodFinish = block.timestamp + vestingPeriod_;
     }

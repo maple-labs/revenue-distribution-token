@@ -8,9 +8,9 @@ import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToke
 
 contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
-    uint256 internal constant RAY = 1e27;
-
     address public immutable override underlying;
+
+    uint256 public immutable override precision;  // Precision of rates, equals max deposit amounts before rounding errors occur
 
     address public override owner;
     address public override pendingOwner;
@@ -20,10 +20,11 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated
     uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends
 
-    constructor(string memory name_, string memory symbol_, address owner_, address underlying_)
+    constructor(string memory name_, string memory symbol_, address owner_, address underlying_, uint256 precision_)
         ERC20(name_, symbol_, ERC20(underlying_).decimals())
     {
         owner      = owner_;
+        precision  = precision_;
         underlying = underlying_;
     }
 
@@ -50,7 +51,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         freeUnderlying = freeUnderlying_ = totalHoldings();
 
         // Calculate slope, update timestamp and period finish
-        issuanceRate        = issuanceRate_ = (ERC20(underlying).balanceOf(address(this)) - freeUnderlying_) * RAY / vestingPeriod_;
+        issuanceRate        = issuanceRate_ = (ERC20(underlying).balanceOf(address(this)) - freeUnderlying_) * precision / vestingPeriod_;
         lastUpdated         = block.timestamp;
         vestingPeriodFinish = block.timestamp + vestingPeriod_;
     }
@@ -92,29 +93,29 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /**********************/
 
     function APR() external view override returns (uint256 apr_) {
-        return issuanceRate * 365 days * ERC20(underlying).decimals() / totalSupply / RAY;
+        return issuanceRate * 365 days * ERC20(underlying).decimals() / totalSupply / precision;
     }
 
     function balanceOfUnderlying(address account_) external view override returns (uint256 balanceOfUnderlying_) {
-        return balanceOf[account_] * exchangeRate() / RAY;
+        return balanceOf[account_] * exchangeRate() / precision;
     }
 
     function exchangeRate() public view override returns (uint256 exchangeRate_) {
         uint256 _totalSupply = totalSupply;
-        if (_totalSupply == uint256(0)) return RAY;
-        return totalHoldings() * RAY / _totalSupply;
+        if (_totalSupply == uint256(0)) return precision;
+        return totalHoldings() * precision / _totalSupply;
     }
 
     function previewDeposit(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
-        shareAmount_ = underlyingAmount_ * RAY / exchangeRate();
+        shareAmount_ = underlyingAmount_ * precision / exchangeRate();
     }
 
     function previewWithdraw(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
-        shareAmount_ = underlyingAmount_ * exchangeRate() / RAY;
+        shareAmount_ = underlyingAmount_ * exchangeRate() / precision;
     }
 
     function previewRedeem(uint256 shareAmount_) public view override returns (uint256 underlyingAmount_) {
-        underlyingAmount_ = shareAmount_ * exchangeRate() / RAY;
+        underlyingAmount_ = shareAmount_ * exchangeRate() / precision;
     }
 
     function totalHoldings() public view override returns (uint256 totalHoldings_) {
@@ -124,17 +125,8 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
             block.timestamp > vestingPeriodFinish ?
                 vestingPeriodFinish - lastUpdated :
                 block.timestamp - lastUpdated;
-        return unlockedBalance(issuanceRate, vestingTimePassed, freeUnderlying);
-    }
 
-    /**********************/
-    /*** Pure Functions ***/
-    /**********************/
-
-    function unlockedBalance(uint256 vestingTime, uint256 issuanceRate_, uint256 freeUnderlying_)
-        public pure returns (uint256 unlockedBalance_)
-    {
-        return issuanceRate_ * vestingTime / RAY + freeUnderlying_;
+        return issuanceRate * vestingTimePassed / precision + freeUnderlying;
     }
 
     /*********************************/

@@ -19,4 +19,4 @@ if [ -z "$test" ]; then match="[src/test/*.t.sol]"; else match=$test; fi
 
 # Necessary until forge adds invariant testing support
 rm -rf out
-dapp test --match "$match" --fuzz-runs $runs --depth $depth --verbosity 2
+dapp test --match "$match" --fuzz-runs $runs --depth $depth --verbosity 4

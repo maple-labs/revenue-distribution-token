@@ -57,7 +57,7 @@ contract RDTInvariants is TestUtils, InvariantTest {
         addTargetContract(address(warper));
     }
 
-    function invariant1_totalHoldings_gte_underlyingBal() public {
+    function invariant1_totalHoldings_lte_underlyingBal() public {
         assertTrue(rdToken.totalHoldings() <= underlying.balanceOf(address(rdToken)));
     }
 
@@ -65,9 +65,9 @@ contract RDTInvariants is TestUtils, InvariantTest {
         // Only relevant if deposits exist
         if(rdToken.totalSupply() > 0) {
             uint256 sumBalanceOfUnderlying =
-            rdToken.balanceOfUnderlying(address(staker1)) +
-            rdToken.balanceOfUnderlying(address(staker2)) +
-            rdToken.balanceOfUnderlying(address(staker3));
+                rdToken.balanceOfUnderlying(address(staker1)) +
+                rdToken.balanceOfUnderlying(address(staker2)) +
+                rdToken.balanceOfUnderlying(address(staker3));
 
             assertTrue(sumBalanceOfUnderlying <= rdToken.totalHoldings());
             assertWithinDiff(sumBalanceOfUnderlying, rdToken.totalHoldings(), 3);  // Three users, causing three rounding errors

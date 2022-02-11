@@ -52,6 +52,8 @@ contract InvariantStaker is TestUtils {
         uint256 beforeBal    = rdToken.balanceOf(address(this));
         uint256 redeemAmount = amount_ % rdToken.balanceOf(address(this));
 
+        emit log_named_uint("redeemAmount", redeemAmount);
+
         rdToken.redeem(redeemAmount);
 
         assertEq(rdToken.balanceOf(address(this)), beforeBal - redeemAmount);

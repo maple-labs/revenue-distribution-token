@@ -110,8 +110,9 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         shareAmount_ = underlyingAmount_ * precision / exchangeRate();
     }
 
+    // TODO: Update this function and corresponding test to divide by exchange rate
     function previewWithdraw(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
-        shareAmount_ = underlyingAmount_ * exchangeRate() / precision;
+        shareAmount_ = underlyingAmount_ * precision / exchangeRate();
     }
 
     function previewRedeem(uint256 shareAmount_) public view override returns (uint256 underlyingAmount_) {

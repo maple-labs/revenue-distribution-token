@@ -49,23 +49,62 @@ contract InvariantStaker is TestUtils {
     }
 
     function redeem(uint256 amount_) external {
-        uint256 beforeBal    = rdToken.balanceOf(address(this));
-        uint256 redeemAmount = amount_ % rdToken.balanceOf(address(this));
+        uint256 beforeBal = rdToken.balanceOf(address(this));
 
-        emit log_named_uint("redeemAmount", redeemAmount);
+        if (beforeBal > 0) {
+            uint256 redeemAmount = amount_ % rdToken.balanceOf(address(this));
 
-        rdToken.redeem(redeemAmount);
+            rdToken.redeem(redeemAmount);
 
-        assertEq(rdToken.balanceOf(address(this)), beforeBal - redeemAmount);
+            assertEq(rdToken.balanceOf(address(this)), beforeBal - redeemAmount);
+        }
     }
 
     function withdraw(uint256 amount_) external {
-        uint256 beforeBal      = underlying.balanceOf(address(this));
-        uint256 withdrawAmount = amount_ % rdToken.balanceOfUnderlying(address(this));
+        uint256 beforeBal = underlying.balanceOf(address(this));
 
-        rdToken.withdraw(withdrawAmount);
+        if (beforeBal > 0) {
+            uint256 withdrawAmount = amount_ % rdToken.balanceOfUnderlying(address(this));
 
-        assertEq(underlying.balanceOf(address(this)), beforeBal + withdrawAmount);  // Ensure successful withdraw
+            rdToken.withdraw(withdrawAmount);
+
+            assertEq(underlying.balanceOf(address(this)), beforeBal + withdrawAmount);  // Ensure successful withdraw
+        }
+    }
+
+}
+
+contract InvariantStakerManager is TestUtils {
+
+    address rdToken;
+    address underlying;
+
+    InvariantStaker[] public stakers;
+
+    constructor(address rdToken_, address underlying_) {
+        rdToken      = rdToken_;
+        underlying   = underlying_;
+    }
+
+    function createStaker() external {
+        InvariantStaker staker = new InvariantStaker(rdToken, underlying);
+        stakers.push(staker);
+    }
+
+    function deposit(uint256 amount_, uint256 index_) external {
+        stakers[constrictToRange(index_, 0, stakers.length - 1)].deposit(amount_);
+    }
+
+    function redeem(uint256 amount_, uint256 index_) external {
+        stakers[constrictToRange(index_, 0, stakers.length - 1)].redeem(amount_);
+    }
+
+    function withdraw(uint256 amount_, uint256 index_) external {
+        stakers[constrictToRange(index_, 0, stakers.length - 1)].withdraw(amount_);
+    }
+
+    function getStakerCount() external view returns (uint256 stakerCount_) {
+        return stakers.length;
     }
 
 }

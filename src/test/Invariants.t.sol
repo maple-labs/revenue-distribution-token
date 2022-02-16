@@ -4,10 +4,10 @@ pragma solidity ^0.8.7;
 import { TestUtils } from "../../lib/contract-test-utils/contracts/test.sol";
 import { MockERC20 } from "../../lib/erc20/src/test/mocks/MockERC20.sol";
 
-import { InvariantERC20User } from "./accounts/ERC20User.sol";
-import { InvariantOwner }     from "./accounts/Owner.sol";
-import { InvariantStaker }    from "./accounts/Staker.sol";
-import { Warper }             from "./accounts/Warper.sol";
+import { InvariantERC20User }     from "./accounts/ERC20User.sol";
+import { InvariantOwner }         from "./accounts/Owner.sol";
+import { InvariantStakerManager } from "./accounts/Staker.sol";
+import { Warper }                 from "./accounts/Warper.sol";
 
 import { Vm } from "../interfaces/Interfaces.sol";
 
@@ -22,39 +22,52 @@ import { RDT_setOwner }  from "./utils/RDTSetOwner.sol";
 // Invariant 6: freeUnderlying <= totalHoldings
 // Invariant 7: balanceOfUnderlying >= balanceOf
 
+
+// Add a contract to target contracts
+// Contract can create new stakers and add them to the array in the test
+// Can also perform staker actions from one of the staker addresses from the array, must pull from the test file
+
 contract RDTInvariants is TestUtils, InvariantTest {
 
-    InvariantERC20User erc20User;
-    InvariantOwner     owner;
-    InvariantStaker    staker1;
-    InvariantStaker    staker2;
-    InvariantStaker    staker3;
-    MockERC20          underlying;
-    RDT_setOwner       rdToken;
-    Warper             warper;
+    InvariantERC20User     erc20User;
+    InvariantOwner         owner;
+    InvariantStakerManager stakerManager;
+    MockERC20              underlying;
+    RDT_setOwner           rdToken;
+    Warper                 warper;
 
     Vm vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
     function setUp() public {
-        underlying = new MockERC20("MockToken", "MT", 18);
-        rdToken    = new RDT_setOwner("Revenue Distribution Token", "RDT", address(this), address(underlying), 1e30);
-        erc20User  = new InvariantERC20User(address(rdToken), address(underlying));
-        owner      = new InvariantOwner(address(rdToken), address(underlying));
-        staker1    = new InvariantStaker(address(rdToken), address(underlying));
-        staker2    = new InvariantStaker(address(rdToken), address(underlying));
-        staker3    = new InvariantStaker(address(rdToken), address(underlying));
-        warper     = new Warper();
+        underlying    = new MockERC20("MockToken", "MT", 18);
+        rdToken       = new RDT_setOwner("Revenue Distribution Token", "RDT", address(this), address(underlying), 1e30);
+        erc20User     = new InvariantERC20User(address(rdToken), address(underlying));
+        stakerManager = new InvariantStakerManager(address(rdToken), address(underlying));
+        owner         = new InvariantOwner(address(rdToken), address(underlying));
+        warper        = new Warper();
 
         // Required to prevent `acceptOwner` from being a target function
         // TODO: Investigate hevm.store error: `hevm: internal error: unexpected failure code`
         rdToken.setOwner(address(owner));
 
+        // Performs random transfers of underlying into contract
         addTargetContract(address(erc20User));
+
+        // Performs random transfers of underlying into contract
+        // Performs random updateVestingSchedule calls
         addTargetContract(address(owner));
-        addTargetContract(address(staker1));
-        addTargetContract(address(staker2));
-        addTargetContract(address(staker3));
+
+        // Performs random instantiations of new staker users
+        // Performs random deposit calls from a random instantiated staker
+        // Performs random withdraw calls from a random instantiated staker
+        // Performs random redeem calls from a random instantiated staker
+        addTargetContract(address(stakerManager));
+
+        // Peforms random warps forward in time
         addTargetContract(address(warper));
+
+        // Create one staker to prevent underflows on index calculations
+        stakerManager.createStaker();
     }
 
     function invariant1_totalHoldings_lte_underlyingBal() public {
@@ -64,13 +77,15 @@ contract RDTInvariants is TestUtils, InvariantTest {
     function invariant2_sumBalanceOfUnderlying_eq_totalHoldings() public {
         // Only relevant if deposits exist
         if(rdToken.totalSupply() > 0) {
-            uint256 sumBalanceOfUnderlying =
-                rdToken.balanceOfUnderlying(address(staker1)) +
-                rdToken.balanceOfUnderlying(address(staker2)) +
-                rdToken.balanceOfUnderlying(address(staker3));
+            uint256 sumBalanceOfUnderlying;
+            uint256 stakerCount = stakerManager.getStakerCount();
+
+            for(uint256 i; i < stakerCount; ++i) {
+                sumBalanceOfUnderlying += rdToken.balanceOfUnderlying(address(stakerManager.stakers(i)));
+            }
 
             assertTrue(sumBalanceOfUnderlying <= rdToken.totalHoldings());
-            assertWithinDiff(sumBalanceOfUnderlying, rdToken.totalHoldings(), 3);  // Three users, causing three rounding errors
+            assertWithinDiff(sumBalanceOfUnderlying, rdToken.totalHoldings(), stakerCount);  // Rounding error of one per user
         }
     }
 
@@ -79,7 +94,9 @@ contract RDTInvariants is TestUtils, InvariantTest {
     }
 
     function invariant4_totalSupply_times_exchangeRate_eq_totalHoldings() external {
-        assertWithinDiff(rdToken.totalSupply() * rdToken.exchangeRate() / rdToken.precision(), rdToken.totalHoldings(), 1);  // One division
+        if(rdToken.totalSupply() > 0) {
+            assertWithinDiff(rdToken.totalSupply() * rdToken.exchangeRate() / rdToken.precision(), rdToken.totalHoldings(), 1);  // One division
+        }
     }
 
     function invariant5_exchangeRate_gte_precision() external {
@@ -91,9 +108,10 @@ contract RDTInvariants is TestUtils, InvariantTest {
     }
 
     function invariant7_balanceOfUnderlying_gte_balanceOf() public {
-        assertTrue(rdToken.balanceOfUnderlying(address(staker1)) >= rdToken.balanceOf(address(staker1)));
-        assertTrue(rdToken.balanceOfUnderlying(address(staker2)) >= rdToken.balanceOf(address(staker2)));
-        assertTrue(rdToken.balanceOfUnderlying(address(staker3)) >= rdToken.balanceOf(address(staker3)));
+        for(uint256 i; i < stakerManager.getStakerCount(); ++i) {
+            address staker = address(stakerManager.stakers(i));
+            assertTrue(rdToken.balanceOfUnderlying(staker) >= rdToken.balanceOf(staker));
+        }
     }
 
 }

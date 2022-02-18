@@ -7,8 +7,6 @@ import { MockERC20 } from "../../lib/erc20/src/test/mocks/MockERC20.sol";
 import { Owner }  from "./accounts/Owner.sol";
 import { Staker } from "./accounts/Staker.sol";
 
-import { Vm } from "../interfaces/Interfaces.sol";
-
 import { RevenueDistributionToken } from "../RevenueDistributionToken.sol";
 
 contract AuthTest is TestUtils {

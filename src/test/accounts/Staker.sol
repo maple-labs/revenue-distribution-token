@@ -92,15 +92,15 @@ contract InvariantStakerManager is TestUtils {
     }
 
     function deposit(uint256 amount_, uint256 index_) external {
-        stakers[constrictToRange(index_, 0, stakers.length)].deposit(amount_);
+        stakers[constrictToRange(index_, 0, stakers.length - 1)].deposit(amount_);
     }
 
     function redeem(uint256 amount_, uint256 index_) external {
-        stakers[constrictToRange(index_, 0, stakers.length)].redeem(amount_);
+        stakers[constrictToRange(index_, 0, stakers.length - 1)].redeem(amount_);
     }
 
     function withdraw(uint256 amount_, uint256 index_) external {
-        stakers[constrictToRange(index_, 0, stakers.length)].withdraw(amount_);
+        stakers[constrictToRange(index_, 0, stakers.length - 1)].withdraw(amount_);
     }
 
     function getStakerCount() external view returns (uint256 stakerCount_) {

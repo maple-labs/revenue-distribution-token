@@ -59,15 +59,15 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** Staker Functions ***/
     /************************/
 
-    function deposit(uint256 amount_) external override returns (uint256 shares_) {
+    function deposit(uint256 amount_) external virtual override returns (uint256 shares_) {
         return _deposit(amount_);
     }
 
-    function redeem(uint256 rdTokenAmount_) external override returns (uint256 underlyingAmount_) {
+    function redeem(uint256 rdTokenAmount_) external virtual override returns (uint256 underlyingAmount_) {
         return _redeem(rdTokenAmount_);
     }
 
-    function withdraw(uint256 underlyingAmount_) external override returns (uint256 shares_) {
+    function withdraw(uint256 underlyingAmount_) external virtual override returns (uint256 shares_) {
         return _withdraw(underlyingAmount_);
     }
 

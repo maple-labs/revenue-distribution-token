@@ -11,7 +11,7 @@ do
 done
 
 runs=$([ -z "$runs" ] && echo "1" || echo "$runs")
-depth=$([ -z "$depth" ] && echo "500" || echo "$depth")
+depth=$([ -z "$depth" ] && echo "1000" || echo "$depth")
 
 export DAPP_SOLC_VERSION=0.8.7
 
@@ -19,4 +19,4 @@ if [ -z "$test" ]; then match="[src/test/*.t.sol]"; else match=$test; fi
 
 # Necessary until forge adds invariant testing support
 rm -rf out
-dapp test --match "$match" --fuzz-runs $runs --depth $depth --verbosity 3
+dapp test --match "$match" --fuzz-runs $runs --depth $depth --verbosity 2

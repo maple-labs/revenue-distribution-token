@@ -7,8 +7,6 @@ import { MockERC20 } from "../../lib/erc20/src/test/mocks/MockERC20.sol";
 import { Owner }  from "./accounts/Owner.sol";
 import { Staker } from "./accounts/Staker.sol";
 
-import { Vm } from "../interfaces/Interfaces.sol";
-
 import { RevenueDistributionToken } from "../RevenueDistributionToken.sol";
 
 contract AuthTest is TestUtils {
@@ -17,8 +15,6 @@ contract AuthTest is TestUtils {
     Owner                    notOwner;
     Owner                    owner;
     RevenueDistributionToken rdToken;
-
-    Vm vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
     function setUp() public {
         notOwner   = new Owner();
@@ -82,8 +78,6 @@ contract EntryExitTest is TestUtils {
     RevenueDistributionToken rdToken;
 
     bytes constant ARITHMETIC_ERROR = abi.encodeWithSignature("Panic(uint256)", 0x11);
-
-    Vm vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
     function setUp() public {
         underlying = new MockERC20("MockToken", "MT", 18);
@@ -177,8 +171,6 @@ contract RevenueStreamingTest is TestUtils {
     RevenueDistributionToken rdToken;
 
     bytes constant ARITHMETIC_ERROR = abi.encodeWithSignature("Panic(uint256)", 0x11);
-
-    Vm vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
     uint256 start;
 

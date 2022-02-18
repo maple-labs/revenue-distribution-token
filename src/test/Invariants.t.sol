@@ -9,10 +9,8 @@ import { InvariantOwner }         from "./accounts/Owner.sol";
 import { InvariantStakerManager } from "./accounts/Staker.sol";
 import { Warper }                 from "./accounts/Warper.sol";
 
-import { Vm } from "../interfaces/Interfaces.sol";
-
 import { InvariantTest } from "./utils/InvariantTest.sol";
-import { RDT_setOwner }  from "./utils/RDTSetOwner.sol";
+import { MutableRDT }    from "./utils/MutableRDT.sol";
 
 // Invariant 1: totalHoldings <= underlying balance of contract (with rounding)
 // Invariant 2: ∑balanceOfUnderlying == totalHoldings (with rounding)
@@ -22,25 +20,18 @@ import { RDT_setOwner }  from "./utils/RDTSetOwner.sol";
 // Invariant 6: freeUnderlying <= totalHoldings
 // Invariant 7: balanceOfUnderlying >= balanceOf
 
-
-// Add a contract to target contracts
-// Contract can create new stakers and add them to the array in the test
-// Can also perform staker actions from one of the staker addresses from the array, must pull from the test file
-
 contract RDTInvariants is TestUtils, InvariantTest {
 
     InvariantERC20User     erc20User;
     InvariantOwner         owner;
     InvariantStakerManager stakerManager;
     MockERC20              underlying;
-    RDT_setOwner           rdToken;
+    MutableRDT           rdToken;
     Warper                 warper;
-
-    Vm vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
     function setUp() public {
         underlying    = new MockERC20("MockToken", "MT", 18);
-        rdToken       = new RDT_setOwner("Revenue Distribution Token", "RDT", address(this), address(underlying), 1e30);
+        rdToken       = new MutableRDT("Revenue Distribution Token", "RDT", address(this), address(underlying), 1e30);
         erc20User     = new InvariantERC20User(address(rdToken), address(underlying));
         stakerManager = new InvariantStakerManager(address(rdToken), address(underlying));
         owner         = new InvariantOwner(address(rdToken), address(underlying));

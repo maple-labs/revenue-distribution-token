@@ -3,7 +3,7 @@ pragma solidity ^0.8.7;
 
 import { RevenueDistributionToken } from "../../RevenueDistributionToken.sol";
 
-contract RDT_setOwner is RevenueDistributionToken {
+contract MutableRDT is RevenueDistributionToken {
 
     constructor(string memory name_, string memory symbol_, address owner_, address underlying_, uint256 precision_)
         RevenueDistributionToken(name_, symbol_, owner_, underlying_, precision_)

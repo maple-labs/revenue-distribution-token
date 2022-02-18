@@ -8,12 +8,11 @@ import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToke
 
 contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
-    address public immutable override underlying;
-
     uint256 public immutable override precision;  // Precision of rates, equals max deposit amounts before rounding errors occur
 
     address public override owner;
     address public override pendingOwner;
+    address public override underlying;
 
     uint256 public override freeUnderlying;       // Amount of underlying unlocked regardless of time passed
     uint256 public override issuanceRate;         // underlying/second rate dependent on aggregate vesting schedule (needs increased precision)

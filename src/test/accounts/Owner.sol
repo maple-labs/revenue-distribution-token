@@ -38,9 +38,6 @@ contract InvariantOwner is TestUtils {
     }
 
     function rdToken_updateVestingSchedule(uint256 vestingPeriod_) external {
-        uint256 preIssuanceRate   = rdToken.issuanceRate();
-        uint256 preFreeUnderlying = rdToken.freeUnderlying();
-
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1, 10_000 days);
 
         rdToken.updateVestingSchedule(vestingPeriod_);

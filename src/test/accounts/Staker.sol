@@ -10,16 +10,16 @@ import { IRevenueDistributionToken as IRDT } from "../../interfaces/IRevenueDist
 
 contract Staker is ERC20User {
 
-    function rdToken_deposit(address token, uint256 amount) external {
-        IRDT(token).deposit(amount);
+    function rdToken_deposit(address token_, uint256 amount_) external {
+        IRDT(token_).deposit(amount_);
     }
 
-    function rdToken_redeem(address token, uint256 amount) external {
-        IRDT(token).redeem(amount);
+    function rdToken_redeem(address token_, uint256 amount_) external {
+        IRDT(token_).redeem(amount_);
     }
 
-    function rdToken_withdraw(address token, uint256 amount) external {
-        IRDT(token).withdraw(amount);
+    function rdToken_withdraw(address token_, uint256 amount_) external {
+        IRDT(token_).withdraw(amount_);
     }
 
 }
@@ -52,7 +52,7 @@ contract InvariantStaker is TestUtils {
         uint256 beforeBal = rdToken.balanceOf(address(this));
 
         if (beforeBal > 0) {
-            uint256 redeemAmount = amount_ % rdToken.balanceOf(address(this));
+            uint256 redeemAmount = constrictToRange(amount_, 1, rdToken.balanceOf(address(this)));
 
             rdToken.redeem(redeemAmount);
 
@@ -64,7 +64,7 @@ contract InvariantStaker is TestUtils {
         uint256 beforeBal = underlying.balanceOf(address(this));
 
         if (beforeBal > 0) {
-            uint256 withdrawAmount = amount_ % rdToken.balanceOfUnderlying(address(this));
+            uint256 withdrawAmount = constrictToRange(amount_, 1, rdToken.balanceOfUnderlying(address(this)));
 
             rdToken.withdraw(withdrawAmount);
 
@@ -92,15 +92,15 @@ contract InvariantStakerManager is TestUtils {
     }
 
     function deposit(uint256 amount_, uint256 index_) external {
-        stakers[constrictToRange(index_, 0, stakers.length)].deposit(amount_);
+        stakers[constrictToRange(index_, 0, stakers.length - 1)].deposit(amount_);
     }
 
     function redeem(uint256 amount_, uint256 index_) external {
-        stakers[constrictToRange(index_, 0, stakers.length)].redeem(amount_);
+        stakers[constrictToRange(index_, 0, stakers.length - 1)].redeem(amount_);
     }
 
     function withdraw(uint256 amount_, uint256 index_) external {
-        stakers[constrictToRange(index_, 0, stakers.length)].withdraw(amount_);
+        stakers[constrictToRange(index_, 0, stakers.length - 1)].withdraw(amount_);
     }
 
     function getStakerCount() external view returns (uint256 stakerCount_) {

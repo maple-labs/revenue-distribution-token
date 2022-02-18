@@ -16,7 +16,7 @@ import { MutableRDT }    from "./utils/MutableRDT.sol";
 // Invariant 2: ∑balanceOfUnderlying == totalHoldings (with rounding)
 // Invariant 3: totalSupply <= totalHoldings
 // Invariant 4: totalSupply * exchangeRate == totalHoldings (with rounding)
-// Invariant 5: exchangeRate >= 1e27
+// Invariant 5: exchangeRate >= `precision`
 // Invariant 6: freeUnderlying <= totalHoldings
 // Invariant 7: balanceOfUnderlying >= balanceOf
 
@@ -26,7 +26,7 @@ contract RDTInvariants is TestUtils, InvariantTest {
     InvariantOwner         owner;
     InvariantStakerManager stakerManager;
     MockERC20              underlying;
-    MutableRDT           rdToken;
+    MutableRDT             rdToken;
     Warper                 warper;
 
     function setUp() public {

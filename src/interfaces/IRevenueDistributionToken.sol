@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.7;
 
+import { IERC20 } from "../../lib/erc20/src/interfaces/IERC20.sol";
+
 // TODO: Add natspec + inherit from IERC4626 once spec is well defined.
-interface IRevenueDistributionToken {
+interface IRevenueDistributionToken is IERC20 {
 
     /**************/
     /*** Events ***/
@@ -20,6 +22,7 @@ interface IRevenueDistributionToken {
     function lastUpdated() external view returns (uint256 lastUpdated_);
     function owner() external view returns (address owner_);
     function pendingOwner() external view returns (address pendingOwner_);
+    function precision() external view returns (uint256 precision_);
     function underlying() external view returns (address underlying_);
     function vestingPeriodFinish() external view returns (uint256 vestingPeriodFinish_);
 

@@ -59,32 +59,53 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** Staker Functions ***/
     /************************/
 
-    function deposit(uint256 amount_) public virtual override returns (uint256 shares_) {
+    function deposit(uint256 amount_) external virtual override returns (uint256 shares_) {
+        return _deposit(msg.sender, amount_);
+    }
+
+    function redeem(uint256 rdTokenAmount_) external virtual override returns (uint256 underlyingAmount_) {
+        return _redeem(msg.sender, rdTokenAmount_);
+    }
+
+    function withdraw(uint256 underlyingAmount_) external virtual override returns (uint256 shares_) {
+        return _withdraw(msg.sender, underlyingAmount_);
+    }
+
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
+
+    function _deposit(address account_, uint256 amount_) internal returns (uint256 shares_) {
         require(amount_ != 0, "RDT:D:AMOUNT");
-        _mint(msg.sender, shares_ = previewDeposit(amount_));
+        _mint(account_, shares_ = previewDeposit(amount_));
         freeUnderlying = totalHoldings() + amount_;
         _updateIssuanceParams();
-        require(ERC20Helper.transferFrom(address(underlying), msg.sender, address(this), amount_), "RDT:D:TRANSFER_FROM");
-        emit Deposit(msg.sender, amount_);
+        require(ERC20Helper.transferFrom(address(underlying), account_, address(this), amount_), "RDT:D:TRANSFER_FROM");
+        emit Deposit(account_, amount_);
     }
 
-    function redeem(uint256 rdTokenAmount_) public virtual override returns (uint256 underlyingAmount_) {
+    function _redeem(address account_, uint256 rdTokenAmount_) internal returns (uint256 underlyingAmount_) {
         require(rdTokenAmount_ != 0, "RDT:W:AMOUNT");
         underlyingAmount_ = previewRedeem(rdTokenAmount_);
-        _burn(msg.sender, rdTokenAmount_);
+        _burn(account_, rdTokenAmount_);
         freeUnderlying = totalHoldings() - underlyingAmount_;
         _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(underlying), msg.sender, underlyingAmount_), "RDT:D:TRANSFER");
-        emit Withdraw(msg.sender, underlyingAmount_);
+        require(ERC20Helper.transfer(address(underlying), account_, underlyingAmount_), "RDT:D:TRANSFER");
+        emit Withdraw(account_, underlyingAmount_);
     }
 
-    function withdraw(uint256 underlyingAmount_) public virtual override returns (uint256 shares_) {
+    function _withdraw(address account_, uint256 underlyingAmount_) internal returns (uint256 shares_) {
         require(underlyingAmount_ != 0, "RDT:W:AMOUNT");
-        _burn(msg.sender, shares_ = previewWithdraw(underlyingAmount_));
+        _burn(account_, shares_ = previewWithdraw(underlyingAmount_));
         freeUnderlying = totalHoldings() - underlyingAmount_;
         _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(underlying), msg.sender, underlyingAmount_), "RDT:D:TRANSFER");
-        emit Withdraw(msg.sender, underlyingAmount_);
+        require(ERC20Helper.transfer(address(underlying), account_, underlyingAmount_), "RDT:D:TRANSFER");
+        emit Withdraw(account_, underlyingAmount_);
+    }
+
+    function _updateIssuanceParams() internal {
+        issuanceRate = block.timestamp > vestingPeriodFinish ? 0 : issuanceRate;
+        lastUpdated  = block.timestamp;
     }
 
     /**********************/
@@ -129,12 +150,4 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         return issuanceRate * vestingTimePassed / precision + freeUnderlying;
     }
 
-    /*********************************/
-    /*** Internal Helper Functions ***/
-    /*********************************/
-
-    function _updateIssuanceParams() internal {
-        issuanceRate = block.timestamp > vestingPeriodFinish ? 0 : issuanceRate;
-        lastUpdated  = block.timestamp;
-    }
 }

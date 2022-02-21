@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.7;
 
-import { TestUtils } from "../../lib/contract-test-utils/contracts/test.sol";
-import { MockERC20 } from "../../lib/erc20/src/test/mocks/MockERC20.sol";
+import { InvariantTest, TestUtils } from "../../lib/contract-test-utils/contracts/test.sol";
+import { MockERC20 }                from "../../lib/erc20/src/test/mocks/MockERC20.sol";
 
 import { InvariantERC20User }     from "./accounts/ERC20User.sol";
 import { InvariantOwner }         from "./accounts/Owner.sol";
 import { InvariantStakerManager } from "./accounts/Staker.sol";
 import { Warper }                 from "./accounts/Warper.sol";
 
-import { InvariantTest } from "./utils/InvariantTest.sol";
-import { MutableRDT }    from "./utils/MutableRDT.sol";
+import { MutableRDT } from "./utils/MutableRDT.sol";
 
 // Invariant 1: totalHoldings <= underlying balance of contract (with rounding)
 // Invariant 2: ∑balanceOfUnderlying == totalHoldings (with rounding)
@@ -29,7 +28,7 @@ contract RDTInvariants is TestUtils, InvariantTest {
     MutableRDT             rdToken;
     Warper                 warper;
 
-    function setUp() public {
+    function setUp() public virtual {
         underlying    = new MockERC20("MockToken", "MT", 18);
         rdToken       = new MutableRDT("Revenue Distribution Token", "RDT", address(this), address(underlying), 1e30);
         erc20User     = new InvariantERC20User(address(rdToken), address(underlying));

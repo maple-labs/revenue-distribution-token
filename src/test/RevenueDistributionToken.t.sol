@@ -16,7 +16,7 @@ contract AuthTest is TestUtils {
     Owner                    owner;
     RevenueDistributionToken rdToken;
 
-    function setUp() public {
+    function setUp() public virtual {
         notOwner   = new Owner();
         owner      = new Owner();
         underlying = new MockERC20("MockToken", "MT", 18);
@@ -79,7 +79,7 @@ contract EntryExitTest is TestUtils {
 
     bytes constant ARITHMETIC_ERROR = abi.encodeWithSignature("Panic(uint256)", 0x11);
 
-    function setUp() public {
+    function setUp() public virtual {
         underlying = new MockERC20("MockToken", "MT", 18);
         rdToken    = new RevenueDistributionToken("Revenue Distribution Token", "RDT", address(this), address(underlying), 1e30);
     }
@@ -174,7 +174,7 @@ contract RevenueStreamingTest is TestUtils {
 
     uint256 start;
 
-    function setUp() public {
+    function setUp() public virtual {
         // Use non-zero timestamp
         start = 10_000;
         vm.warp(start);

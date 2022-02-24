@@ -21,39 +21,41 @@ import { MutableRDT } from "./utils/MutableRDT.sol";
 
 contract RDTInvariantsBase is TestUtils, InvariantTest {
 
+    // Performs random transfers of underlying into contract
     InvariantERC20User     erc20User;
+
+    // Performs random transfers of underlying into contract
+    // Performs random updateVestingSchedule calls
     InvariantOwner         owner;
+
+    // Performs random instantiations of new staker users
+    // Performs random deposit calls from a random instantiated staker
+    // Performs random withdraw calls from a random instantiated staker
+    // Performs random redeem calls from a random instantiated staker
     InvariantStakerManager stakerManager;
+
     MockERC20              underlying;
     MutableRDT             rdToken;
+
+    // Peforms random warps forward in time
     Warper                 warper;
 
     function setUp() public virtual {
         underlying    = new MockERC20("MockToken", "MT", 18);
         rdToken       = new MutableRDT("Revenue Distribution Token", "RDT", address(this), address(underlying), 1e30);
         erc20User     = new InvariantERC20User(address(rdToken), address(underlying));
-        stakerManager = new InvariantStakerManager(address(rdToken), address(underlying));
+        stakerManager = new InvariantStakerManager(address(rdToken), address(underlying), 0, true);
         owner         = new InvariantOwner(address(rdToken), address(underlying));
         warper        = new Warper();
 
         // Required to prevent `acceptOwner` from being a target function
         // TODO: Investigate hevm.store error: `hevm: internal error: unexpected failure code`
         rdToken.setOwner(address(owner));
-
-        // Performs random transfers of underlying into contract
+        
         addTargetContract(address(erc20User));
-
-        // Performs random transfers of underlying into contract
-        // Performs random updateVestingSchedule calls
         addTargetContract(address(owner));
-
-        // Performs random instantiations of new staker users
-        // Performs random deposit calls from a random instantiated staker
-        // Performs random withdraw calls from a random instantiated staker
-        // Performs random redeem calls from a random instantiated staker
         addTargetContract(address(stakerManager));
 
-        // Peforms random warps forward in time
         addTargetContract(address(warper));
 
         // Create one staker to prevent underflows on index calculations
@@ -110,13 +112,17 @@ contract RDTInvariantsBase is TestUtils, InvariantTest {
 contract RDTInvariantsConstantExchangeRate is RDTInvariantsBase { 
 
     uint256 initialExchangeRate;
+    uint256 startTime;
 
     // No warping and no updates to the vesting schedule
-    function setUp() public override {
+    function setUp() public override { 
+        // Non zero start time
+        vm.warp(10_000);
+
         underlying    = new MockERC20("MockToken", "MT", 18);
         rdToken       = new MutableRDT("Revenue Distribution Token", "RDT", address(this), address(underlying), 1e30);
         erc20User     = new InvariantERC20User(address(rdToken), address(underlying));
-        stakerManager = new InvariantStakerManager(address(rdToken), address(underlying));
+        stakerManager = new InvariantStakerManager(address(rdToken), address(underlying), block.timestamp, false);
         owner         = new InvariantOwner(address(rdToken), address(underlying));
         warper        = new Warper();
 
@@ -124,13 +130,7 @@ contract RDTInvariantsConstantExchangeRate is RDTInvariantsBase {
         // TODO: Investigate hevm.store error: `hevm: internal error: unexpected failure code`
         rdToken.setOwner(address(owner));
 
-        // Performs random transfers of underlying into contract
-        // addTargetContract(address(erc20User));
-
-        // Performs random instantiations of new staker users
-        // Performs random deposit calls from a random instantiated staker
-        // Performs random withdraw calls from a random instantiated staker
-        // Performs random redeem calls from a random instantiated staker
+        addTargetContract(address(erc20User));
         addTargetContract(address(stakerManager));
 
         // Create one staker to prevent underflows on index calculations
@@ -141,15 +141,32 @@ contract RDTInvariantsConstantExchangeRate is RDTInvariantsBase {
         owner.erc20_transfer(1e45);
         owner.rdToken_updateVestingSchedule(300 days);
 
-        vm.warp(10 days);
-
         initialExchangeRate = rdToken.exchangeRate();
+        startTime           = block.timestamp;
     }
 
     function invariant8_constantExchangeRate() public {
-        emit log_named_uint("initialRate", initialExchangeRate);
-        emit log_named_uint("fetchedRate", rdToken.exchangeRate());
+        vm.warp(startTime);
         assertEq(rdToken.exchangeRate(), initialExchangeRate);
+    }
+
+}
+
+contract RDTInvariantsMultipleDeposits is RDTInvariantsBase {
+
+    function setUp() public override {
+        super.setUp();
+
+        // Add 50 depositors
+        for (uint i = 0; i <= 50; i++) {
+            stakerManager.createStaker();
+
+            // Get a more or less random amount between 1 and 1_000_000 ether
+            uint256 amt = uint256(keccak256(abi.encode(i, "SALT"))) % 1_000_000 ether + 1;
+
+            stakerManager.deposit(amt, i);
+        }
+
     }
 
 }

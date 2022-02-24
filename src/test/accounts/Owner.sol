@@ -25,6 +25,7 @@ contract Owner {
 
 contract InvariantOwner is TestUtils {
 
+
     IRDT      rdToken;
     MockERC20 underlying;
 

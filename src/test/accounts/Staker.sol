@@ -79,27 +79,37 @@ contract InvariantStakerManager is TestUtils {
     address rdToken;
     address underlying;
 
+    uint256 startTime;
+    bool    allowWarp;
+
     InvariantStaker[] public stakers;
 
-    constructor(address rdToken_, address underlying_) {
-        rdToken      = rdToken_;
-        underlying   = underlying_;
+    constructor(address rdToken_, address underlying_, uint256 startTime_, bool allowWarp_) {
+        rdToken     = rdToken_;
+        underlying  = underlying_;
+        startTime    = startTime_;
+        allowWarp   = allowWarp_; 
     }
+
+    modifier warper() {
+        if (!allowWarp) vm.warp(startTime);
+        _;
+    } 
 
     function createStaker() external {
         InvariantStaker staker = new InvariantStaker(rdToken, underlying);
         stakers.push(staker);
     }
 
-    function deposit(uint256 amount_, uint256 index_) external {
+    function deposit(uint256 amount_, uint256 index_) external warper {
         stakers[constrictToRange(index_, 0, stakers.length - 1)].deposit(amount_);
     }
 
-    function redeem(uint256 amount_, uint256 index_) external {
+    function redeem(uint256 amount_, uint256 index_) external warper {
         stakers[constrictToRange(index_, 0, stakers.length - 1)].redeem(amount_);
     }
 
-    function withdraw(uint256 amount_, uint256 index_) external {
+    function withdraw(uint256 amount_, uint256 index_) external warper {
         stakers[constrictToRange(index_, 0, stakers.length - 1)].withdraw(amount_);
     }
 

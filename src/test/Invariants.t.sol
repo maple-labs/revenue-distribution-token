@@ -19,7 +19,7 @@ import { MutableRDT } from "./utils/MutableRDT.sol";
 // Invariant 6: freeUnderlying <= totalHoldings
 // Invariant 7: balanceOfUnderlying >= balanceOf
 
-contract RDTInvariants is TestUtils, InvariantTest {
+contract RDTInvariantsBase is TestUtils, InvariantTest {
 
     InvariantERC20User     erc20User;
     InvariantOwner         owner;
@@ -102,6 +102,54 @@ contract RDTInvariants is TestUtils, InvariantTest {
             address staker = address(stakerManager.stakers(i));
             assertTrue(rdToken.balanceOfUnderlying(staker) >= rdToken.balanceOf(staker));
         }
+    }
+
+}
+
+
+contract RDTInvariantsConstantExchangeRate is RDTInvariantsBase { 
+
+    uint256 initialExchangeRate;
+
+    // No warping and no updates to the vesting schedule
+    function setUp() public override {
+        underlying    = new MockERC20("MockToken", "MT", 18);
+        rdToken       = new MutableRDT("Revenue Distribution Token", "RDT", address(this), address(underlying), 1e30);
+        erc20User     = new InvariantERC20User(address(rdToken), address(underlying));
+        stakerManager = new InvariantStakerManager(address(rdToken), address(underlying));
+        owner         = new InvariantOwner(address(rdToken), address(underlying));
+        warper        = new Warper();
+
+        // Required to prevent `acceptOwner` from being a target function
+        // TODO: Investigate hevm.store error: `hevm: internal error: unexpected failure code`
+        rdToken.setOwner(address(owner));
+
+        // Performs random transfers of underlying into contract
+        // addTargetContract(address(erc20User));
+
+        // Performs random instantiations of new staker users
+        // Performs random deposit calls from a random instantiated staker
+        // Performs random withdraw calls from a random instantiated staker
+        // Performs random redeem calls from a random instantiated staker
+        addTargetContract(address(stakerManager));
+
+        // Create one staker to prevent underflows on index calculations
+        stakerManager.createStaker();
+        stakerManager.deposit(1e30, 0);
+
+        // Do one deposit and update rate
+        owner.erc20_transfer(1e45);
+        owner.rdToken_updateVestingSchedule(300 days);
+
+        vm.warp(10 days);
+
+        initialExchangeRate = rdToken.exchangeRate();
+    }
+
+    function invariant8_constantExchangeRate() public {
+        emit log_named_uint("initialRate", initialExchangeRate);
+        emit log_named_uint("fetchedRate", rdToken.exchangeRate());
+        assertEq(rdToken.exchangeRate(), initialExchangeRate);
     }
 
 }

@@ -104,7 +104,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function _updateIssuanceParams() internal {
-        issuanceRate = block.timestamp > vestingPeriodFinish ? 0 : issuanceRate;
+        issuanceRate = block.timestamp > vestingPeriodFinish ? 0 : issuanceRate;  // TODO: >=?
         lastUpdated  = block.timestamp;
     }
 

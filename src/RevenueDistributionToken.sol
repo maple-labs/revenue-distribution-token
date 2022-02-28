@@ -130,29 +130,33 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function balanceOfAssets(address account_) external view returns (uint256 balanceOfAssets_) {
-        return balanceOf[account_] * exchangeRate() / precision;
+        return convertToAssets(balanceOf[account_]);
     }
 
-    function exchangeRate() public view override returns (uint256 exchangeRate_) {
-        uint256 _totalSupply = totalSupply;
-        if (_totalSupply == uint256(0)) return precision;
-        return totalAssets() * precision / _totalSupply;
+    function convertToAssets(uint256 shares_) public view override returns (uint256 assets_) {
+        uint256 supply = totalSupply != uint256(0) ? totalSupply : assets_;
+        assets_ = shares_ * totalAssets() / supply;
+    }
+
+    function convertToShares(uint256 assets_) public view override returns (uint256 shares_) {
+        uint256 supply = totalSupply != uint256(0) ? totalSupply : assets_;
+        shares_ = assets_ * supply / totalAssets();
     }
 
     function previewDeposit(uint256 assets_) public view override returns (uint256 shares_) {
-        shares_ = assets_ * precision / exchangeRate();
+        shares_ = convertToShares(assets_);
     }
 
     function previewMint(uint256 shares_) public view override returns (uint256 assets_) {
-        assets_ = shares_ * exchangeRate() / precision;
+        assets_ = convertToAssets(shares_);
     }
 
     function previewWithdraw(uint256 assets_) public view override returns (uint256 shares_) {
-        shares_ = assets_ * precision / exchangeRate();
+        shares_ = convertToShares(assets_);
     }
 
     function previewRedeem(uint256 shares_) public view override returns (uint256 assets_) {
-        assets_ = shares_ * exchangeRate() / precision;
+        assets_ = convertToAssets(shares_);
     }
 
     function totalAssets() public view override returns (uint256 totalManagedAssets_) {

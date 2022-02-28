@@ -30,25 +30,25 @@ jobs:
 
       - name: Summary of static analysis
         run: |
-          slither src --print human-summary
+          slither contracts --print human-summary
 
       - name: Contract summary of static analysis
         run: |
-          slither src --print contract-summary
+          slither contracts --print contract-summary
 
       - name: Function summary
         run: |
-          slither src --print function-summary
+          slither contracts --print function-summary
 
       - name: Inheritance
         run: |
-          slither src --print inheritance
+          slither contracts --print inheritance
 
       - name: Data dependency
         run: |
-          slither src --print data-dependency
+          slither contracts --print data-dependency
 
       - name: Static Analysis
         run: |
-          slither src
+          slither contracts
         continue-on-error: true

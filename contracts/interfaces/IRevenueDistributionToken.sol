@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.7;
 
-import { IERC20 } from "../../lib/erc20/src/interfaces/IERC20.sol";
+import { IERC20 } from "../../modules/erc20/contracts/interfaces/IERC20.sol";
 
 // TODO: Add natspec + inherit from IERC4626 once spec is well defined.
 interface IRevenueDistributionToken is IERC20 {

@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 set -e
 
-while getopts t:r:b:v:c: flag
+while getopts p:m: flag
 do
     case "${flag}" in
-        t) test=${OPTARG};;
-        r) runs=${OPTARG};;
+        p) profile=${OPTARG};;
+        m) match=${OPTARG};;
     esac
 done
 
-runs=$([ -z "$runs" ] && echo "10" || echo "$runs")
-
-export DAPP_SOLC_VERSION=0.8.7
-export PROPTEST_CASES=$runs
+export FOUNDRY_PROFILE=$profile
 
 if [ -z "$test" ]; then match="[src/test/*.t.sol]"; else match=$test; fi
+
+echo $FOUNDRY_PROFILE
 
 forge test --match "$match" -vvv

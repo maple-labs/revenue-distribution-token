@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.7;
 
-import { InvariantTest, TestUtils } from "../../lib/contract-test-utils/contracts/test.sol";
-import { MockERC20 }                from "../../lib/erc20/src/test/mocks/MockERC20.sol";
+import { InvariantTest, TestUtils } from "../../modules/contract-test-utils/contracts/test.sol";
+import { MockERC20 }                from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { InvariantERC20User }     from "./accounts/ERC20User.sol";
 import { InvariantOwner }         from "./accounts/Owner.sol";

@@ -17,4 +17,4 @@ jobs:
         run: forge update
 
       - name: Run forge tests
-        run: ./test.sh -r 1000
+        run: ./test.sh -p ci_pull_request

@@ -1,3 +1,0 @@
-[submodule "lib/erc20-helper"]
-	path = lib/erc20-helper
-	url = https://github.com/maple-labs/erc20-helper

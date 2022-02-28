@@ -12,19 +12,19 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     address public override owner;
     address public override pendingOwner;
-    address public override underlying;
+    address public override asset;
 
     uint256 public override freeAssets;           // Amount of assets unlocked regardless of time passed.
-    uint256 public override issuanceRate;         // underlying/second rate dependent on aggregate vesting schedule (needs increased precision).
+    uint256 public override issuanceRate;         // asset/second rate dependent on aggregate vesting schedule (needs increased precision).
     uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated.
     uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends.
 
-    constructor(string memory name_, string memory symbol_, address owner_, address underlying_, uint256 precision_)
-        ERC20(name_, symbol_, ERC20(underlying_).decimals())
+    constructor(string memory name_, string memory symbol_, address owner_, address asset_, uint256 precision_)
+        ERC20(name_, symbol_, ERC20(asset_).decimals())
     {
         owner      = owner_;
         precision  = precision_;
-        underlying = underlying_;
+        asset = asset_;
     }
 
     /********************************/
@@ -46,11 +46,11 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     function updateVestingSchedule(uint256 vestingPeriod_) external override returns (uint256 issuanceRate_, uint256 freeAssets_) {
         require(msg.sender == owner, "RDT:UVS:NOT_OWNER");
 
-        // Update "y-intercept" to reflect current available underlying
+        // Update "y-intercept" to reflect current available asset
         freeAssets = freeAssets_ = totalHoldings();
 
         // Calculate slope, update timestamp and period finish
-        issuanceRate        = issuanceRate_ = (ERC20(underlying).balanceOf(address(this)) - freeAssets_) * precision / vestingPeriod_;
+        issuanceRate        = issuanceRate_ = (ERC20(asset).balanceOf(address(this)) - freeAssets_) * precision / vestingPeriod_;
         lastUpdated         = block.timestamp;
         vestingPeriodFinish = block.timestamp + vestingPeriod_;
     }
@@ -59,16 +59,16 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** Staker Functions ***/
     /************************/
 
-    function deposit(uint256 amount_) external virtual override returns (uint256 shares_) {
-        return _deposit(msg.sender, amount_);
+    function deposit(uint256 assets_, address receiver_) external override returns (uint256 shares_);
+        shares_ = _deposit(msg.sender, amount_);
     }
 
-    function redeem(uint256 rdTokenAmount_) external virtual override returns (uint256 underlyingAmount_) {
+    function redeem(uint256 rdTokenAmount_) external virtual override returns (uint256 assetAmount_) {
         return _redeem(msg.sender, rdTokenAmount_);
     }
 
-    function withdraw(uint256 underlyingAmount_) external virtual override returns (uint256 shares_) {
-        return _withdraw(msg.sender, underlyingAmount_);
+    function withdraw(uint256 assetAmount_) external virtual override returns (uint256 shares_) {
+        return _withdraw(msg.sender, assetAmount_);
     }
 
     /**************************/
@@ -80,27 +80,27 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         _mint(account_, shares_ = previewDeposit(amount_));
         freeAssets = totalHoldings() + amount_;
         _updateIssuanceParams();
-        require(ERC20Helper.transferFrom(address(underlying), account_, address(this), amount_), "RDT:D:TRANSFER_FROM");
+        require(ERC20Helper.transferFrom(address(asset), account_, address(this), amount_), "RDT:D:TRANSFER_FROM");
         emit Deposit(account_, amount_);
     }
 
-    function _redeem(address account_, uint256 rdTokenAmount_) internal returns (uint256 underlyingAmount_) {
+    function _redeem(address account_, uint256 rdTokenAmount_) internal returns (uint256 assetAmount_) {
         require(rdTokenAmount_ != 0, "RDT:W:AMOUNT");
-        underlyingAmount_ = previewRedeem(rdTokenAmount_);
+        assetAmount_ = previewRedeem(rdTokenAmount_);
         _burn(account_, rdTokenAmount_);
-        freeAssets = totalHoldings() - underlyingAmount_;
+        freeAssets = totalHoldings() - assetAmount_;
         _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(underlying), account_, underlyingAmount_), "RDT:D:TRANSFER");
-        emit Withdraw(account_, underlyingAmount_);
+        require(ERC20Helper.transfer(address(asset), account_, assetAmount_), "RDT:D:TRANSFER");
+        emit Withdraw(account_, assetAmount_);
     }
 
-    function _withdraw(address account_, uint256 underlyingAmount_) internal returns (uint256 shares_) {
-        require(underlyingAmount_ != 0, "RDT:W:AMOUNT");
-        _burn(account_, shares_ = previewWithdraw(underlyingAmount_));
-        freeAssets = totalHoldings() - underlyingAmount_;
+    function _withdraw(address account_, uint256 assetAmount_) internal returns (uint256 shares_) {
+        require(assetAmount_ != 0, "RDT:W:AMOUNT");
+        _burn(account_, shares_ = previewWithdraw(assetAmount_));
+        freeAssets = totalHoldings() - assetAmount_;
         _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(underlying), account_, underlyingAmount_), "RDT:D:TRANSFER");
-        emit Withdraw(account_, underlyingAmount_);
+        require(ERC20Helper.transfer(address(asset), account_, assetAmount_), "RDT:D:TRANSFER");
+        emit Withdraw(account_, assetAmount_);
     }
 
     function _updateIssuanceParams() internal {
@@ -113,10 +113,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /**********************/
 
     function APR() external view override returns (uint256 apr_) {
-        return issuanceRate * 365 days * ERC20(underlying).decimals() / totalSupply / precision;
+        return issuanceRate * 365 days * ERC20(asset).decimals() / totalSupply / precision;
     }
 
-    function balanceOfUnderlying(address account_) external view override returns (uint256 balanceOfUnderlying_) {
+    function balanceOfAssets(address account_) external view override returns (uint256 balanceOfAssets_) {
         return balanceOf[account_] * exchangeRate() / precision;
     }
 
@@ -126,16 +126,17 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         return totalHoldings() * precision / _totalSupply;
     }
 
-    function previewDeposit(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
-        shareAmount_ = underlyingAmount_ * precision / exchangeRate();
+    function previewDeposit(uint256 assetAmount_) public view override returns (uint256 shareAmount_) {
+        shareAmount_ = assetAmount_ * precision / exchangeRate();
     }
 
-    function previewWithdraw(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
-        shareAmount_ = underlyingAmount_ * precision / exchangeRate();
+    // TODO: Update this function and corresponding test to divide by exchange rate
+    function previewWithdraw(uint256 assetAmount_) public view override returns (uint256 shareAmount_) {
+        shareAmount_ = assetAmount_ * precision / exchangeRate();
     }
 
-    function previewRedeem(uint256 shareAmount_) public view override returns (uint256 underlyingAmount_) {
-        underlyingAmount_ = shareAmount_ * exchangeRate() / precision;
+    function previewRedeem(uint256 shareAmount_) public view override returns (uint256 assetAmount_) {
+        assetAmount_ = shareAmount_ * exchangeRate() / precision;
     }
 
     function totalHoldings() public view override returns (uint256 totalHoldings_) {

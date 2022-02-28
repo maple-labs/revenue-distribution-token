@@ -59,15 +59,15 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** Staker Functions ***/
     /************************/
 
-    function deposit(uint256 assets_, address receiver_) external override returns (uint256 shares_) {
+    function deposit(uint256 assets_, address receiver_) external virtual override returns (uint256 shares_) {
         shares_ = _deposit(assets_, msg.sender, msg.sender);
     }
 
-    function redeem(uint256 rdTokenAmount_) external virtual override returns (uint256 assetAmount_) {
-        return _redeem(msg.sender, rdTokenAmount_);
+    function redeem(uint256 shares_, address receiver_, address owner_) external virtual override returns (uint256 assets_) {
+        return _redeem(shares_, msg.sender, msg.sender, msg.sender);
     }
 
-    function withdraw(uint256 assetAmount_) external virtual override returns (uint256 shares_) {
+    function withdraw(uint256 assets_, address receiver_, address owner_) external virtual override returns (uint256 shares_) {
         return _withdraw(msg.sender, assetAmount_);
     }
 
@@ -84,23 +84,24 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         emit Deposit(caller_, receiver_, assets_, shares_);
     }
 
-    function _redeem(address account_, uint256 rdTokenAmount_) internal returns (uint256 assetAmount_) {
-        require(rdTokenAmount_ != 0, "RDT:W:AMOUNT");
-        assetAmount_ = previewRedeem(rdTokenAmount_);
-        _burn(account_, rdTokenAmount_);
-        freeAssets = totalHoldings() - assetAmount_;
+    // TODO: see if we need caller_ param.
+    function _redeem(uint256 shares_, address receiver_, address owner_, address caller_) internal returns (uint256 assets_) {
+        require(shares_ != 0, "RDT:W:AMOUNT");
+        assets_ = previewRedeem(shares_);
+        _burn(owner_, shares_);
+        freeAssets = totalHoldings() - assets_;
         _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(asset), account_, assetAmount_), "RDT:D:TRANSFER");
-        emit Withdraw(account_, assetAmount_);
+        require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:D:TRANSFER");
+        emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
     }
 
-    function _withdraw(address account_, uint256 assetAmount_) internal returns (uint256 shares_) {
-        require(assetAmount_ != 0, "RDT:W:AMOUNT");
-        _burn(account_, shares_ = previewWithdraw(assetAmount_));
-        freeAssets = totalHoldings() - assetAmount_;
+    function _withdraw(uint256 assets_, address receiver_, address owner_, address caller_) internal returns (uint256 shares_) {
+        require(assets_ != 0, "RDT:W:AMOUNT");
+        _burn(owner_, shares_ = previewWithdraw(assets_));
+        freeAssets = totalHoldings() - assets_;
         _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(asset), account_, assetAmount_), "RDT:D:TRANSFER");
-        emit Withdraw(account_, assetAmount_);
+        require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:D:TRANSFER");
+        emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
     }
 
     function _updateIssuanceParams() internal {

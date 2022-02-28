@@ -428,17 +428,17 @@ contract ExitTest is TestUtils {
     }
 
     function test_withdraw_exchangeRateGtOne(
-        // uint256 depositAmount,
-        // uint256 withdrawAmount,
-        // uint256 vestingAmount,
-        // uint256 vestingPeriod,
-        // uint256 warpTime
+        uint256 depositAmount,
+        uint256 withdrawAmount,
+        uint256 vestingAmount,
+        uint256 vestingPeriod,
+        uint256 warpTime
     ) public {
-        uint256 depositAmount = 1;
-        uint256 withdrawAmount = 0;
-        uint256 vestingAmount = 4;
-        uint256 vestingPeriod = 87019426667675137597357041442616040660973967936164532366933444090322032721926;
-        uint256 warpTime = 113381949751713944158593733077499978332134200528026331000091832767761312760;
+        // uint256 depositAmount = 1;
+        // uint256 withdrawAmount = 0;
+        // uint256 vestingAmount = 4;
+        // uint256 vestingPeriod = 87019426667675137597357041442616040660973967936164532366933444090322032721926;
+        // uint256 warpTime = 113381949751713944158593733077499978332134200528026331000091832767761312760;
 
         depositAmount  = constrictToRange(depositAmount,  1, 1e29);
         withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
@@ -636,18 +636,18 @@ contract ExitTest is TestUtils {
     }
 
     function test_redeem_exchangeRateGtOne(
-        // uint256 depositAmount,
-        // uint256 redeemAmount,
-        // uint256 vestingAmount,
-        // uint256 vestingPeriod,
-        // uint256 warpTime
+        uint256 depositAmount,
+        uint256 redeemAmount,
+        uint256 vestingAmount,
+        uint256 vestingPeriod,
+        uint256 warpTime
     ) public {
 
-        uint256 depositAmount = 1;
-        uint256 redeemAmount = 0;
-        uint256 vestingAmount = 4;
-        uint256 vestingPeriod = 87019426667675137597357041442616040660973967936164532366933444090322032721926;
-        uint256 warpTime = 113381949751713944158593733077499978332134200528026331000091832767761312760;
+        // uint256 depositAmount = 1;
+        // uint256 redeemAmount = 0;
+        // uint256 vestingAmount = 4;
+        // uint256 vestingPeriod = 87019426667675137597357041442616040660973967936164532366933444090322032721926;
+        // uint256 warpTime = 113381949751713944158593733077499978332134200528026331000091832767761312760;
 
         depositAmount = constrictToRange(depositAmount, 1, 1e29);
         redeemAmount  = constrictToRange(redeemAmount,  1, depositAmount);

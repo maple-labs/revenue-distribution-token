@@ -453,7 +453,6 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.lastUpdated(),              start);
 
         uint256 totalHoldings = depositAmount + vestingAmount * warpTime / vestingPeriod;
-        uint256 amountVested  = vestingAmount * 1e30 * warpTime / vestingPeriod / 1e30;
         uint256 exchangeRate1 = rdToken.totalHoldings() * 1e30 / depositAmount;  // Use actual `totalHoldings` to not propogate errors
 
         assertWithinDiff(rdToken.totalHoldings(), totalHoldings,                         1);
@@ -470,16 +469,18 @@ contract ExitTest is TestUtils {
 
         assertEq(rdToken.balanceOf(address(staker)), stakerBalance);
         assertEq(rdToken.totalSupply(),              stakerBalance);
-        assertEq(rdToken.freeUnderlying(),           totalHoldings);
         assertEq(rdToken.lastUpdated(),              start + warpTime);
 
-        uint256 exchangeRate2 = stakerBalance == 0 ? 1e30 : (depositAmount + amountVested - withdrawAmount) * 1e30 / stakerBalance;
+        uint256 exchangeRate2 = stakerBalance == 0 ? 1e30 : rdToken.totalHoldings() * 1e30 / stakerBalance;  // Use actual `totalHoldings` to avoid propogating errors
 
-        assertWithinPrecision(rdToken.exchangeRate(), exchangeRate2, 8);  // TODO: See if we can bring this down
+        if (rdToken.totalSupply() > 0) assertWithinPrecision(rdToken.exchangeRate(), exchangeRate1, 8);  // TODO: See if this can be reduced
+
         assertWithinPrecision(rdToken.exchangeRate(), exchangeRate1, 8);
 
-        assertWithinDiff(rdToken.totalHoldings(), totalHoldings,                        1);
-        assertWithinDiff(rdToken.issuanceRate(),  vestingAmount * 1e30 / vestingPeriod, 1);
+        assertWithinDiff(rdToken.exchangeRate(),   exchangeRate2,                        10);
+        assertWithinDiff(rdToken.issuanceRate(),   vestingAmount * 1e30 / vestingPeriod, 1);
+        assertWithinDiff(rdToken.freeUnderlying(), totalHoldings,                        1);
+        assertWithinDiff(rdToken.totalHoldings(),  totalHoldings,                        1);
 
         assertEq(underlying.balanceOf(address(staker)),  withdrawAmount);
         assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount - withdrawAmount);
@@ -631,7 +632,6 @@ contract ExitTest is TestUtils {
         uint256 vestingPeriod,
         uint256 warpTime
     ) public {
-
         depositAmount = constrictToRange(depositAmount, 1, 1e29);
         redeemAmount  = constrictToRange(redeemAmount,  1, depositAmount);
         vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
@@ -651,6 +651,7 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.lastUpdated(),              start);
 
         uint256 totalHoldings = depositAmount + vestingAmount * warpTime / vestingPeriod;
+        uint256 amountVested  = vestingAmount * 1e30 * warpTime / vestingPeriod / 1e30;
         uint256 exchangeRate1 = rdToken.totalHoldings() * 1e30 / depositAmount;  // Use actual `totalHoldings` value to avoid propagating errors
 
         assertWithinDiff(rdToken.totalHoldings(), totalHoldings,                        1);
@@ -663,13 +664,12 @@ contract ExitTest is TestUtils {
         staker.rdToken_redeem(address(rdToken), redeemAmount);
 
         uint256 amountWithdrawn = redeemAmount * exchangeRate1 / 1e30;
-        uint256 amountVested    = vestingAmount * 1e30 * warpTime / vestingPeriod / 1e30;
 
         assertEq(rdToken.balanceOf(address(staker)), depositAmount - redeemAmount);
         assertEq(rdToken.totalSupply(),              depositAmount - redeemAmount);
         assertEq(rdToken.lastUpdated(),              start + warpTime);
 
-        uint256 exchangeRate2 = redeemAmount == depositAmount ? 1e30 : (depositAmount + amountVested - amountWithdrawn) * 1e30 / (depositAmount - redeemAmount);
+        uint256 exchangeRate2 = redeemAmount == depositAmount ? 1e30 : rdToken.totalHoldings() * 1e30 / (depositAmount - redeemAmount);  // Use actual `totalHoldings` value to avoid propagating errors
 
         if (rdToken.totalSupply() > 0) assertWithinPrecision(rdToken.exchangeRate(), exchangeRate1, 8);  // TODO: See if this can be reduced
 

@@ -454,7 +454,7 @@ contract ExitTest is TestUtils {
 
         uint256 totalHoldings = depositAmount + vestingAmount * warpTime / vestingPeriod;
         uint256 amountVested  = vestingAmount * 1e30 * warpTime / vestingPeriod / 1e30;
-        uint256 exchangeRate1 = totalHoldings * 1e30 / depositAmount;
+        uint256 exchangeRate1 = rdToken.totalHoldings() * 1e30 / depositAmount;  // Use actual `totalHoldings` to not propogate errors
 
         assertWithinDiff(rdToken.totalHoldings(), totalHoldings,                         1);
         assertWithinDiff(rdToken.exchangeRate(),  exchangeRate1,                         1);
@@ -650,7 +650,7 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.lastUpdated(),              start);
 
         uint256 totalHoldings = depositAmount + vestingAmount * warpTime / vestingPeriod;
-        uint256 exchangeRate1 = totalHoldings * 1e30 / depositAmount;
+        uint256 exchangeRate1 = rdToken.totalHoldings() * 1e30 / depositAmount;  // Use actual `totalHoldings` value to avoid propagating errors
 
         assertWithinDiff(rdToken.totalHoldings(), totalHoldings,                        1);
         assertWithinDiff(rdToken.exchangeRate(),  exchangeRate1,                        1);

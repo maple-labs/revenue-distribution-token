@@ -60,19 +60,19 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /************************/
 
     function deposit(uint256 assets_, address receiver_) external virtual override returns (uint256 shares_) {
-        shares_ = _deposit(assets_, msg.sender, msg.sender);
+        shares_ = _deposit(assets_, receiver_, msg.sender);
     }
 
     function mint(uint256 shares_, address receiver_) external virtual override returns (uint256 assets_) {
-        assets_ = _mint(assets_, msg.sender, msg.sender);
+        assets_ = _mint(shares_, receiver_, msg.sender);
     }
 
     function redeem(uint256 shares_, address receiver_, address owner_) external virtual override returns (uint256 assets_) {
-        assets_ = _redeem(shares_, msg.sender, msg.sender, msg.sender);
+        assets_ = _redeem(shares_, receiver_, owner_, msg.sender);
     }
 
     function withdraw(uint256 assets_, address receiver_, address owner_) external virtual override returns (uint256 shares_) {
-        shares_ = _withdraw(assets_, msg.sender, msg.sender, msg.sender);
+        shares_ = _withdraw(assets_, receiver_, owner_, msg.sender);
     }
 
     /**************************/
@@ -129,7 +129,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         return issuanceRate * 365 days * ERC20(asset).decimals() / totalSupply / precision;
     }
 
-    function balanceOfAssets(address account_) external view returns (uint256 balanceOfAssets_) {
+    function balanceOfAssets(address account_) external view override returns (uint256 balanceOfAssets_) {
         return convertToAssets(balanceOf[account_]);
     }
 
@@ -143,11 +143,11 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         shares_ = assets_ * supply / totalAssets();
     }
 
-    function maxDeposit(address receiver_) external view override returns (uint256 maxAssets_) {
+    function maxDeposit(address receiver_) external pure override returns (uint256 maxAssets_) {
         maxAssets_ = type(uint256).max;
     }
 
-    function maxMint(address receiver_) external view override returns (uint256 maxShares_) {
+    function maxMint(address receiver_) external pure override returns (uint256 maxShares_) {
         maxShares_ = type(uint256).max;
     }
 

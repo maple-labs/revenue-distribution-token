@@ -26,17 +26,11 @@ interface IRevenueDistributionToken is IERC4626 {
     function setPendingOwner(address pendingOwner_) external;
     function updateVestingSchedule(uint256 vestingPeriod_) external returns (uint256 issuanceRate_, uint256 freeUnderlying_);
 
-    /************************/
-    /*** Staker Functions ***/
-    /************************/
-
     /**********************/
     /*** View Functions ***/
     /**********************/
 
     function APR() external view returns (uint256 APR_);
-    function balanceOfUnderlying(address account) external view returns (uint256 balanceOfUnderlying_);
-    function exchangeRate() external view returns (uint256 exchangeRate_);
-    function totalHoldings() external view returns (uint256 totalHoldings_);
+    function balanceOfAssets(address account) external view returns (uint256 balanceOfUnderlying_);
 
 }

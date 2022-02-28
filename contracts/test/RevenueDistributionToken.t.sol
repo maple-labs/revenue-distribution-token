@@ -476,9 +476,9 @@ contract ExitTest is TestUtils {
         uint256 exchangeRate2 = stakerBalance == 0 ? 1e30 : (depositAmount + amountVested - withdrawAmount) * 1e30 / stakerBalance;
 
         assertWithinPrecision(rdToken.exchangeRate(), exchangeRate2, 8);  // TODO: See if we can bring this down
+        assertWithinPrecision(rdToken.exchangeRate(), exchangeRate1, 8);
 
         assertWithinDiff(rdToken.totalHoldings(), totalHoldings,                        1);
-        assertWithinDiff(rdToken.exchangeRate(),  totalHoldings * 1e30 / stakerBalance, 1);
         assertWithinDiff(rdToken.issuanceRate(),  vestingAmount * 1e30 / vestingPeriod, 1);
 
         assertEq(underlying.balanceOf(address(staker)),  withdrawAmount);

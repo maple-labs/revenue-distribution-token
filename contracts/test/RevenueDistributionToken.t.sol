@@ -309,6 +309,10 @@ contract ExitTest is TestUtils {
         vm.warp(10_000_000);  // Warp to non-zero timestamp
     }
 
+    /************************/
+    /*** `withdraw` tests ***/
+    /************************/
+
     function test_withdraw_zeroAmount(uint256 depositAmount) external {
         _depositUnderlying(constrictToRange(depositAmount, 1, 1e29));
 
@@ -328,11 +332,11 @@ contract ExitTest is TestUtils {
         staker.rdToken_withdraw(address(rdToken), depositAmount);
     }
 
-    function test_withdraw_burnUnderflow_exchangeRateGtOne_explicitVals(uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod, uint256 warpTime) external {
-        depositAmount = constrictToRange(depositAmount, 1, 1e29);
-        vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
-        vestingPeriod = constrictToRange(vestingPeriod, 1, 100 days);
-        warpTime      = constrictToRange(vestingAmount, 1, vestingPeriod);
+    function test_withdraw_burnUnderflow_exchangeRateGtOne_explicitVals() external {
+        uint256 depositAmount = 100 ether;
+        uint256 vestingAmount = 10 ether;
+        uint256 vestingPeriod = 10 days;
+        uint256 warpTime      = 5 days;
 
         _depositUnderlying(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
@@ -347,26 +351,337 @@ contract ExitTest is TestUtils {
         staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount);
     }
 
-    function test_withdraw_burnUnderflow_exchangeRateGtOne(uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod, uint256 warpTime) external {
-        depositAmount = constrictToRange(depositAmount, 1, 1e29);
-        vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
-        vestingPeriod = constrictToRange(vestingPeriod, 1, 100 days);
-        warpTime      = constrictToRange(vestingAmount, 1, vestingPeriod);
+    function test_withdraw(uint256 depositAmount, uint256 withdrawAmount) public {
+        depositAmount  = constrictToRange(depositAmount,  1, 1e29);
+        withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
+
+        underlying.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(underlying), address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), depositAmount);
+
+        uint256 start = block.timestamp;
+
+        assertEq(rdToken.balanceOf(address(staker)), depositAmount);
+        assertEq(rdToken.totalSupply(),              depositAmount);
+        assertEq(rdToken.freeUnderlying(),           depositAmount);
+        assertEq(rdToken.totalHoldings(),            depositAmount);
+        assertEq(rdToken.exchangeRate(),             1e30);
+        assertEq(rdToken.issuanceRate(),             0);
+        assertEq(rdToken.lastUpdated(),              start);
+
+        assertEq(underlying.balanceOf(address(staker)),  0);
+        assertEq(underlying.balanceOf(address(rdToken)), depositAmount);
+
+        vm.warp(start + 10 days);
+
+        staker.rdToken_withdraw(address(rdToken), withdrawAmount);
+
+        assertEq(rdToken.balanceOf(address(staker)), depositAmount - withdrawAmount);
+        assertEq(rdToken.totalSupply(),              depositAmount - withdrawAmount);
+        assertEq(rdToken.freeUnderlying(),           depositAmount - withdrawAmount);
+        assertEq(rdToken.totalHoldings(),            depositAmount - withdrawAmount);
+        assertEq(rdToken.exchangeRate(),             1e30);
+        assertEq(rdToken.issuanceRate(),             0);
+        assertEq(rdToken.lastUpdated(),              start + 10 days);
+
+        assertEq(underlying.balanceOf(address(staker)),  withdrawAmount);
+        assertEq(underlying.balanceOf(address(rdToken)), depositAmount - withdrawAmount);
+    }
+
+    function test_withdraw_exchangeRateGtOne_explicitVals() public {
+        uint256 depositAmount  = 100 ether;
+        uint256 withdrawAmount = 20 ether;
+        uint256 vestingAmount  = 10 ether;
+        uint256 vestingPeriod  = 200 seconds;
+        uint256 warpTime       = 100 seconds;
+        uint256 start          = block.timestamp;
 
         _depositUnderlying(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
         vm.warp(block.timestamp + warpTime);
 
-        uint256 maxWithdrawAmount = rdToken.previewRedeem(rdToken.balanceOf(address(staker)));  // TODO
+        assertEq(rdToken.balanceOf(address(staker)), 100 ether);
+        assertEq(rdToken.totalSupply(),              100 ether);
+        assertEq(rdToken.freeUnderlying(),           100 ether);
+        assertEq(rdToken.totalHoldings(),            105 ether);
+        assertEq(rdToken.exchangeRate(),             1.05e30);
+        assertEq(rdToken.issuanceRate(),             0.05 ether * 1e30);
+        assertEq(rdToken.lastUpdated(),              start);
 
-        vm.expectRevert(ARITHMETIC_ERROR);
-        staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount + 1);
+        assertEq(underlying.balanceOf(address(staker)),  0);
+        assertEq(underlying.balanceOf(address(rdToken)), 110 ether);
 
-        staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount);
+        staker.rdToken_withdraw(address(rdToken), withdrawAmount);
+
+        assertEq(rdToken.balanceOf(address(staker)), 80.952380952380952381 ether);  // 100 - 80 / 1.05
+        assertEq(rdToken.totalSupply(),              80.952380952380952381 ether);
+        assertEq(rdToken.freeUnderlying(),           85 ether);  // totalHoldings - 20 withdrawn
+        assertEq(rdToken.totalHoldings(),            85 ether);
+        assertEq(rdToken.exchangeRate(),             1.049999999999999999999382352941e30);
+        assertEq(rdToken.issuanceRate(),             0.05 ether * 1e30);
+        assertEq(rdToken.lastUpdated(),              start + 100 seconds);
+
+        assertEq(underlying.balanceOf(address(staker)),  20 ether);
+        assertEq(underlying.balanceOf(address(rdToken)), 90 ether);
     }
 
-     function _depositUnderlying(uint256 depositAmount) internal {
+    function test_withdraw_exchangeRateGtOne(
+        uint256 depositAmount,
+        uint256 withdrawAmount,
+        uint256 vestingAmount,
+        uint256 vestingPeriod,
+        uint256 warpTime
+    ) public {
+        depositAmount  = constrictToRange(depositAmount,  1, 1e29);
+        withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
+        vestingAmount  = constrictToRange(vestingAmount,  1, 1e29);
+        vestingPeriod  = constrictToRange(vestingPeriod,  1, 100 days);
+        warpTime       = constrictToRange(warpTime,       1, vestingPeriod);
+
+        uint256 start = block.timestamp;
+
+        _depositUnderlying(depositAmount);
+        _transferAndUpdateVesting(vestingAmount, vestingPeriod);
+
+        vm.warp(block.timestamp + warpTime);
+
+        assertEq(rdToken.balanceOf(address(staker)), depositAmount);
+        assertEq(rdToken.totalSupply(),              depositAmount);
+        assertEq(rdToken.freeUnderlying(),           depositAmount);
+        assertEq(rdToken.lastUpdated(),              start);
+
+        uint256 totalHoldings = depositAmount + vestingAmount * warpTime / vestingPeriod;
+        uint256 amountVested  = vestingAmount * 1e30 * warpTime / vestingPeriod / 1e30;
+        uint256 exchangeRate1 = totalHoldings * 1e30 / depositAmount;
+
+        assertWithinDiff(rdToken.totalHoldings(), totalHoldings,                         1);
+        assertWithinDiff(rdToken.exchangeRate(),  exchangeRate1,                         1);
+        assertWithinDiff(rdToken.issuanceRate(),  vestingAmount * 1e30 / vestingPeriod,  1);
+
+        assertEq(underlying.balanceOf(address(staker)),  0);
+        assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount);  // Balance is higher than totalHoldings
+
+        staker.rdToken_withdraw(address(rdToken), withdrawAmount);
+
+        totalHoldings -= withdrawAmount;
+        uint256 stakerBalance = depositAmount - withdrawAmount * 1e30 / exchangeRate1;
+
+        assertEq(rdToken.balanceOf(address(staker)), stakerBalance);
+        assertEq(rdToken.totalSupply(),              stakerBalance);
+        assertEq(rdToken.freeUnderlying(),           totalHoldings);
+        assertEq(rdToken.lastUpdated(),              start + warpTime);
+
+        uint256 exchangeRate2 = stakerBalance == 0 ? 1e30 : (depositAmount + amountVested - withdrawAmount) * 1e30 / stakerBalance;
+
+        assertWithinPrecision(rdToken.exchangeRate(), exchangeRate2, 8);  // TODO: See if we can bring this down
+
+        assertWithinDiff(rdToken.totalHoldings(), totalHoldings,                        1);
+        assertWithinDiff(rdToken.exchangeRate(),  totalHoldings * 1e30 / stakerBalance, 1);
+        assertWithinDiff(rdToken.issuanceRate(),  vestingAmount * 1e30 / vestingPeriod, 1);
+
+        assertEq(underlying.balanceOf(address(staker)),  withdrawAmount);
+        assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount - withdrawAmount);
+
+    }
+
+    // TODO: Implement once max* functions are added as per 4626 standard
+    // function test_withdraw_burnUnderflow_exchangeRateGtOne(uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod, uint256 warpTime) external {
+    //     depositAmount = constrictToRange(depositAmount, 1, 1e29);
+    //     vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
+    //     vestingPeriod = constrictToRange(vestingPeriod, 1, 100 days);
+    //     warpTime      = constrictToRange(vestingAmount, 1, vestingPeriod);
+
+    //     _depositUnderlying(depositAmount);
+    //     _transferAndUpdateVesting(vestingAmount, vestingPeriod);
+
+    //     vm.warp(block.timestamp + warpTime);
+
+    //     uint256 underflowWithdrawAmount = rdToken.previewRedeem(rdToken.balanceOf(address(staker)) + 1);  // TODO
+    //     uint256 maxWithdrawAmount       = rdToken.previewRedeem(rdToken.balanceOf(address(staker)));  // TODO
+
+    //     vm.expectRevert(ARITHMETIC_ERROR);
+    //     staker.rdToken_withdraw(address(rdToken), underflowWithdrawAmount);
+
+    //     staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount);
+    // }
+
+
+    /************************/
+    /*** `redeem` tests ***/
+    /************************/
+
+    function test_redeem_zeroAmount(uint256 depositAmount) external {
+        _depositUnderlying(constrictToRange(depositAmount, 1, 1e29));
+
+        vm.expectRevert("RDT:W:AMOUNT");
+        staker.rdToken_redeem(address(rdToken), 0);
+
+        staker.rdToken_redeem(address(rdToken), 1);
+    }
+
+    function test_redeem_burnUnderflow(uint256 depositAmount) external {
+        depositAmount = constrictToRange(depositAmount, 1, 1e29);
+        _depositUnderlying(depositAmount);
+
+        vm.expectRevert(ARITHMETIC_ERROR);
+        staker.rdToken_redeem(address(rdToken), depositAmount + 1);
+
+        staker.rdToken_redeem(address(rdToken), depositAmount);
+    }
+
+    function test_redeem_burnUnderflow_exchangeRateGtOne_explicitVals() external {
+        uint256 depositAmount = 100 ether;
+        uint256 vestingAmount = 10 ether;
+        uint256 vestingPeriod = 10 days;
+        uint256 warpTime      = 5 days;
+
+        _depositUnderlying(depositAmount);
+        _transferAndUpdateVesting(vestingAmount, vestingPeriod);
+
+        vm.warp(block.timestamp + warpTime);
+
+        vm.expectRevert(ARITHMETIC_ERROR);
+        staker.rdToken_redeem(address(rdToken), 100 ether + 1);
+
+        staker.rdToken_redeem(address(rdToken), 100 ether);
+    }
+
+    function test_redeem(uint256 depositAmount, uint256 redeemAmount) public {
+        depositAmount  = constrictToRange(depositAmount,  1, 1e29);
+        redeemAmount = constrictToRange(redeemAmount, 1, depositAmount);
+
+        underlying.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(underlying), address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), depositAmount);
+
+        uint256 start = block.timestamp;
+
+        assertEq(rdToken.balanceOf(address(staker)), depositAmount);
+        assertEq(rdToken.totalSupply(),              depositAmount);
+        assertEq(rdToken.freeUnderlying(),           depositAmount);
+        assertEq(rdToken.totalHoldings(),            depositAmount);
+        assertEq(rdToken.exchangeRate(),             1e30);
+        assertEq(rdToken.issuanceRate(),             0);
+        assertEq(rdToken.lastUpdated(),              start);
+
+        assertEq(underlying.balanceOf(address(staker)),  0);
+        assertEq(underlying.balanceOf(address(rdToken)), depositAmount);
+
+        vm.warp(start + 10 days);
+
+        staker.rdToken_redeem(address(rdToken), redeemAmount);
+
+        assertEq(rdToken.balanceOf(address(staker)), depositAmount - redeemAmount);
+        assertEq(rdToken.totalSupply(),              depositAmount - redeemAmount);
+        assertEq(rdToken.freeUnderlying(),           depositAmount - redeemAmount);
+        assertEq(rdToken.totalHoldings(),            depositAmount - redeemAmount);
+        assertEq(rdToken.exchangeRate(),             1e30);
+        assertEq(rdToken.issuanceRate(),             0);
+        assertEq(rdToken.lastUpdated(),              start + 10 days);
+
+        assertEq(underlying.balanceOf(address(staker)),  redeemAmount);
+        assertEq(underlying.balanceOf(address(rdToken)), depositAmount - redeemAmount);
+    }
+
+    function test_redeem_exchangeRateGtOne_explicitVals() public {
+        uint256 depositAmount  = 100 ether;
+        uint256 redeemAmount   = 20 ether;
+        uint256 vestingAmount  = 10 ether;
+        uint256 vestingPeriod  = 200 seconds;
+        uint256 warpTime       = 100 seconds;
+        uint256 start          = block.timestamp;
+
+        _depositUnderlying(depositAmount);
+        _transferAndUpdateVesting(vestingAmount, vestingPeriod);
+
+        vm.warp(block.timestamp + warpTime);
+
+        assertEq(rdToken.balanceOf(address(staker)), 100 ether);
+        assertEq(rdToken.totalSupply(),              100 ether);
+        assertEq(rdToken.freeUnderlying(),           100 ether);
+        assertEq(rdToken.totalHoldings(),            105 ether);
+        assertEq(rdToken.exchangeRate(),             1.05e30);
+        assertEq(rdToken.issuanceRate(),             0.05 ether * 1e30);
+        assertEq(rdToken.lastUpdated(),              start);
+
+        assertEq(underlying.balanceOf(address(staker)),  0);
+        assertEq(underlying.balanceOf(address(rdToken)), 110 ether);
+
+        staker.rdToken_redeem(address(rdToken), redeemAmount);
+
+        assertEq(rdToken.balanceOf(address(staker)), 80 ether);  // 100 - 80 / 1.05
+        assertEq(rdToken.totalSupply(),              80 ether);
+        assertEq(rdToken.freeUnderlying(),           84 ether);  // 105 * 0.8
+        assertEq(rdToken.totalHoldings(),            84 ether);
+        assertEq(rdToken.exchangeRate(),             1.05e30);
+        assertEq(rdToken.issuanceRate(),             0.05 ether * 1e30);
+        assertEq(rdToken.lastUpdated(),              start + 100 seconds);
+
+        assertEq(underlying.balanceOf(address(staker)),  21 ether);
+        assertEq(underlying.balanceOf(address(rdToken)), 89 ether);
+    }
+
+    function test_redeem_exchangeRateGtOne(
+        uint256 depositAmount,
+        uint256 redeemAmount,
+        uint256 vestingAmount,
+        uint256 vestingPeriod,
+        uint256 warpTime
+    ) public {
+        depositAmount = constrictToRange(depositAmount, 1, 1e29);
+        redeemAmount  = constrictToRange(redeemAmount,  1, depositAmount);
+        vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
+        vestingPeriod = constrictToRange(vestingPeriod, 1, 100 days);
+        warpTime      = constrictToRange(warpTime,      1, vestingPeriod);
+
+        uint256 start = block.timestamp;
+
+        _depositUnderlying(depositAmount);
+        _transferAndUpdateVesting(vestingAmount, vestingPeriod);
+
+        vm.warp(block.timestamp + warpTime);
+
+        assertEq(rdToken.balanceOf(address(staker)), depositAmount);
+        assertEq(rdToken.totalSupply(),              depositAmount);
+        assertEq(rdToken.freeUnderlying(),           depositAmount);
+        assertEq(rdToken.lastUpdated(),              start);
+
+        uint256 totalHoldings = depositAmount + vestingAmount * warpTime / vestingPeriod;
+        uint256 exchangeRate1 = totalHoldings * 1e30 / depositAmount;
+
+        assertWithinDiff(rdToken.totalHoldings(), totalHoldings,                        1);
+        assertWithinDiff(rdToken.exchangeRate(),  exchangeRate1,                        1);
+        assertWithinDiff(rdToken.issuanceRate(),  vestingAmount * 1e30 / vestingPeriod, 1);
+
+        assertEq(underlying.balanceOf(address(staker)),  0);
+        assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount);  // Balance is higher than totalHoldings
+
+        staker.rdToken_redeem(address(rdToken), redeemAmount);
+
+        uint256 amountWithdrawn = redeemAmount * exchangeRate1 / 1e30;
+        uint256 amountVested    = vestingAmount * 1e30 * warpTime / vestingPeriod / 1e30;
+
+        assertEq(rdToken.balanceOf(address(staker)), depositAmount - redeemAmount);
+        assertEq(rdToken.totalSupply(),              depositAmount - redeemAmount);
+        assertEq(rdToken.freeUnderlying(),           depositAmount + amountVested - amountWithdrawn);
+        assertEq(rdToken.totalHoldings(),            depositAmount + amountVested - amountWithdrawn);
+        assertEq(rdToken.lastUpdated(),              start + warpTime);
+
+        uint256 exchangeRate2 = (depositAmount + amountVested - amountWithdrawn) * 1e30 / (depositAmount - redeemAmount);
+
+        assertWithinPrecision(rdToken.exchangeRate(), exchangeRate1, 8);
+
+        assertWithinDiff(rdToken.exchangeRate(), exchangeRate2,                        1);
+        assertWithinDiff(rdToken.issuanceRate(), vestingAmount * 1e30 / vestingPeriod, 1);
+
+        assertEq(underlying.balanceOf(address(staker)),  amountWithdrawn);
+        assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount - amountWithdrawn);  // Note that vestingAmount is used
+    }
+
+    function _depositUnderlying(uint256 depositAmount) internal {
         underlying.mint(address(staker), depositAmount);
         staker.erc20_approve(address(underlying), address(rdToken), depositAmount);
         staker.rdToken_deposit(address(rdToken), depositAmount);
@@ -378,55 +693,6 @@ contract ExitTest is TestUtils {
         rdToken.updateVestingSchedule(vestingPeriod_);
     }
 }
-
-//     function test_withdraw(uint256 depositAmount) public {
-//         depositAmount = constrictToRange(depositAmount, 1, 1e29);
-
-//         underlying.mint(address(staker), depositAmount);
-
-//         staker.erc20_approve(address(underlying), address(rdToken), depositAmount);
-//         staker.rdToken_deposit(address(rdToken), depositAmount);
-
-//         assertEq(underlying.balanceOf(address(staker)),  0);
-//         assertEq(underlying.balanceOf(address(rdToken)), depositAmount);
-//         assertEq(rdToken.balanceOf(address(staker)),     depositAmount);
-//         assertEq(rdToken.totalHoldings(),                depositAmount);
-//         assertEq(rdToken.exchangeRate(),                 1e30);
-
-//         vm.expectRevert(ARITHMETIC_ERROR);  // Arithmetic error
-//         staker.rdToken_withdraw(address(rdToken), depositAmount + 1);
-//         staker.rdToken_withdraw(address(rdToken), depositAmount);
-
-//         assertEq(underlying.balanceOf(address(staker)),  depositAmount);
-//         assertEq(underlying.balanceOf(address(rdToken)), 0);
-//         assertEq(rdToken.balanceOf(address(staker)),     0);
-//         assertEq(rdToken.totalHoldings(),                0);
-//         assertEq(rdToken.exchangeRate(),                 1e30);
-//     }
-
-//     function test_redeem(uint256 depositAmount) public {
-//         depositAmount = constrictToRange(depositAmount, 1, 1e29);
-
-//         underlying.mint(address(staker), depositAmount);
-
-//         staker.erc20_approve(address(underlying), address(rdToken), depositAmount);
-//         staker.rdToken_deposit(address(rdToken), depositAmount);
-
-//         assertEq(underlying.balanceOf(address(staker)),  0);
-//         assertEq(underlying.balanceOf(address(rdToken)), depositAmount);
-//         assertEq(rdToken.balanceOf(address(staker)),     depositAmount);
-//         assertEq(rdToken.totalHoldings(),                depositAmount);
-//         assertEq(rdToken.exchangeRate(),                 1e30);
-
-//         staker.rdToken_redeem(address(rdToken), depositAmount);
-
-//         assertEq(underlying.balanceOf(address(staker)),  depositAmount);
-//         assertEq(underlying.balanceOf(address(rdToken)), 0);
-//         assertEq(rdToken.balanceOf(address(staker)),     0);
-//         assertEq(rdToken.totalHoldings(),                0);
-//         assertEq(rdToken.exchangeRate(),                 1e30);
-//     }
-// }
 
 contract RevenueStreamingTest is TestUtils {
 

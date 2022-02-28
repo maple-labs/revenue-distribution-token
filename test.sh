@@ -13,6 +13,4 @@ export FOUNDRY_PROFILE=$profile
 
 if [ -z "$test" ]; then match="[src/test/*.t.sol]"; else match=$test; fi
 
-echo $FOUNDRY_PROFILE
-
 forge test --match "$match" -vvv

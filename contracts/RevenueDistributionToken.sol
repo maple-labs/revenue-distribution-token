@@ -59,8 +59,8 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** Staker Functions ***/
     /************************/
 
-    function deposit(uint256 assets_, address receiver_) external override returns (uint256 shares_);
-        shares_ = _deposit(msg.sender, amount_);
+    function deposit(uint256 assets_, address receiver_) external override returns (uint256 shares_) {
+        shares_ = _deposit(assets_, msg.sender, msg.sender);
     }
 
     function redeem(uint256 rdTokenAmount_) external virtual override returns (uint256 assetAmount_) {
@@ -75,13 +75,13 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** Internal Functions ***/
     /**************************/
 
-    function _deposit(address account_, uint256 amount_) internal returns (uint256 shares_) {
-        require(amount_ != 0, "RDT:D:AMOUNT");
-        _mint(account_, shares_ = previewDeposit(amount_));
-        freeAssets = totalHoldings() + amount_;
+    function _deposit(uint256 assets_, address receiver_, address caller_) internal returns (uint256 shares_) {
+        require(assets_ != 0, "RDT:D:AMOUNT");
+        _mint(receiver_, shares_ = previewDeposit(assets_));
+        freeAssets = totalHoldings() + assets_;
         _updateIssuanceParams();
-        require(ERC20Helper.transferFrom(address(asset), account_, address(this), amount_), "RDT:D:TRANSFER_FROM");
-        emit Deposit(account_, amount_);
+        require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:D:TRANSFER_FROM");
+        emit Deposit(caller_, receiver_, assets_, shares_);
     }
 
     function _redeem(address account_, uint256 rdTokenAmount_) internal returns (uint256 assetAmount_) {

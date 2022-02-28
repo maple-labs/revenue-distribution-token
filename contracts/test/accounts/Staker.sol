@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.7;
 
-import { TestUtils } from "../../../lib/contract-test-utils/contracts/test.sol";
+import { TestUtils } from "../../../modules/contract-test-utils/contracts/test.sol";
 
-import { ERC20User } from "../../../lib/erc20/src/test/accounts/ERC20User.sol";
-import { MockERC20 } from "../../../lib/erc20/src/test/mocks/MockERC20.sol";
+import { ERC20User } from "../../../modules/erc20/contracts/test/accounts/ERC20User.sol";
+import { MockERC20 } from "../../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { IRevenueDistributionToken as IRDT } from "../../interfaces/IRevenueDistributionToken.sol";
 

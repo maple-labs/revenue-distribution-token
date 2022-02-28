@@ -6,13 +6,6 @@ import { IERC4626 } from "./IERC4626.sol";
 // TODO: Add natspec + inherit from IERC4626 once spec is well defined.
 interface IRevenueDistributionToken is IERC4626 {
 
-    /**************/
-    /*** Events ***/
-    /**************/
-
-    event Deposit(address indexed from, uint256 value);
-    event Withdraw(address indexed to, uint256 value);
-
     /***********************/
     /*** State Variables ***/
     /***********************/

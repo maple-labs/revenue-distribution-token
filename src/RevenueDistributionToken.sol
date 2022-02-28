@@ -14,10 +14,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     address public override pendingOwner;
     address public override underlying;
 
-    uint256 public override freeUnderlying;       // Amount of underlying unlocked regardless of time passed
-    uint256 public override issuanceRate;         // underlying/second rate dependent on aggregate vesting schedule (needs increased precision)
-    uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated
-    uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends
+    uint256 public override freeAssets;           // Amount of assets unlocked regardless of time passed.
+    uint256 public override issuanceRate;         // underlying/second rate dependent on aggregate vesting schedule (needs increased precision).
+    uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated.
+    uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends.
 
     constructor(string memory name_, string memory symbol_, address owner_, address underlying_, uint256 precision_)
         ERC20(name_, symbol_, ERC20(underlying_).decimals())
@@ -43,14 +43,14 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     // TODO: Revisit returns
-    function updateVestingSchedule(uint256 vestingPeriod_) external override returns (uint256 issuanceRate_, uint256 freeUnderlying_) {
+    function updateVestingSchedule(uint256 vestingPeriod_) external override returns (uint256 issuanceRate_, uint256 freeAssets_) {
         require(msg.sender == owner, "RDT:UVS:NOT_OWNER");
 
         // Update "y-intercept" to reflect current available underlying
-        freeUnderlying = freeUnderlying_ = totalHoldings();
+        freeAssets = freeAssets_ = totalHoldings();
 
         // Calculate slope, update timestamp and period finish
-        issuanceRate        = issuanceRate_ = (ERC20(underlying).balanceOf(address(this)) - freeUnderlying_) * precision / vestingPeriod_;
+        issuanceRate        = issuanceRate_ = (ERC20(underlying).balanceOf(address(this)) - freeAssets_) * precision / vestingPeriod_;
         lastUpdated         = block.timestamp;
         vestingPeriodFinish = block.timestamp + vestingPeriod_;
     }
@@ -78,7 +78,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     function _deposit(address account_, uint256 amount_) internal returns (uint256 shares_) {
         require(amount_ != 0, "RDT:D:AMOUNT");
         _mint(account_, shares_ = previewDeposit(amount_));
-        freeUnderlying = totalHoldings() + amount_;
+        freeAssets = totalHoldings() + amount_;
         _updateIssuanceParams();
         require(ERC20Helper.transferFrom(address(underlying), account_, address(this), amount_), "RDT:D:TRANSFER_FROM");
         emit Deposit(account_, amount_);
@@ -88,7 +88,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         require(rdTokenAmount_ != 0, "RDT:W:AMOUNT");
         underlyingAmount_ = previewRedeem(rdTokenAmount_);
         _burn(account_, rdTokenAmount_);
-        freeUnderlying = totalHoldings() - underlyingAmount_;
+        freeAssets = totalHoldings() - underlyingAmount_;
         _updateIssuanceParams();
         require(ERC20Helper.transfer(address(underlying), account_, underlyingAmount_), "RDT:D:TRANSFER");
         emit Withdraw(account_, underlyingAmount_);
@@ -97,7 +97,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     function _withdraw(address account_, uint256 underlyingAmount_) internal returns (uint256 shares_) {
         require(underlyingAmount_ != 0, "RDT:W:AMOUNT");
         _burn(account_, shares_ = previewWithdraw(underlyingAmount_));
-        freeUnderlying = totalHoldings() - underlyingAmount_;
+        freeAssets = totalHoldings() - underlyingAmount_;
         _updateIssuanceParams();
         require(ERC20Helper.transfer(address(underlying), account_, underlyingAmount_), "RDT:D:TRANSFER");
         emit Withdraw(account_, underlyingAmount_);
@@ -140,14 +140,14 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function totalHoldings() public view override returns (uint256 totalHoldings_) {
-        if (issuanceRate == 0) return freeUnderlying;
+        if (issuanceRate == 0) return freeAssets;
 
         uint256 vestingTimePassed =
             block.timestamp > vestingPeriodFinish ?
                 vestingPeriodFinish - lastUpdated :
                 block.timestamp - lastUpdated;
 
-        return issuanceRate * vestingTimePassed / precision + freeUnderlying;
+        return issuanceRate * vestingTimePassed / precision + freeAssets;
     }
 
 }

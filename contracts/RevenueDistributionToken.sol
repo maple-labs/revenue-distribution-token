@@ -143,35 +143,35 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         shares_ = assets_ * supply / totalAssets();
     }
 
-    function maxDeposit(address receiver_) external pure override returns (uint256 maxAssets_) {
+    function maxDeposit(address receiver_) external pure virtual override returns (uint256 maxAssets_) {
         maxAssets_ = type(uint256).max;
     }
 
-    function maxMint(address receiver_) external pure override returns (uint256 maxShares_) {
+    function maxMint(address receiver_) external pure virtual override returns (uint256 maxShares_) {
         maxShares_ = type(uint256).max;
     }
 
-    function maxRedeem(address owner_) external view override returns (uint256 maxShares_) {
+    function maxRedeem(address owner_) external view virtual override returns (uint256 maxShares_) {
         maxShares_ = balanceOf[owner_]; 
     }
 
-    function maxWithdraw(address owner_) external view override returns (uint256 maxAssets_) {
+    function maxWithdraw(address owner_) external view virtual override returns (uint256 maxAssets_) {
         maxAssets_ = previewRedeem(balanceOf[owner_]);
     }
 
-    function previewDeposit(uint256 assets_) public view override returns (uint256 shares_) {
+    function previewDeposit(uint256 assets_) public view virtual override returns (uint256 shares_) {
         shares_ = convertToShares(assets_);
     }
 
-    function previewMint(uint256 shares_) public view override returns (uint256 assets_) {
+    function previewMint(uint256 shares_) public view virtual override returns (uint256 assets_) {
         assets_ = convertToAssets(shares_);
     }
 
-    function previewWithdraw(uint256 assets_) public view override returns (uint256 shares_) {
+    function previewWithdraw(uint256 assets_) public view virtual override returns (uint256 shares_) {
         shares_ = convertToShares(assets_);
     }
 
-    function previewRedeem(uint256 shares_) public view override returns (uint256 assets_) {
+    function previewRedeem(uint256 shares_) public view virtual override returns (uint256 assets_) {
         assets_ = convertToAssets(shares_);
     }
 

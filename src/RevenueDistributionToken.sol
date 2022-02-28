@@ -47,7 +47,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         require(msg.sender == owner, "RDT:UVS:NOT_OWNER");
 
         // Update "y-intercept" to reflect current available asset
-        freeAssets = freeAssets_ = totalHoldings();
+        freeAssets = freeAssets_ = totalAssets();
 
         // Calculate slope, update timestamp and period finish
         issuanceRate        = issuanceRate_ = (ERC20(asset).balanceOf(address(this)) - freeAssets_) * precision / vestingPeriod_;
@@ -63,12 +63,16 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         shares_ = _deposit(assets_, msg.sender, msg.sender);
     }
 
+    function mint(uint256 shares_, address receiver_) external virtual override returns (uint256 assets_) {
+        assets_ = _mint(assets_, msg.sender, msg.sender);
+    }
+
     function redeem(uint256 shares_, address receiver_, address owner_) external virtual override returns (uint256 assets_) {
-        return _redeem(shares_, msg.sender, msg.sender, msg.sender);
+        assets_ = _redeem(shares_, msg.sender, msg.sender, msg.sender);
     }
 
     function withdraw(uint256 assets_, address receiver_, address owner_) external virtual override returns (uint256 shares_) {
-        return _withdraw(msg.sender, assetAmount_);
+        shares_ = _withdraw(assets_, msg.sender, msg.sender, msg.sender);
     }
 
     /**************************/
@@ -78,29 +82,37 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     function _deposit(uint256 assets_, address receiver_, address caller_) internal returns (uint256 shares_) {
         require(assets_ != 0, "RDT:D:AMOUNT");
         _mint(receiver_, shares_ = previewDeposit(assets_));
-        freeAssets = totalHoldings() + assets_;
+        freeAssets = totalAssets() + assets_;
         _updateIssuanceParams();
         require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:D:TRANSFER_FROM");
         emit Deposit(caller_, receiver_, assets_, shares_);
     }
 
-    // TODO: see if we need caller_ param.
+    function _mint(uint256 shares_, address receiver_, address caller_) internal returns (uint256 assets_) {
+        require(shares_ != 0, "RDT:M:AMOUNT");
+        _mint(receiver_, assets_ = previewMint(shares_));
+        freeAssets = totalAssets() + assets_;
+        _updateIssuanceParams();
+        require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:M:TRANSFER_FROM");
+        emit Deposit(caller_, receiver_, assets_, shares_);
+    }
+
     function _redeem(uint256 shares_, address receiver_, address owner_, address caller_) internal returns (uint256 assets_) {
         require(shares_ != 0, "RDT:W:AMOUNT");
         assets_ = previewRedeem(shares_);
         _burn(owner_, shares_);
-        freeAssets = totalHoldings() - assets_;
+        freeAssets = totalAssets() - assets_;
         _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:D:TRANSFER");
+        require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:R:TRANSFER");
         emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
     }
 
     function _withdraw(uint256 assets_, address receiver_, address owner_, address caller_) internal returns (uint256 shares_) {
         require(assets_ != 0, "RDT:W:AMOUNT");
         _burn(owner_, shares_ = previewWithdraw(assets_));
-        freeAssets = totalHoldings() - assets_;
+        freeAssets = totalAssets() - assets_;
         _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:D:TRANSFER");
+        require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:W:TRANSFER");
         emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
     }
 
@@ -117,30 +129,33 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         return issuanceRate * 365 days * ERC20(asset).decimals() / totalSupply / precision;
     }
 
-    function balanceOfAssets(address account_) external view override returns (uint256 balanceOfAssets_) {
+    function balanceOfAssets(address account_) external view returns (uint256 balanceOfAssets_) {
         return balanceOf[account_] * exchangeRate() / precision;
     }
 
     function exchangeRate() public view override returns (uint256 exchangeRate_) {
         uint256 _totalSupply = totalSupply;
         if (_totalSupply == uint256(0)) return precision;
-        return totalHoldings() * precision / _totalSupply;
+        return totalAssets() * precision / _totalSupply;
     }
 
-    function previewDeposit(uint256 assetAmount_) public view override returns (uint256 shareAmount_) {
-        shareAmount_ = assetAmount_ * precision / exchangeRate();
+    function previewDeposit(uint256 assets_) public view override returns (uint256 shares_) {
+        shares_ = assets_ * precision / exchangeRate();
     }
 
-    // TODO: Update this function and corresponding test to divide by exchange rate
-    function previewWithdraw(uint256 assetAmount_) public view override returns (uint256 shareAmount_) {
-        shareAmount_ = assetAmount_ * precision / exchangeRate();
+    function previewMint(uint256 shares_) public view override returns (uint256 assets_) {
+        assets_ = shares_ * exchangeRate() / precision;
     }
 
-    function previewRedeem(uint256 shareAmount_) public view override returns (uint256 assetAmount_) {
-        assetAmount_ = shareAmount_ * exchangeRate() / precision;
+    function previewWithdraw(uint256 assets_) public view override returns (uint256 shares_) {
+        shares_ = assets_ * precision / exchangeRate();
     }
 
-    function totalHoldings() public view override returns (uint256 totalHoldings_) {
+    function previewRedeem(uint256 shares_) public view override returns (uint256 assets_) {
+        assets_ = shares_ * exchangeRate() / precision;
+    }
+
+    function totalAssets() public view override returns (uint256 totalManagedAssets_) {
         if (issuanceRate == 0) return freeAssets;
 
         uint256 vestingTimePassed =

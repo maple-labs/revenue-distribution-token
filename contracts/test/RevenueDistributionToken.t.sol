@@ -1059,8 +1059,9 @@ contract RevenueStreamingTest is TestUtils {
         // TODO: Try assertEq
         assertWithinDiff(rdToken.balanceOfAssets(address(staker)), expectedFinalTotal, 2);
 
-        assertWithinDiff(rdToken.totalAssets(), expectedFinalTotal,                             1);
-        // assertWithinDiff(rdToken.exchangeRate(),  rdToken.totalAssets() * 1e30 / depositAmount, 1);  // Using totalAssets because of rounding
+        assertWithinDiff(rdToken.totalAssets(), expectedFinalTotal, 1);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert),    sampleSharesToConvert * rdToken.totalAssets() / depositAmount); // Using totalAssets because of rounding
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert),    sampleAssetsToConvert * depositAmount / rdToken.totalAssets());
 
         assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount);
 
@@ -1072,8 +1073,8 @@ contract RevenueStreamingTest is TestUtils {
         assertWithinDiff(rdToken.freeAssets(),  0, 1);
         assertWithinDiff(rdToken.totalAssets(), 0, 1);
 
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);                   // Returns to sampleSharesToConvert zero when empty.
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);                   // Returns to sampleAssetsToConvert zero when empty.
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);  // Returns to sampleSharesToConvert zero when empty.
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);  // Returns to sampleAssetsToConvert zero when empty.
         assertEq(rdToken.issuanceRate(),                         expectedRate);           // TODO: Investigate implications of non-zero issuanceRate here
         assertEq(rdToken.lastUpdated(),                          start + vestingPeriod);  // This makes issuanceRate * time zero
         assertEq(rdToken.vestingPeriodFinish(),                  start + vestingPeriod);

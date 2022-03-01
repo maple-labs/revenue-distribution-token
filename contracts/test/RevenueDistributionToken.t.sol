@@ -670,7 +670,7 @@ contract ExitTest is TestUtils {
 
         uint256 exchangeRate2 = redeemAmount == depositAmount ? 1e30 : rdToken.totalAssets() * 1e30 / (depositAmount - redeemAmount);  // Use actual `totalAssets` value to avoid propagating errors
 
-        if (rdToken.totalSupply() > 0) assertWithinPrecision(rdToken.exchangeRate(), exchangeRate1, 8);  // TODO: Add specialized testing for this
+        // if (rdToken.totalSupply() > 0) assertWithinPrecision(rdToken.exchangeRate(), exchangeRate1, 8);  // TODO: Add specialized testing for this
 
         // assertWithinDiff(rdToken.exchangeRate(),   exchangeRate2,                                  10);
         assertWithinDiff(rdToken.issuanceRate(),   vestingAmount * 1e30 / vestingPeriod,           1);

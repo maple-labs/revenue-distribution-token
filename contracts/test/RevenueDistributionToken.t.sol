@@ -134,7 +134,7 @@ contract DepositTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), 0);
         assertEq(rdToken.totalSupply(),              0);
         assertEq(rdToken.freeUnderlying(),           0);
-        assertEq(rdToken.totalHoldings(),            0);
+        assertEq(rdToken.totalAssets(),            0);
         assertEq(rdToken.exchangeRate(),             1e30);
         assertEq(rdToken.issuanceRate(),             0);
         assertEq(rdToken.lastUpdated(),              0);
@@ -151,7 +151,7 @@ contract DepositTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), depositAmount);
         assertEq(rdToken.totalSupply(),              depositAmount);
         assertEq(rdToken.freeUnderlying(),           depositAmount);
-        assertEq(rdToken.totalHoldings(),            depositAmount);
+        assertEq(rdToken.totalAssets(),            depositAmount);
         assertEq(rdToken.exchangeRate(),             1e30);
         assertEq(rdToken.issuanceRate(),             0);
         assertEq(rdToken.lastUpdated(),              block.timestamp);
@@ -185,7 +185,7 @@ contract DepositTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), 0);
         assertEq(rdToken.totalSupply(),              20e18);
         assertEq(rdToken.freeUnderlying(),           20e18);
-        assertEq(rdToken.totalHoldings(),            25e18);
+        assertEq(rdToken.totalAssets(),            25e18);
         assertEq(rdToken.exchangeRate(),             1.25e30);  // (20 + 5) * 1e30 / 20
         assertEq(rdToken.issuanceRate(),             0.5e48);   // 5e18 * 1e30 / 10s
         assertEq(rdToken.lastUpdated(),              start);
@@ -209,8 +209,8 @@ contract DepositTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), 8e18);
         assertEq(rdToken.totalSupply(),              28e18);  // 8 + original 10
         assertEq(rdToken.freeUnderlying(),           35e18);
-        assertEq(rdToken.totalHoldings(),            35e18);
-        assertEq(rdToken.exchangeRate(),             1.25e30);  // totalHoldings gets updated but exchangeRate stays constant
+        assertEq(rdToken.totalAssets(),            35e18);
+        assertEq(rdToken.exchangeRate(),             1.25e30);  // totalAssets gets updated but exchangeRate stays constant
         assertEq(rdToken.issuanceRate(),             0);
         assertEq(rdToken.lastUpdated(),              start + 11 seconds);
 
@@ -247,7 +247,7 @@ contract DepositTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), 0);
         assertEq(rdToken.totalSupply(),              initialAmount);
         assertEq(rdToken.freeUnderlying(),           initialAmount);
-        assertEq(rdToken.totalHoldings(),            initialAmount + vestingAmount);
+        assertEq(rdToken.totalAssets(),            initialAmount + vestingAmount);
         assertEq(rdToken.exchangeRate(),             (initialAmount + vestingAmount) * 1e30 / initialShares);
         assertEq(rdToken.issuanceRate(),             vestingAmount * 1e30 / 10 seconds);
         assertEq(rdToken.lastUpdated(),              start);
@@ -275,7 +275,7 @@ contract DepositTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), depositAmount * 1e30 / exchangeRate);
         assertEq(rdToken.totalSupply(),              initialShares + stakerShares);
         assertEq(rdToken.freeUnderlying(),           initialAmount + vestingAmount + depositAmount);
-        assertEq(rdToken.totalHoldings(),            initialAmount + vestingAmount + depositAmount);
+        assertEq(rdToken.totalAssets(),            initialAmount + vestingAmount + depositAmount);
         assertEq(rdToken.exchangeRate(),             exchangeRate);
         assertEq(rdToken.issuanceRate(),             0);
         assertEq(rdToken.lastUpdated(),              start + 11 seconds);
@@ -365,7 +365,7 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), depositAmount);
         assertEq(rdToken.totalSupply(),              depositAmount);
         assertEq(rdToken.freeUnderlying(),           depositAmount);
-        assertEq(rdToken.totalHoldings(),            depositAmount);
+        assertEq(rdToken.totalAssets(),            depositAmount);
         assertEq(rdToken.exchangeRate(),             1e30);
         assertEq(rdToken.issuanceRate(),             0);
         assertEq(rdToken.lastUpdated(),              start);
@@ -380,7 +380,7 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), depositAmount - withdrawAmount);
         assertEq(rdToken.totalSupply(),              depositAmount - withdrawAmount);
         assertEq(rdToken.freeUnderlying(),           depositAmount - withdrawAmount);
-        assertEq(rdToken.totalHoldings(),            depositAmount - withdrawAmount);
+        assertEq(rdToken.totalAssets(),            depositAmount - withdrawAmount);
         assertEq(rdToken.exchangeRate(),             1e30);
         assertEq(rdToken.issuanceRate(),             0);
         assertEq(rdToken.lastUpdated(),              start + 10 days);
@@ -405,7 +405,7 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), 100e18);
         assertEq(rdToken.totalSupply(),              100e18);
         assertEq(rdToken.freeUnderlying(),           100e18);
-        assertEq(rdToken.totalHoldings(),            105e18);
+        assertEq(rdToken.totalAssets(),            105e18);
         assertEq(rdToken.exchangeRate(),             1.05e30);
         assertEq(rdToken.issuanceRate(),             0.05e18 * 1e30);
         assertEq(rdToken.lastUpdated(),              start);
@@ -417,8 +417,8 @@ contract ExitTest is TestUtils {
 
         assertEq(rdToken.balanceOf(address(staker)), 80.952380952380952381e18);  // 100 - 80 / 1.05
         assertEq(rdToken.totalSupply(),              80.952380952380952381e18);
-        assertEq(rdToken.freeUnderlying(),           85e18);  // totalHoldings - 20 withdrawn
-        assertEq(rdToken.totalHoldings(),            85e18);
+        assertEq(rdToken.freeUnderlying(),           85e18);  // totalAssets - 20 withdrawn
+        assertEq(rdToken.totalAssets(),            85e18);
         assertEq(rdToken.exchangeRate(),             1.049999999999999999999382352941e30);
         assertEq(rdToken.issuanceRate(),             0.05e18 * 1e30);
         assertEq(rdToken.lastUpdated(),              start + 100 seconds);
@@ -453,33 +453,33 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.freeUnderlying(),           depositAmount);
         assertEq(rdToken.lastUpdated(),              start);
 
-        uint256 totalHoldings = depositAmount + vestingAmount * warpTime / vestingPeriod;
-        uint256 exchangeRate1 = rdToken.totalHoldings() * 1e30 / depositAmount;  // Use actual `totalHoldings` to not propogate errors
+        uint256 totalAssets = depositAmount + vestingAmount * warpTime / vestingPeriod;
+        uint256 exchangeRate1 = rdToken.totalAssets() * 1e30 / depositAmount;  // Use actual `totalAssets` to not propogate errors
 
-        assertWithinDiff(rdToken.totalHoldings(), totalHoldings,                         1);
+        assertWithinDiff(rdToken.totalAssets(), totalAssets,                         1);
         assertWithinDiff(rdToken.exchangeRate(),  exchangeRate1,                         1);
         assertWithinDiff(rdToken.issuanceRate(),  vestingAmount * 1e30 / vestingPeriod,  1);
 
         assertEq(underlying.balanceOf(address(staker)),  0);
-        assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount);  // Balance is higher than totalHoldings
+        assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount);  // Balance is higher than totalAssets
 
         staker.rdToken_withdraw(address(rdToken), withdrawAmount);
 
-        totalHoldings -= withdrawAmount;
+        totalAssets -= withdrawAmount;
         uint256 stakerBalance = depositAmount - withdrawAmount * 1e30 / exchangeRate1;
 
         assertEq(rdToken.balanceOf(address(staker)), stakerBalance);
         assertEq(rdToken.totalSupply(),              stakerBalance);
         assertEq(rdToken.lastUpdated(),              start + warpTime);
 
-        uint256 exchangeRate2 = stakerBalance == 0 ? 1e30 : rdToken.totalHoldings() * 1e30 / stakerBalance;  // Use actual `totalHoldings` to avoid propogating errors
+        uint256 exchangeRate2 = stakerBalance == 0 ? 1e30 : rdToken.totalAssets() * 1e30 / stakerBalance;  // Use actual `totalAssets` to avoid propogating errors
 
         // if (rdToken.totalSupply() > 0) assertWithinPrecision(rdToken.exchangeRate(), exchangeRate1, 8);  // TODO: Add specialized testing for this
 
         assertWithinDiff(rdToken.exchangeRate(),   exchangeRate2,                        10);
         assertWithinDiff(rdToken.issuanceRate(),   vestingAmount * 1e30 / vestingPeriod, 1);
-        assertWithinDiff(rdToken.freeUnderlying(), totalHoldings,                        1);
-        assertWithinDiff(rdToken.totalHoldings(),  totalHoldings,                        1);
+        assertWithinDiff(rdToken.freeUnderlying(), totalAssets,                        1);
+        assertWithinDiff(rdToken.totalAssets(),  totalAssets,                        1);
 
         assertEq(underlying.balanceOf(address(staker)),  withdrawAmount);
         assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount - withdrawAmount);
@@ -562,7 +562,7 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), depositAmount);
         assertEq(rdToken.totalSupply(),              depositAmount);
         assertEq(rdToken.freeUnderlying(),           depositAmount);
-        assertEq(rdToken.totalHoldings(),            depositAmount);
+        assertEq(rdToken.totalAssets(),            depositAmount);
         assertEq(rdToken.exchangeRate(),             1e30);
         assertEq(rdToken.issuanceRate(),             0);
         assertEq(rdToken.lastUpdated(),              start);
@@ -577,7 +577,7 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), depositAmount - redeemAmount);
         assertEq(rdToken.totalSupply(),              depositAmount - redeemAmount);
         assertEq(rdToken.freeUnderlying(),           depositAmount - redeemAmount);
-        assertEq(rdToken.totalHoldings(),            depositAmount - redeemAmount);
+        assertEq(rdToken.totalAssets(),            depositAmount - redeemAmount);
         assertEq(rdToken.exchangeRate(),             1e30);
         assertEq(rdToken.issuanceRate(),             0);
         assertEq(rdToken.lastUpdated(),              start + 10 days);
@@ -602,7 +602,7 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), 100e18);
         assertEq(rdToken.totalSupply(),              100e18);
         assertEq(rdToken.freeUnderlying(),           100e18);
-        assertEq(rdToken.totalHoldings(),            105e18);
+        assertEq(rdToken.totalAssets(),            105e18);
         assertEq(rdToken.exchangeRate(),             1.05e30);
         assertEq(rdToken.issuanceRate(),             0.05e18 * 1e30);
         assertEq(rdToken.lastUpdated(),              start);
@@ -615,7 +615,7 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.balanceOf(address(staker)), 80e18);
         assertEq(rdToken.totalSupply(),              80e18);
         assertEq(rdToken.freeUnderlying(),           84e18);  // 105 * 0.8
-        assertEq(rdToken.totalHoldings(),            84e18);
+        assertEq(rdToken.totalAssets(),            84e18);
         assertEq(rdToken.exchangeRate(),             1.05e30);
         assertEq(rdToken.issuanceRate(),             0.05e18 * 1e30);
         assertEq(rdToken.lastUpdated(),              start + 100 seconds);
@@ -649,16 +649,16 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.freeUnderlying(),           depositAmount);
         assertEq(rdToken.lastUpdated(),              start);
 
-        uint256 totalHoldings = depositAmount + vestingAmount * warpTime / vestingPeriod;
+        uint256 totalAssets = depositAmount + vestingAmount * warpTime / vestingPeriod;
         uint256 amountVested  = vestingAmount * 1e30 * warpTime / vestingPeriod / 1e30;
-        uint256 exchangeRate1 = rdToken.totalHoldings() * 1e30 / depositAmount;  // Use actual `totalHoldings` value to avoid propagating errors
+        uint256 exchangeRate1 = rdToken.totalAssets() * 1e30 / depositAmount;  // Use actual `totalAssets` value to avoid propagating errors
 
-        assertWithinDiff(rdToken.totalHoldings(), totalHoldings,                        1);
+        assertWithinDiff(rdToken.totalAssets(), totalAssets,                        1);
         assertWithinDiff(rdToken.exchangeRate(),  exchangeRate1,                        1);
         assertWithinDiff(rdToken.issuanceRate(),  vestingAmount * 1e30 / vestingPeriod, 1);
 
         assertEq(underlying.balanceOf(address(staker)),  0);
-        assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount);  // Balance is higher than totalHoldings
+        assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount);  // Balance is higher than totalAssets
 
         staker.rdToken_redeem(address(rdToken), redeemAmount);
 
@@ -668,14 +668,14 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.totalSupply(),              depositAmount - redeemAmount);
         assertEq(rdToken.lastUpdated(),              start + warpTime);
 
-        uint256 exchangeRate2 = redeemAmount == depositAmount ? 1e30 : rdToken.totalHoldings() * 1e30 / (depositAmount - redeemAmount);  // Use actual `totalHoldings` value to avoid propagating errors
+        uint256 exchangeRate2 = redeemAmount == depositAmount ? 1e30 : rdToken.totalAssets() * 1e30 / (depositAmount - redeemAmount);  // Use actual `totalAssets` value to avoid propagating errors
 
         // if (rdToken.totalSupply() > 0) assertWithinPrecision(rdToken.exchangeRate(), exchangeRate1, 8);  // TODO: Add specialized testing for this
 
         assertWithinDiff(rdToken.exchangeRate(),   exchangeRate2,                                  10);
         assertWithinDiff(rdToken.issuanceRate(),   vestingAmount * 1e30 / vestingPeriod,           1);
         assertWithinDiff(rdToken.freeUnderlying(), depositAmount + amountVested - amountWithdrawn, 1);
-        assertWithinDiff(rdToken.totalHoldings(),  depositAmount + amountVested - amountWithdrawn, 1);
+        assertWithinDiff(rdToken.totalAssets(),  depositAmount + amountVested - amountWithdrawn, 1);
 
         assertEq(underlying.balanceOf(address(staker)),  amountWithdrawn);
         assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount - amountWithdrawn);  // Note that vestingAmount is used
@@ -718,7 +718,7 @@ contract RevenueStreamingTest is TestUtils {
 
     function test_updateVestingSchedule_single() external {
         assertEq(rdToken.freeUnderlying(),      0);
-        assertEq(rdToken.totalHoldings(),       0);
+        assertEq(rdToken.totalAssets(),       0);
         assertEq(rdToken.issuanceRate(),        0);
         assertEq(rdToken.lastUpdated(),         0);
         assertEq(rdToken.vestingPeriodFinish(), 0);
@@ -730,7 +730,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(underlying.balanceOf(address(rdToken)), 1000);
 
         assertEq(rdToken.freeUnderlying(),      0);
-        assertEq(rdToken.totalHoldings(),       0);
+        assertEq(rdToken.totalAssets(),       0);
         assertEq(rdToken.exchangeRate(),        1e30);
         assertEq(rdToken.issuanceRate(),        10e30);  // 10 tokens per second
         assertEq(rdToken.lastUpdated(),         start);
@@ -738,30 +738,30 @@ contract RevenueStreamingTest is TestUtils {
 
         vm.warp(rdToken.vestingPeriodFinish());
 
-        assertEq(rdToken.totalHoldings(), 1000);  // All tokens vested
+        assertEq(rdToken.totalAssets(), 1000);  // All tokens vested
     }
 
     function test_updateVestingSchedule_single_roundingDown() external {
         _transferAndUpdateVesting(1000, 30 seconds);  // 33.3333... tokens per second
 
-        assertEq(rdToken.totalHoldings(), 0);
+        assertEq(rdToken.totalAssets(), 0);
         assertEq(rdToken.issuanceRate(),  33333333333333333333333333333333);  // 3.33e30
 
-        // totalHoldings should never be more than one full unit off
+        // totalAssets should never be more than one full unit off
         vm.warp(start + 1 seconds);
-        assertEq(rdToken.totalHoldings(), 33);  // 33 < 33.33...
+        assertEq(rdToken.totalAssets(), 33);  // 33 < 33.33...
 
         vm.warp(start + 2 seconds);
-        assertEq(rdToken.totalHoldings(), 66);  // 66 < 66.66...
+        assertEq(rdToken.totalAssets(), 66);  // 66 < 66.66...
 
         vm.warp(start + 3 seconds);
-        assertEq(rdToken.totalHoldings(), 99);  // 99 < 99.99...
+        assertEq(rdToken.totalAssets(), 99);  // 99 < 99.99...
 
         vm.warp(start + 4 seconds);
-        assertEq(rdToken.totalHoldings(), 133);  // 133 < 133.33...
+        assertEq(rdToken.totalAssets(), 133);  // 133 < 133.33...
 
         vm.warp(rdToken.vestingPeriodFinish());
-        assertEq(rdToken.totalHoldings(), 999);  // 999 < 1000
+        assertEq(rdToken.totalAssets(), 999);  // 999 < 1000
     }
 
     /*************************************************/
@@ -777,11 +777,11 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.issuanceRate(),        100e30);              // (1000 + 1000) / 20 seconds = 100 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), start + 20 seconds);  // Always updates to latest vesting schedule
 
-        assertEq(rdToken.totalHoldings(), 0);
+        assertEq(rdToken.totalAssets(), 0);
 
         vm.warp(start + 20 seconds);
 
-        assertEq(rdToken.totalHoldings(), 2000);
+        assertEq(rdToken.totalAssets(), 2000);
     }
 
     function test_updateVestingSchedule_sameTime_longerVesting_higherRate() external {
@@ -793,11 +793,11 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.issuanceRate(),        20e30);                // (3000 + 1000) / 200 seconds = 20 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), start + 200 seconds);  // Always updates to latest vesting schedule
 
-        assertEq(rdToken.totalHoldings(), 0);
+        assertEq(rdToken.totalAssets(), 0);
 
         vm.warp(start + 200 seconds);
 
-        assertEq(rdToken.totalHoldings(), 4000);
+        assertEq(rdToken.totalAssets(), 4000);
     }
 
     function test_updateVestingSchedule_sameTime_longerVesting_lowerRate() external {
@@ -809,11 +809,11 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.issuanceRate(),        4e30);                 // (1000 + 1000) / 500 seconds = 4 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), start + 500 seconds);  // Always updates to latest vesting schedule
 
-        assertEq(rdToken.totalHoldings(), 0);
+        assertEq(rdToken.totalAssets(), 0);
 
         vm.warp(start + 5000 seconds);
 
-        assertEq(rdToken.totalHoldings(), 2000);
+        assertEq(rdToken.totalAssets(), 2000);
     }
 
     /*******************************************************/
@@ -826,21 +826,21 @@ contract RevenueStreamingTest is TestUtils {
         vm.warp(start + 60 seconds);
 
         assertEq(rdToken.issuanceRate(),        10e30);
-        assertEq(rdToken.totalHoldings(),       600);
+        assertEq(rdToken.totalAssets(),       600);
         assertEq(rdToken.freeUnderlying(),      0);
         assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);
 
         _transferAndUpdateVesting(1000, 20 seconds);  // 50 tokens per second
 
         assertEq(rdToken.issuanceRate(),        70e30);  // (400 + 1000) / 20 seconds = 70 tokens per second
-        assertEq(rdToken.totalHoldings(),       600);
+        assertEq(rdToken.totalAssets(),       600);
         assertEq(rdToken.freeUnderlying(),      600);
         assertEq(rdToken.vestingPeriodFinish(), start + 60 seconds + 20 seconds);
 
         vm.warp(start + 60 seconds + 20 seconds);
 
         assertEq(rdToken.issuanceRate(),   70e30);
-        assertEq(rdToken.totalHoldings(),  2000);
+        assertEq(rdToken.totalAssets(),  2000);
         assertEq(rdToken.freeUnderlying(), 600);
     }
 
@@ -850,20 +850,20 @@ contract RevenueStreamingTest is TestUtils {
         vm.warp(start + 60 seconds);
 
         assertEq(rdToken.issuanceRate(),        10e30);
-        assertEq(rdToken.totalHoldings(),       600);
+        assertEq(rdToken.totalAssets(),       600);
         assertEq(rdToken.freeUnderlying(),      0);
         assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);
 
         _transferAndUpdateVesting(3000, 200 seconds);  // 15 tokens per second
 
         assertEq(rdToken.issuanceRate(),   17e30);  // (400 + 3000) / 200 seconds = 17 tokens per second
-        assertEq(rdToken.totalHoldings(),  600);
+        assertEq(rdToken.totalAssets(),  600);
         assertEq(rdToken.freeUnderlying(), 600);
 
         vm.warp(start + 60 seconds + 200 seconds);
 
         assertEq(rdToken.issuanceRate(),   17e30);
-        assertEq(rdToken.totalHoldings(),  4000);
+        assertEq(rdToken.totalAssets(),  4000);
         assertEq(rdToken.freeUnderlying(), 600);
     }
 
@@ -873,19 +873,19 @@ contract RevenueStreamingTest is TestUtils {
         vm.warp(start + 60 seconds);
 
         assertEq(rdToken.issuanceRate(),   10e30);
-        assertEq(rdToken.totalHoldings(),  600);
+        assertEq(rdToken.totalAssets(),  600);
         assertEq(rdToken.freeUnderlying(), 0);
 
         _transferAndUpdateVesting(1000, 200 seconds);  // 5 tokens per second
 
         assertEq(rdToken.issuanceRate(),   7e30);  // (400 + 1000) / 200 seconds = 7 tokens per second
-        assertEq(rdToken.totalHoldings(),  600);
+        assertEq(rdToken.totalAssets(),  600);
         assertEq(rdToken.freeUnderlying(), 600);
 
         vm.warp(start + 60 seconds + 200 seconds);
 
         assertEq(rdToken.issuanceRate(),   7e30);
-        assertEq(rdToken.totalHoldings(),  2000);
+        assertEq(rdToken.totalAssets(),  2000);
         assertEq(rdToken.freeUnderlying(), 600);
     }
 
@@ -906,7 +906,7 @@ contract RevenueStreamingTest is TestUtils {
         staker.rdToken_deposit(address(rdToken), depositAmount);
 
         assertEq(rdToken.freeUnderlying(),      1_000_000e18);
-        assertEq(rdToken.totalHoldings(),       1_000_000e18);
+        assertEq(rdToken.totalAssets(),       1_000_000e18);
         assertEq(rdToken.exchangeRate(),        1e30);
         assertEq(rdToken.issuanceRate(),        0);
         assertEq(rdToken.lastUpdated(),         start);
@@ -914,14 +914,14 @@ contract RevenueStreamingTest is TestUtils {
 
         vm.warp(start + 1 days);
 
-        assertEq(rdToken.totalHoldings(),  1_000_000e18);  // No change
+        assertEq(rdToken.totalAssets(),  1_000_000e18);  // No change
 
-        vm.warp(start);  // Warp back after demonstrating totalHoldings is not time-dependent before vesting starts
+        vm.warp(start);  // Warp back after demonstrating totalAssets is not time-dependent before vesting starts
 
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
         assertEq(rdToken.freeUnderlying(),      1_000_000e18);
-        assertEq(rdToken.totalHoldings(),       1_000_000e18);
+        assertEq(rdToken.totalAssets(),       1_000_000e18);
         assertEq(rdToken.exchangeRate(),        1e30);
         assertEq(rdToken.issuanceRate(),        0.5e18 * 1e30);  // 0.5 tokens per second
         assertEq(rdToken.lastUpdated(),         start);
@@ -931,25 +931,25 @@ contract RevenueStreamingTest is TestUtils {
         vm.warp(start + 20_000 seconds);  // 10% of vesting schedule
 
         assertEq(rdToken.balanceOfUnderlying(address(staker)), 1_010_000e18);
-        assertEq(rdToken.totalHoldings(),                      1_010_000e18);
+        assertEq(rdToken.totalAssets(),                      1_010_000e18);
         assertEq(rdToken.exchangeRate(),                       1.01e30);
 
         vm.warp(start + 40_000 seconds);  // 20% of vesting schedule
 
         assertEq(rdToken.balanceOfUnderlying(address(staker)), 1_020_000e18);
-        assertEq(rdToken.totalHoldings(),                      1_020_000e18);
+        assertEq(rdToken.totalAssets(),                      1_020_000e18);
         assertEq(rdToken.exchangeRate(),                       1.02e30);
 
         vm.warp(start + 60_000 seconds);  // 30% of vesting schedule
 
         assertEq(rdToken.balanceOfUnderlying(address(staker)), 1_030_000e18);
-        assertEq(rdToken.totalHoldings(),                      1_030_000e18);
+        assertEq(rdToken.totalAssets(),                      1_030_000e18);
         assertEq(rdToken.exchangeRate(),                       1.03e30);
 
         vm.warp(start + 200_000 seconds);  // End of vesting schedule
 
         assertEq(rdToken.balanceOfUnderlying(address(staker)), 1_100_000e18);
-        assertEq(rdToken.totalHoldings(),                      1_100_000e18);
+        assertEq(rdToken.totalAssets(),                      1_100_000e18);
         assertEq(rdToken.exchangeRate(),                       1.1e30);
 
         assertEq(underlying.balanceOf(address(rdToken)), 1_100_000e18);
@@ -959,7 +959,7 @@ contract RevenueStreamingTest is TestUtils {
         staker.rdToken_redeem(address(rdToken), 1_000_000e18);  // Use `redeem` so rdToken amount can be used to burn 100% of tokens
 
         assertEq(rdToken.freeUnderlying(),      0);
-        assertEq(rdToken.totalHoldings(),       0);
+        assertEq(rdToken.totalAssets(),       0);
         assertEq(rdToken.exchangeRate(),        1e30);                     // Exchange rate returns to 1 when empty
         assertEq(rdToken.issuanceRate(),        0.5e18 * 1e30);         // TODO: Investigate implications of non-zero issuanceRate here
         assertEq(rdToken.lastUpdated(),         start + 200_000 seconds);  // This makes issuanceRate * time zero
@@ -985,7 +985,7 @@ contract RevenueStreamingTest is TestUtils {
         staker.rdToken_deposit(address(rdToken), depositAmount);
 
         assertEq(rdToken.freeUnderlying(),      depositAmount);
-        assertEq(rdToken.totalHoldings(),       depositAmount);
+        assertEq(rdToken.totalAssets(),       depositAmount);
         assertEq(rdToken.exchangeRate(),        1e30);
         assertEq(rdToken.issuanceRate(),        0);
         assertEq(rdToken.lastUpdated(),         start);
@@ -993,16 +993,16 @@ contract RevenueStreamingTest is TestUtils {
 
         vm.warp(start + 1 days);
 
-        assertEq(rdToken.totalHoldings(),  depositAmount);  // No change
+        assertEq(rdToken.totalAssets(),  depositAmount);  // No change
 
-        vm.warp(start);  // Warp back after demonstrating totalHoldings is not time-dependent before vesting starts
+        vm.warp(start);  // Warp back after demonstrating totalAssets is not time-dependent before vesting starts
 
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
         uint256 expectedRate = vestingAmount * 1e30 / vestingPeriod;
 
         assertEq(rdToken.freeUnderlying(),      depositAmount);
-        assertEq(rdToken.totalHoldings(),       depositAmount);
+        assertEq(rdToken.totalAssets(),       depositAmount);
         assertEq(rdToken.exchangeRate(),        1e30);
         assertEq(rdToken.issuanceRate(),        expectedRate);
         assertEq(rdToken.lastUpdated(),         start);
@@ -1012,12 +1012,12 @@ contract RevenueStreamingTest is TestUtils {
         for (uint256 i = 1; i < 10; ++i) {
             vm.warp(start + vestingPeriod * i / 10);  // 10% intervals of vesting schedule
 
-            uint256 expectedTotalHoldings = depositAmount + expectedRate * (block.timestamp - start) / 1e30;
+            uint256 expectedtotalAssets = depositAmount + expectedRate * (block.timestamp - start) / 1e30;
 
-            assertWithinDiff(rdToken.balanceOfUnderlying(address(staker)), expectedTotalHoldings, 1);
+            assertWithinDiff(rdToken.balanceOfUnderlying(address(staker)), expectedtotalAssets, 1);
 
-            assertEq(rdToken.totalHoldings(), expectedTotalHoldings);
-            assertEq(rdToken.exchangeRate(),  expectedTotalHoldings * 1e30 / depositAmount);
+            assertEq(rdToken.totalAssets(), expectedtotalAssets);
+            assertEq(rdToken.exchangeRate(),  expectedtotalAssets * 1e30 / depositAmount);
         }
 
         vm.warp(start + vestingPeriod);
@@ -1027,8 +1027,8 @@ contract RevenueStreamingTest is TestUtils {
         // TODO: Try assertEq
         assertWithinDiff(rdToken.balanceOfUnderlying(address(staker)), expectedFinalTotal, 2);
 
-        assertWithinDiff(rdToken.totalHoldings(), expectedFinalTotal,                             1);
-        assertWithinDiff(rdToken.exchangeRate(),  rdToken.totalHoldings() * 1e30 / depositAmount, 1);  // Using totalHoldings because of rounding
+        assertWithinDiff(rdToken.totalAssets(), expectedFinalTotal,                             1);
+        assertWithinDiff(rdToken.exchangeRate(),  rdToken.totalAssets() * 1e30 / depositAmount, 1);  // Using totalAssets because of rounding
 
         assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount);
 
@@ -1038,7 +1038,7 @@ contract RevenueStreamingTest is TestUtils {
         staker.rdToken_redeem(address(rdToken), depositAmount);  // Use `redeem` so rdToken amount can be used to burn 100% of tokens
 
         assertWithinDiff(rdToken.freeUnderlying(), 0, 1);
-        assertWithinDiff(rdToken.totalHoldings(),  0, 1);
+        assertWithinDiff(rdToken.totalAssets(),  0, 1);
 
         assertEq(rdToken.exchangeRate(),        1e30);                   // Exchange rate returns to zero when empty
         assertEq(rdToken.issuanceRate(),        expectedRate);           // TODO: Investigate implications of non-zero issuanceRate here

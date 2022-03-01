@@ -10,7 +10,7 @@ interface IRevenueDistributionToken is IERC4626 {
     /*** State Variables ***/
     /***********************/
 
-    function freeAssets() external view returns (uint256 freeUnderlying_);
+    function freeAssets() external view returns (uint256 freeAssets_);
     function issuanceRate() external view returns (uint256 issuanceRate_);
     function lastUpdated() external view returns (uint256 lastUpdated_);
     function owner() external view returns (address owner_);
@@ -24,7 +24,7 @@ interface IRevenueDistributionToken is IERC4626 {
 
     function acceptOwnership() external;
     function setPendingOwner(address pendingOwner_) external;
-    function updateVestingSchedule(uint256 vestingPeriod_) external returns (uint256 issuanceRate_, uint256 freeUnderlying_);
+    function updateVestingSchedule(uint256 vestingPeriod_) external returns (uint256 issuanceRate_, uint256 freeAssets_);
 
     /**********************/
     /*** View Functions ***/

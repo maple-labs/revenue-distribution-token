@@ -16,7 +16,7 @@ import { MutableRDT } from "./utils/MutableRDT.sol";
 // Invariant 3: totalSupply <= totalAssets
 // Invariant 4: convertToAssets(totalSupply) == totalAssets (with rounding)
 // Invariant 5: exchangeRate >= `precision`
-// Invariant 6: freeUnderlying <= totalAssets
+// Invariant 6: freeAssets <= totalAssets
 // Invariant 7: balanceOfAssets >= balanceOf
 
 contract RDTInvariants is TestUtils, InvariantTest {
@@ -94,8 +94,8 @@ contract RDTInvariants is TestUtils, InvariantTest {
     //     assertTrue(rdToken.exchangeRate() >= rdToken.precision());
     // }
 
-    function invariant6_freeUnderlying_lte_totalAssets() external {
-        assertTrue(rdToken.freeUnderlying() <= rdToken.totalAssets());
+    function invariant6_freeAssets_lte_totalAssets() external {
+        assertTrue(rdToken.freeAssets() <= rdToken.totalAssets());
     }
 
     function invariant7_balanceOfAssets_gte_balanceOf() public {

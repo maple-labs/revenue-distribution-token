@@ -326,7 +326,7 @@ contract ExitTest is TestUtils {
     /************************/
 
     function test_withdraw_zeroAmount(uint256 depositAmount) external {
-        _depositasset(constrictToRange(depositAmount, 1, 1e29));
+        _depositAsset(constrictToRange(depositAmount, 1, 1e29));
 
         vm.expectRevert("RDT:W:AMOUNT");
         staker.rdToken_withdraw(address(rdToken), 0);
@@ -336,7 +336,7 @@ contract ExitTest is TestUtils {
 
     function test_withdraw_burnUnderflow(uint256 depositAmount) external {
         depositAmount = constrictToRange(depositAmount, 1, 1e29);
-        _depositasset(depositAmount);
+        _depositAsset(depositAmount);
 
         vm.expectRevert(ARITHMETIC_ERROR);
         staker.rdToken_withdraw(address(rdToken), depositAmount + 1);
@@ -350,7 +350,7 @@ contract ExitTest is TestUtils {
         uint256 vestingPeriod = 10 days;
         uint256 warpTime      = 5 days;
 
-        _depositasset(depositAmount);
+        _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
         vm.warp(block.timestamp + warpTime);
@@ -411,7 +411,7 @@ contract ExitTest is TestUtils {
         uint256 warpTime       = 100 seconds;
         uint256 start          = block.timestamp;
 
-        _depositasset(depositAmount);
+        _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
         vm.warp(block.timestamp + warpTime);
@@ -459,7 +459,7 @@ contract ExitTest is TestUtils {
 
         uint256 start = block.timestamp;
 
-        _depositasset(depositAmount);
+        _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
         vm.warp(block.timestamp + warpTime);
@@ -505,7 +505,7 @@ contract ExitTest is TestUtils {
     //     vestingPeriod = constrictToRange(vestingPeriod, 1, 100 days);
     //     warpTime      = constrictToRange(vestingAmount, 1, vestingPeriod);
 
-    //     _depositasset(depositAmount);
+    //     _depositAsset(depositAmount);
     //     _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
     //     vm.warp(block.timestamp + warpTime);
@@ -525,7 +525,7 @@ contract ExitTest is TestUtils {
     /************************/
 
     function test_redeem_zeroAmount(uint256 depositAmount) external {
-        _depositasset(constrictToRange(depositAmount, 1, 1e29));
+        _depositAsset(constrictToRange(depositAmount, 1, 1e29));
 
         vm.expectRevert("RDT:W:AMOUNT");
         staker.rdToken_redeem(address(rdToken), 0);
@@ -535,7 +535,7 @@ contract ExitTest is TestUtils {
 
     function test_redeem_burnUnderflow(uint256 depositAmount) external {
         depositAmount = constrictToRange(depositAmount, 1, 1e29);
-        _depositasset(depositAmount);
+        _depositAsset(depositAmount);
 
         vm.expectRevert(ARITHMETIC_ERROR);
         staker.rdToken_redeem(address(rdToken), depositAmount + 1);
@@ -549,7 +549,7 @@ contract ExitTest is TestUtils {
         uint256 vestingPeriod = 10 days;
         uint256 warpTime      = 5 days;
 
-        _depositasset(depositAmount);
+        _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
         vm.warp(block.timestamp + warpTime);
@@ -608,7 +608,7 @@ contract ExitTest is TestUtils {
         uint256 warpTime       = 100 seconds;
         uint256 start          = block.timestamp;
 
-        _depositasset(depositAmount);
+        _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
         vm.warp(block.timestamp + warpTime);
@@ -655,7 +655,7 @@ contract ExitTest is TestUtils {
 
         uint256 start = block.timestamp;
 
-        _depositasset(depositAmount);
+        _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
         vm.warp(block.timestamp + warpTime);
@@ -692,7 +692,7 @@ contract ExitTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)), depositAmount + vestingAmount - expectedAssetsFromRedeem);  // Note that vestingAmount is used
     }
 
-    function _depositasset(uint256 depositAmount) internal {
+    function _depositAsset(uint256 depositAmount) internal {
         asset.mint(address(staker), depositAmount);
         staker.erc20_approve(address(asset), address(rdToken), depositAmount);
         staker.rdToken_deposit(address(rdToken), depositAmount);

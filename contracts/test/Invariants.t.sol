@@ -14,7 +14,7 @@ import { MutableRDT } from "./utils/MutableRDT.sol";
 // Invariant 1: totalAssets <= underlying balance of contract (with rounding)
 // Invariant 2: ∑balanceOfAssets == totalAssets (with rounding)
 // Invariant 3: totalSupply <= totalAssets
-// Invariant 4: totalSupply * exchangeRate == totalAssets (with rounding)
+// Invariant 4: convertToAssets(totalSupply) == totalAssets (with rounding)
 // Invariant 5: exchangeRate >= `precision`
 // Invariant 6: freeUnderlying <= totalAssets
 // Invariant 7: balanceOfAssets >= balanceOf

@@ -612,7 +612,7 @@ contract ExitTest is TestUtils {
 
         staker.rdToken_redeem(address(rdToken), redeemAmount);
 
-        assertEq(rdToken.balanceOf(address(staker)), 80e18);  // 100 - 80 / 1.05
+        assertEq(rdToken.balanceOf(address(staker)), 80e18);
         assertEq(rdToken.totalSupply(),              80e18);
         assertEq(rdToken.freeUnderlying(),           84e18);  // 105 * 0.8
         assertEq(rdToken.totalHoldings(),            84e18);

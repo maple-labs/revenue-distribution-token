@@ -214,14 +214,14 @@ contract DepositTest is TestUtils {
 
         assertEq(stakerShares, 8e18);  // 10 / 1.25 exchangeRate
 
-        assertEq(rdToken.balanceOf(address(staker)), 8e18);
-        assertEq(rdToken.totalSupply(),              28e18);  // 8 + original 10
-        assertEq(rdToken.freeAssets(),           35e18);
-        assertEq(rdToken.totalAssets(),            35e18);
-        // assertEq(rdToken.convertToAssets(sampleSharesToConvert),             1.25e30);  // totalAssets gets updated but exchangeRate stays constant
-        // assertEq(rdToken.convertToShares(sampleAssetsToConvert),             1.25e30);  // totalAssets gets updated but exchangeRate stays constant
-        assertEq(rdToken.issuanceRate(),             0);
-        assertEq(rdToken.lastUpdated(),              start + 11 seconds);
+        assertEq(rdToken.balanceOf(address(staker)),             8e18);
+        assertEq(rdToken.totalSupply(),                          28e18);  // 8 + original 10
+        assertEq(rdToken.freeAssets(),                           35e18);
+        assertEq(rdToken.totalAssets(),                          35e18);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.25e18); // totalAssets gets updated but share conversion stays constant
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 0.8e18);  // totalAssets gets updated but asset conversion stays constant
+        assertEq(rdToken.issuanceRate(),                         0);
+        assertEq(rdToken.lastUpdated(),                          start + 11 seconds);
 
         assertEq(underlying.balanceOf(address(staker)),  0);
         assertEq(underlying.balanceOf(address(rdToken)), 35e18);

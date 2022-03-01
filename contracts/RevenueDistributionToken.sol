@@ -129,7 +129,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         return issuanceRate * 365 days * ERC20(asset).decimals() / totalSupply / precision;
     }
 
-    function balanceOfAssets(address account_) external view override returns (uint256 balanceOfAssets_) {
+    function balanceOfAssets(address account_) public view override returns (uint256 balanceOfAssets_) {
         return convertToAssets(balanceOf[account_]);
     }
 

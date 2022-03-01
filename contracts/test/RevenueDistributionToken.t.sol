@@ -167,7 +167,7 @@ contract DepositTest is TestUtils {
         assertEq(underlying.balanceOf(address(rdToken)), depositAmount);
     }
 
-    function test_deposit_exchangeRateGtOne_explicitVals() external {
+    function test_deposit_totalAssetsGtTotalSupply_explicitVals() external {
         /*************/
         /*** Setup ***/
         /*************/
@@ -227,7 +227,7 @@ contract DepositTest is TestUtils {
         assertEq(underlying.balanceOf(address(rdToken)), 35e18);
     }
 
-    function test_deposit_exchangeRateGtOne(uint256 initialAmount, uint256 depositAmount, uint256 vestingAmount) external {
+    function test_deposit_totalAssetsGtTotalSupply(uint256 initialAmount, uint256 depositAmount, uint256 vestingAmount) external {
         /*************/
         /*** Setup ***/
         /*************/

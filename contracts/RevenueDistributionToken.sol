@@ -68,12 +68,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function redeem(uint256 shares_, address receiver_, address owner_) external virtual override returns (uint256 assets_) {
-        require(owner_ == msg.sender, "RDT:R:NOT_OWNER");
         assets_ = _redeem(shares_, receiver_, owner_, msg.sender);
     }
 
     function withdraw(uint256 assets_, address receiver_, address owner_) external virtual override returns (uint256 shares_) {
-        require(owner_ == msg.sender, "RDT:W:NOT_OWNER");
         shares_ = _withdraw(assets_, receiver_, owner_, msg.sender);
     }
 
@@ -100,6 +98,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function _redeem(uint256 shares_, address receiver_, address owner_, address caller_) internal returns (uint256 assets_) {
+        require(owner_ == msg.sender, "RDT:R:NOT_OWNER");
         require(shares_ != 0, "RDT:W:AMOUNT");
         assets_ = previewRedeem(shares_);
         _burn(owner_, shares_);
@@ -110,6 +109,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function _withdraw(uint256 assets_, address receiver_, address owner_, address caller_) internal returns (uint256 shares_) {
+        require(owner_ == msg.sender, "RDT:W:NOT_OWNER");
         require(assets_ != 0, "RDT:W:AMOUNT");
         _burn(owner_, shares_ = previewWithdraw(assets_));
         freeAssets = totalAssets() - assets_;

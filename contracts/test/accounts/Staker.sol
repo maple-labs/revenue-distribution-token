@@ -10,16 +10,16 @@ import { IRevenueDistributionToken as IRDT } from "../../interfaces/IRevenueDist
 
 contract Staker is ERC20User {
 
-    function rdToken_deposit(address token_, uint256 amount_) external returns (uint256 shares_) {
-        return IRDT(token_).deposit(amount_, address(this));
+    function rdToken_deposit(address token_, uint256 assets_) external returns (uint256 shares_) {
+        return IRDT(token_).deposit(assets_, address(this));
     }
 
-    function rdToken_redeem(address token_, uint256 amount_) external returns (uint256 underlyingAmount_) {
-        return IRDT(token_).redeem(amount_, address(this), address(this));
+    function rdToken_redeem(address token_, uint256 shares_) external returns (uint256 assets_) {
+        return IRDT(token_).redeem(shares_, address(this), address(this));
     }
 
-    function rdToken_withdraw(address token_, uint256 amount_) external returns (uint256 shares_) {
-        return IRDT(token_).withdraw(amount_, address(this), address(this));
+    function rdToken_withdraw(address token_, uint256 assets_) external returns (uint256 shares_) {
+        return IRDT(token_).withdraw(assets_, address(this), address(this));
     }
 
 }
@@ -34,25 +34,25 @@ contract InvariantStaker is TestUtils {
         underlying = MockERC20(underlying_);
     }
 
-    function deposit(uint256 amount_) external {
+    function deposit(uint256 assets_) external {
         // NOTE: The precision of the exchangeRate is equal to the amount of funds that can be deposited before rounding errors start to arise
-        amount_ = constrictToRange(amount_, 1, 1e29);  // 100 billion at WAD precision (1 less than 1e30 to avoid precision issues)
+        assets_ = constrictToRange(assets_, 1, 1e29);  // 100 billion at WAD precision (1 less than 1e30 to avoid precision issues)
 
         uint256 beforeBal   = rdToken.balanceOf(address(this));
-        uint256 shareAmount = rdToken.previewDeposit(amount_);
+        uint256 shareAmount = rdToken.previewDeposit(assets_);
 
-        underlying.mint(address(this),       amount_);
-        underlying.approve(address(rdToken), amount_);
-        rdToken.deposit(amount_, address(this));
+        underlying.mint(address(this),       assets_);
+        underlying.approve(address(rdToken), assets_);
+        rdToken.deposit(assets_, address(this));
 
         assertEq(rdToken.balanceOf(address(this)), beforeBal + shareAmount);  // Ensure successful deposit
     }
 
-    function redeem(uint256 amount_) external {
+    function redeem(uint256 shares_) external {
         uint256 beforeBal = rdToken.balanceOf(address(this));
 
         if (beforeBal > 0) {
-            uint256 redeemAmount = constrictToRange(amount_, 1, rdToken.balanceOf(address(this)));
+            uint256 redeemAmount = constrictToRange(shares_, 1, rdToken.balanceOf(address(this)));
 
             rdToken.redeem(redeemAmount, address(this), address(this));
 
@@ -60,11 +60,11 @@ contract InvariantStaker is TestUtils {
         }
     }
 
-    function withdraw(uint256 amount_) external {
+    function withdraw(uint256 assets_) external {
         uint256 beforeBal = underlying.balanceOf(address(this));
 
         if (beforeBal > 0) {
-            uint256 withdrawAmount = constrictToRange(amount_, 1, rdToken.balanceOfAssets(address(this)));
+            uint256 withdrawAmount = constrictToRange(assets_, 1, rdToken.balanceOfAssets(address(this)));
 
             rdToken.withdraw(withdrawAmount, address(this), address(this));
 

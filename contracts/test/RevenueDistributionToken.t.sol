@@ -9,6 +9,8 @@ import { Staker } from "./accounts/Staker.sol";
 
 import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol";
 
+import { console } from "../../modules/contract-test-utils/contracts/log.sol";
+
 contract AuthTest is TestUtils {
 
     MockERC20 underlying;
@@ -76,6 +78,9 @@ contract DepositTest is TestUtils {
     MockERC20 underlying;
     RDT       rdToken;
     Staker    staker;
+
+    uint256 sampleAssetsToConvert = 1e18;
+    uint256 sampleSharesToConvert = 1e18;
 
     function setUp() public virtual {
         underlying = new MockERC20("MockToken", "MT", 18);

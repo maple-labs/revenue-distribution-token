@@ -85,13 +85,14 @@ contract RDTInvariants is TestUtils, InvariantTest {
 
     function invariant4_totalSupply_times_exchangeRate_eq_totalAssets() external {
         if(rdToken.totalSupply() > 0) {
-            assertWithinDiff(rdToken.totalSupply() * rdToken.exchangeRate() / rdToken.precision(), rdToken.totalAssets(), 1);  // One division
+            assertWithinDiff(rdToken.convertToAssets(rdToken.totalSupply()), rdToken.totalAssets(), 1);  // One division
         }
     }
 
-    function invariant5_exchangeRate_gte_precision() external {
-        assertTrue(rdToken.exchangeRate() >= rdToken.precision());
-    }
+    // TODO: figure out if there's a replacement for this one involving convertTo* functions. I think Invariant 3: totalSupply <= totalAssets covers this.
+    // function invariant5_exchangeRate_gte_precision() external {
+    //     assertTrue(rdToken.exchangeRate() >= rdToken.precision());
+    // }
 
     function invariant6_freeUnderlying_lte_totalAssets() external {
         assertTrue(rdToken.freeUnderlying() <= rdToken.totalAssets());

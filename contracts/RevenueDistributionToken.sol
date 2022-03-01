@@ -68,10 +68,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function redeem(uint256 shares_, address receiver_, address owner_) external virtual override returns (uint256 assets_) {
+        require(owner_ == msg.sender, "RDT:R:NOT_OWNER");
         assets_ = _redeem(shares_, receiver_, owner_, msg.sender);
     }
 
     function withdraw(uint256 assets_, address receiver_, address owner_) external virtual override returns (uint256 shares_) {
+        require(owner_ == msg.sender, "RDT:R:NOT_OWNER");
         shares_ = _withdraw(assets_, receiver_, owner_, msg.sender);
     }
 

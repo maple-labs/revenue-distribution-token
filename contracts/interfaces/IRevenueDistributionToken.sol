@@ -31,6 +31,6 @@ interface IRevenueDistributionToken is IERC4626 {
     /**********************/
 
     function APR() external view returns (uint256 APR_);
-    function balanceOfAssets(address account) external view returns (uint256 balanceOfUnderlying_);
+    function balanceOfAssets(address account) external view returns (uint256 balanceOfAssets_);
 
 }

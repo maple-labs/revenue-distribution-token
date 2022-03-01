@@ -189,14 +189,14 @@ contract DepositTest is TestUtils {
         /*** Before state ***/
         /********************/
 
-        assertEq(rdToken.balanceOf(address(staker)), 0);
-        assertEq(rdToken.totalSupply(),              20e18);
-        assertEq(rdToken.freeAssets(),           20e18);
-        assertEq(rdToken.totalAssets(),            25e18);
-        // assertEq(rdToken.convertToAssets(sampleAssetsToConvert),             1.25e30);  // (20 + 5) * 1e30 / 20
-        // assertEq(rdToken.convertToShares(sampleSharesToConvert),             1.25e30);  // (20 + 5) * 1e30 / 20
-        assertEq(rdToken.issuanceRate(),             0.5e48);   // 5e18 * 1e30 / 10s
-        assertEq(rdToken.lastUpdated(),              start);
+        assertEq(rdToken.balanceOf(address(staker)),             0);
+        assertEq(rdToken.totalSupply(),                          20e18);
+        assertEq(rdToken.freeAssets(),                           20e18);
+        assertEq(rdToken.totalAssets(),                          25e18);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.25e18); // 1 * (20 + 5) / 20
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 0.8e18);  // 1 * 20 / (20 + 5)
+        assertEq(rdToken.issuanceRate(),                         0.5e48);  // 5e18 * 1e30 / 10s
+        assertEq(rdToken.lastUpdated(),                          start);
 
         assertEq(underlying.balanceOf(address(staker)),  10e18);
         assertEq(underlying.balanceOf(address(rdToken)), 25e18);

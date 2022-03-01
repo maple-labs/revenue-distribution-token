@@ -1046,9 +1046,10 @@ contract RevenueStreamingTest is TestUtils {
 
             assertWithinDiff(rdToken.balanceOfAssets(address(staker)), expectedtotalAssets, 1);
 
+            assertEq(rdToken.totalSupply(),                           depositAmount);
             assertEq(rdToken.totalAssets(),                           expectedtotalAssets);
-            // assertEq(rdToken.convertToAssets(sampleSharesToConvert),  expectedtotalAssets * 1e30 / depositAmount);
-            // assertEq(rdToken.convertToShares(sampleAssetsToConvert),  expectedtotalAssets * 1e30 / depositAmount);
+            assertEq(rdToken.convertToAssets(sampleSharesToConvert),  sampleSharesToConvert * expectedtotalAssets / depositAmount);
+            assertEq(rdToken.convertToShares(sampleAssetsToConvert),  sampleAssetsToConvert * depositAmount / expectedtotalAssets);
         }
 
         vm.warp(start + vestingPeriod);

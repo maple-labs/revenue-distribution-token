@@ -651,7 +651,6 @@ contract ExitTest is TestUtils {
 
         uint256 totalAssets = depositAmount + vestingAmount * warpTime / vestingPeriod;
         uint256 amountVested  = vestingAmount * 1e30 * warpTime / vestingPeriod / 1e30;
-        uint256 exchangeRate1 = rdToken.totalAssets() * 1e30 / depositAmount;  // Use actual `totalAssets` value to avoid propagating errors
 
         assertWithinDiff(rdToken.totalAssets(), totalAssets,                        1);
         // assertWithinDiff(rdToken.exchangeRate(),  exchangeRate1,                        1);

@@ -170,7 +170,7 @@ contract DepositTest is TestUtils {
         // Do a deposit so that totalSupply is non-zero
         underlying.mint(address(this), 20e18);
         underlying.approve(address(rdToken), 20e18);
-        rdToken.deposit(20e18);
+        rdToken.deposit(20e18, address(this));
 
         _transferAndUpdateVesting(5e18, 10 seconds);
 
@@ -230,7 +230,7 @@ contract DepositTest is TestUtils {
         // Do a deposit so that totalSupply is non-zero
         underlying.mint(address(this), initialAmount);
         underlying.approve(address(rdToken), initialAmount);
-        uint256 initialShares = rdToken.deposit(initialAmount);
+        uint256 initialShares = rdToken.deposit(initialAmount, address(this));
 
         uint256 start = block.timestamp;
 

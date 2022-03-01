@@ -253,14 +253,14 @@ contract DepositTest is TestUtils {
         /*** Before state ***/
         /********************/
 
-        assertEq(rdToken.balanceOf(address(staker)), 0);
-        assertEq(rdToken.totalSupply(),              initialAmount);
-        assertEq(rdToken.freeAssets(),           initialAmount);
-        assertEq(rdToken.totalAssets(),            initialAmount + vestingAmount);
-        // assertEq(rdToken.convertToAssets(sampleSharesToConvert),             (initialAmount + vestingAmount) * 1e30 / initialShares);
-        // assertEq(rdToken.convertToShares(sampleAssetsToConvert),             (initialAmount + vestingAmount) * 1e30 / initialShares);
-        assertEq(rdToken.issuanceRate(),             vestingAmount * 1e30 / 10 seconds);
-        assertEq(rdToken.lastUpdated(),              start);
+        assertEq(rdToken.balanceOf(address(staker)),             0);
+        assertEq(rdToken.totalSupply(),                          initialAmount);
+        assertEq(rdToken.freeAssets(),                           initialAmount);
+        assertEq(rdToken.totalAssets(),                          initialAmount + vestingAmount);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert * (initialAmount + vestingAmount) / initialShares);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert * initialShares / (initialAmount + vestingAmount));
+        assertEq(rdToken.issuanceRate(),                         vestingAmount * 1e30 / 10 seconds);
+        assertEq(rdToken.lastUpdated(),                          start);
 
         assertEq(underlying.balanceOf(address(staker)),  depositAmount);
         assertEq(underlying.balanceOf(address(rdToken)), initialAmount + vestingAmount);

@@ -10,16 +10,16 @@ import { IRevenueDistributionToken as IRDT } from "../../interfaces/IRevenueDist
 
 contract Staker is ERC20User {
 
-    function rdToken_deposit(address token_, uint256 amount_) external {
-        IRDT(token_).deposit(amount_);
+    function rdToken_deposit(address token_, uint256 amount_) external returns (uint256 shares_) {
+        return IRDT(token_).deposit(amount_);
     }
 
-    function rdToken_redeem(address token_, uint256 amount_) external {
-        IRDT(token_).redeem(amount_);
+    function rdToken_redeem(address token_, uint256 amount_) external returns (uint256 underlyingAmount_) {
+        return IRDT(token_).redeem(amount_);
     }
 
-    function rdToken_withdraw(address token_, uint256 amount_) external {
-        IRDT(token_).withdraw(amount_);
+    function rdToken_withdraw(address token_, uint256 amount_) external returns (uint256 shares_) {
+        return IRDT(token_).withdraw(amount_);
     }
 
 }

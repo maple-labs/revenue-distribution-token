@@ -20,4 +20,4 @@ jobs:
         run: forge update
 
       - name: Run forge tests
-        run: ./test.sh -p ci_push_to_main
+        run: ./test.sh -p super_deep

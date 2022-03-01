@@ -10,8 +10,8 @@ verbosity = 2            # The verbosity of tests
 [local]
 fuzz_runs = 100
 
-[ci_pull_request]
-fuzz_runs = 1000
+[deep]
+fuzz_runs = 5000
 
-[ci_push_to_main]
-fuzz_runs = 100000
+[super_deep]
+fuzz_runs = 50000

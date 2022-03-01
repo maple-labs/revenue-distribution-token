@@ -660,25 +660,22 @@ contract ExitTest is TestUtils {
         assertEq(underlying.balanceOf(address(staker)),  0);
         assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount);  // Balance is higher than totalAssets
 
-        staker.rdToken_redeem(address(rdToken), redeemAmount);
+        uint256 expectedAssetsFromRedeem = rdToken.convertToAssets(redeemAmount);
+        uint256 assetsFromRedeem = staker.rdToken_redeem(address(rdToken), redeemAmount);
 
-        uint256 amountWithdrawn = redeemAmount * exchangeRate1 / 1e30;
-
+        assertEq(assetsFromRedeem,                   expectedAssetsFromRedeem);
         assertEq(rdToken.balanceOf(address(staker)), depositAmount - redeemAmount);
         assertEq(rdToken.totalSupply(),              depositAmount - redeemAmount);
         assertEq(rdToken.lastUpdated(),              start + warpTime);
 
-        uint256 exchangeRate2 = redeemAmount == depositAmount ? 1e30 : rdToken.totalAssets() * 1e30 / (depositAmount - redeemAmount);  // Use actual `totalAssets` value to avoid propagating errors
-
         // if (rdToken.totalSupply() > 0) assertWithinPrecision(rdToken.exchangeRate(), exchangeRate1, 8);  // TODO: Add specialized testing for this
 
-        // assertWithinDiff(rdToken.exchangeRate(),   exchangeRate2,                                  10);
-        assertWithinDiff(rdToken.issuanceRate(),   vestingAmount * 1e30 / vestingPeriod,           1);
-        assertWithinDiff(rdToken.freeAssets(), depositAmount + amountVested - amountWithdrawn, 1);
-        assertWithinDiff(rdToken.totalAssets(),  depositAmount + amountVested - amountWithdrawn, 1);
+        assertWithinDiff(rdToken.issuanceRate(), vestingAmount * 1e30 / vestingPeriod, 1);
+        assertEq(rdToken.freeAssets(),           depositAmount + amountVested - expectedAssetsFromRedeem);
+        assertEq(rdToken.totalAssets(),          depositAmount + amountVested - expectedAssetsFromRedeem);
 
-        assertEq(underlying.balanceOf(address(staker)),  amountWithdrawn);
-        assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount - amountWithdrawn);  // Note that vestingAmount is used
+        assertEq(underlying.balanceOf(address(staker)),  expectedAssetsFromRedeem);
+        assertEq(underlying.balanceOf(address(rdToken)), depositAmount + vestingAmount - expectedAssetsFromRedeem);  // Note that vestingAmount is used
     }
 
     function _depositUnderlying(uint256 depositAmount) internal {

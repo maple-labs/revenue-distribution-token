@@ -1030,13 +1030,13 @@ contract RevenueStreamingTest is TestUtils {
 
         uint256 expectedRate = vestingAmount * 1e30 / vestingPeriod;
 
-        assertEq(rdToken.freeAssets(),                              depositAmount);
-        assertEq(rdToken.totalAssets(),                             depositAmount);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert),    sampleSharesToConvert);
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert),    sampleAssetsToConvert);
-        assertEq(rdToken.issuanceRate(),                            expectedRate);
-        assertEq(rdToken.lastUpdated(),                             start);
-        assertEq(rdToken.vestingPeriodFinish(),                     start + vestingPeriod);
+        assertEq(rdToken.freeAssets(),                           depositAmount);
+        assertEq(rdToken.totalAssets(),                          depositAmount);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         expectedRate);
+        assertEq(rdToken.lastUpdated(),                          start);
+        assertEq(rdToken.vestingPeriodFinish(),                  start + vestingPeriod);
 
         // Warp and assert vesting in 10% increments
         for (uint256 i = 1; i < 10; ++i) {

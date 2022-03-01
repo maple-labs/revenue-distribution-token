@@ -11,15 +11,15 @@ import { IRevenueDistributionToken as IRDT } from "../../interfaces/IRevenueDist
 contract Staker is ERC20User {
 
     function rdToken_deposit(address token_, uint256 amount_) external returns (uint256 shares_) {
-        return IRDT(token_).deposit(amount_);
+        return IRDT(token_).deposit(amount_, address(this));
     }
 
     function rdToken_redeem(address token_, uint256 amount_) external returns (uint256 underlyingAmount_) {
-        return IRDT(token_).redeem(amount_);
+        return IRDT(token_).redeem(amount_, address(this), address(this));
     }
 
     function rdToken_withdraw(address token_, uint256 amount_) external returns (uint256 shares_) {
-        return IRDT(token_).withdraw(amount_);
+        return IRDT(token_).withdraw(amount_, address(this), address(this));
     }
 
 }
@@ -43,7 +43,7 @@ contract InvariantStaker is TestUtils {
 
         underlying.mint(address(this),       amount_);
         underlying.approve(address(rdToken), amount_);
-        rdToken.deposit(amount_);
+        rdToken.deposit(amount_, address(this));
 
         assertEq(rdToken.balanceOf(address(this)), beforeBal + shareAmount);  // Ensure successful deposit
     }
@@ -54,7 +54,7 @@ contract InvariantStaker is TestUtils {
         if (beforeBal > 0) {
             uint256 redeemAmount = constrictToRange(amount_, 1, rdToken.balanceOf(address(this)));
 
-            rdToken.redeem(redeemAmount);
+            rdToken.redeem(redeemAmount, address(this), address(this));
 
             assertEq(rdToken.balanceOf(address(this)), beforeBal - redeemAmount);
         }
@@ -64,9 +64,9 @@ contract InvariantStaker is TestUtils {
         uint256 beforeBal = underlying.balanceOf(address(this));
 
         if (beforeBal > 0) {
-            uint256 withdrawAmount = constrictToRange(amount_, 1, rdToken.balanceOfUnderlying(address(this)));
+            uint256 withdrawAmount = constrictToRange(amount_, 1, rdToken.balanceOfAssets(address(this)));
 
-            rdToken.withdraw(withdrawAmount);
+            rdToken.withdraw(withdrawAmount, address(this), address(this));
 
             assertEq(underlying.balanceOf(address(this)), beforeBal + withdrawAmount);  // Ensure successful withdraw
         }

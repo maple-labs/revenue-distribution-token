@@ -156,7 +156,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function maxWithdraw(address owner_) external view virtual override returns (uint256 maxAssets_) {
-        maxAssets_ = previewRedeem(balanceOf[owner_]);
+        maxAssets_ = balanceOfAssets(owner_);
     }
 
     function previewDeposit(uint256 assets_) public view virtual override returns (uint256 shares_) {

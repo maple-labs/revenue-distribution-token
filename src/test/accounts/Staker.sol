@@ -27,7 +27,7 @@ contract Staker is ERC20User {
 contract InvariantStaker is TestUtils {
 
     IRDT      rdToken;
-    MockERC20 underlying;
+    MockERC20 underlying;   
 
     constructor(address rdToken_, address underlying_) {
         rdToken    = IRDT(rdToken_);
@@ -78,23 +78,47 @@ contract InvariantStakerManager is TestUtils {
 
     address rdToken;
     address underlying;
+    address manager;
 
     uint256 startTime;
-    bool    allowWarp;
+
+    bool allowWarp;
+    bool allowDeposit  = true;
+    bool allowRedeem   = true;
+    bool allowWithdraw = true;
+
 
     InvariantStaker[] public stakers;
 
     constructor(address rdToken_, address underlying_, uint256 startTime_, bool allowWarp_) {
-        rdToken     = rdToken_;
-        underlying  = underlying_;
-        startTime    = startTime_;
-        allowWarp   = allowWarp_; 
+        manager    = msg.sender;
+        rdToken    = rdToken_;
+        underlying = underlying_;
+        startTime  = startTime_;
+        allowWarp  = allowWarp_; 
     }
 
     modifier warper() {
         if (!allowWarp) vm.warp(startTime);
         _;
-    } 
+    }
+
+    modifier onlyManager() {
+        require(msg.sender == manager);
+        _;
+    }
+
+    function setAllowDeposit(bool deposit_) external onlyManager {
+        allowDeposit = deposit_;
+    }
+
+    function setAllowRedeem(bool redeem_) external onlyManager {
+        allowRedeem = redeem_;
+    }
+
+    function setAllowWithdrawal(bool withdrawal) external onlyManager {
+        allowWithdraw = withdrawal;
+    }
 
     function createStaker() external {
         InvariantStaker staker = new InvariantStaker(rdToken, underlying);

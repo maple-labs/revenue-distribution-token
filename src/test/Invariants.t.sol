@@ -170,3 +170,32 @@ contract RDTInvariantsMultipleDeposits is RDTInvariantsBase {
     }
 
 }
+
+contract RDTInvariantsWithdraws is RDTInvariantsBase {
+
+    uint256 initialSupply;
+
+    function setUp() public override {
+        super.setUp();
+
+        // Add 50 depositors
+        for (uint i = 0; i <= 50; i++) {
+            stakerManager.createStaker();
+
+            // Get a more or less random amount between 1 and 1_000_000 ether
+            uint256 amt = uint256(keccak256(abi.encode(i, "SALT"))) % 1_000_000 ether + 1;
+
+            stakerManager.deposit(amt, i);
+        }
+
+        // Fuzzer can't deposit
+        stakerManager.setAllowDeposit(false);
+
+        initialSupply = MockERC20(address(rdToken)).totalSupply();
+    }
+
+    function invariant8_supplyDoesNotIncrease() public {
+        assertTrue(MockERC20(address(rdToken)).totalSupply() > initialSupply);
+    }
+
+}

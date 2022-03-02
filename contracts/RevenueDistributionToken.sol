@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.7;
 
-import { ERC20 }       from "../modules/erc20/contracts/ERC20.sol";
+import { ERC20Permit }       from "../modules/erc20/contracts/ERC20Permit.sol";
 import { ERC20Helper } from "../modules/erc20-helper/src/ERC20Helper.sol";
 
 import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
 
-contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
+contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     uint256 public immutable override precision;  // Precision of rates, equals max deposit amounts before rounding errors occur
 
@@ -20,7 +20,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends.
 
     constructor(string memory name_, string memory symbol_, address owner_, address asset_, uint256 precision_)
-        ERC20(name_, symbol_, ERC20(asset_).decimals())
+        ERC20Permit(name_, symbol_, ERC20Permit(asset_).decimals())
     {
         owner     = owner_;
         precision = precision_;
@@ -50,7 +50,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         freeAssets = freeAssets_ = totalAssets();
 
         // Calculate slope, update timestamp and period finish.
-        issuanceRate        = issuanceRate_ = (ERC20(asset).balanceOf(address(this)) - freeAssets_) * precision / vestingPeriod_;
+        issuanceRate        = issuanceRate_ = (ERC20Permit(asset).balanceOf(address(this)) - freeAssets_) * precision / vestingPeriod_;
         lastUpdated         = block.timestamp;
         vestingPeriodFinish = block.timestamp + vestingPeriod_;
     }
@@ -128,7 +128,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /**********************/
 
     function APR() external view override returns (uint256 apr_) {
-        return issuanceRate * 365 days * ERC20(asset).decimals() / totalSupply / precision;
+        return issuanceRate * 365 days * ERC20Permit(asset).decimals() / totalSupply / precision;
     }
 
     function balanceOfAssets(address account_) public view override returns (uint256 balanceOfAssets_) {

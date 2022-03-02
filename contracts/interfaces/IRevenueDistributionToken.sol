@@ -2,9 +2,10 @@
 pragma solidity 0.8.7;
 
 import { IERC4626 } from "./IERC4626.sol";
+import { IERC20Permit } from "../../modules/erc20/contracts/interfaces/IERC20Permit.sol";
 
 // TODO: Add natspec + inherit from IERC4626 once spec is well defined.
-interface IRevenueDistributionToken is IERC4626 {
+interface IRevenueDistributionToken is IERC4626, IERC20Permit {
 
     /***********************/
     /*** State Variables ***/

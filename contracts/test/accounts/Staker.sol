@@ -3,12 +3,12 @@ pragma solidity ^0.8.7;
 
 import { TestUtils } from "../../../modules/contract-test-utils/contracts/test.sol";
 
-import { ERC20User } from "../../../modules/erc20/contracts/test/accounts/ERC20User.sol";
+import { ERC20PermitUser } from "../../../modules/erc20/out/ERC20User.sol/ERC20PermitUser.json";
 import { MockERC20 } from "../../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { IRevenueDistributionToken as IRDT } from "../../interfaces/IRevenueDistributionToken.sol";
 
-contract Staker is ERC20User {
+contract Staker is ERC20PermitUser {
 
     function rdToken_deposit(address token_, uint256 assets_) external returns (uint256 shares_) {
         return IRDT(token_).deposit(assets_, address(this));

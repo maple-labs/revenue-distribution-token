@@ -3,7 +3,7 @@ pragma solidity ^0.8.7;
 
 import { TestUtils } from "../../../modules/contract-test-utils/contracts/test.sol";
 
-import { ERC20PermitUser } from "../../../modules/erc20/out/ERC20User.sol/ERC20PermitUser.json";
+import { ERC20PermitUser } from "../../../modules/erc20/contracts/test/accounts/ERC20User.sol";
 import { MockERC20 } from "../../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { IRevenueDistributionToken as IRDT } from "../../interfaces/IRevenueDistributionToken.sol";

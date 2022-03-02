@@ -11,13 +11,13 @@ import { Warper }                 from "./accounts/Warper.sol";
 
 import { MutableRDT } from "./utils/MutableRDT.sol";
 
-// Invariant 1: totalHoldings <= underlying balance of contract (with rounding)
-// Invariant 2: ∑balanceOfUnderlying == totalHoldings (with rounding)
-// Invariant 3: totalSupply <= totalHoldings
-// Invariant 4: totalSupply * exchangeRate == totalHoldings (with rounding)
+// Invariant 1: totalAssets <= underlying balance of contract (with rounding)
+// Invariant 2: ∑balanceOfAssets == totalAssets (with rounding)
+// Invariant 3: totalSupply <= totalAssets
+// Invariant 4: convertToAssets(totalSupply) == totalAssets (with rounding)
 // Invariant 5: exchangeRate >= `precision`
-// Invariant 6: freeUnderlying <= totalHoldings
-// Invariant 7: balanceOfUnderlying >= balanceOf
+// Invariant 6: freeAssets <= totalAssets
+// Invariant 7: balanceOfAssets >= balanceOf
 
 contract RDTInvariants is TestUtils, InvariantTest {
 
@@ -60,47 +60,48 @@ contract RDTInvariants is TestUtils, InvariantTest {
         stakerManager.createStaker();
     }
 
-    function invariant1_totalHoldings_lte_underlyingBal() public {
-        assertTrue(rdToken.totalHoldings() <= underlying.balanceOf(address(rdToken)));
+    function invariant1_totalAssets_lte_underlyingBal() public {
+        assertTrue(rdToken.totalAssets() <= underlying.balanceOf(address(rdToken)));
     }
 
-    function invariant2_sumBalanceOfUnderlying_eq_totalHoldings() public {
+    function invariant2_sumBalanceOfAssets_eq_totalAssets() public {
         // Only relevant if deposits exist
         if(rdToken.totalSupply() > 0) {
-            uint256 sumBalanceOfUnderlying;
+            uint256 sumBalanceOfAssets;
             uint256 stakerCount = stakerManager.getStakerCount();
 
             for(uint256 i; i < stakerCount; ++i) {
-                sumBalanceOfUnderlying += rdToken.balanceOfUnderlying(address(stakerManager.stakers(i)));
+                sumBalanceOfAssets += rdToken.balanceOfAssets(address(stakerManager.stakers(i)));
             }
 
-            assertTrue(sumBalanceOfUnderlying <= rdToken.totalHoldings());
-            assertWithinDiff(sumBalanceOfUnderlying, rdToken.totalHoldings(), stakerCount);  // Rounding error of one per user
+            assertTrue(sumBalanceOfAssets <= rdToken.totalAssets());
+            assertWithinDiff(sumBalanceOfAssets, rdToken.totalAssets(), stakerCount);  // Rounding error of one per user
         }
     }
 
-    function invariant3_totalSupply_lte_totalHoldings() external {
-        assertTrue(rdToken.totalSupply() <= rdToken.totalHoldings());
+    function invariant3_totalSupply_lte_totalAssets() external {
+        assertTrue(rdToken.totalSupply() <= rdToken.totalAssets());
     }
 
-    function invariant4_totalSupply_times_exchangeRate_eq_totalHoldings() external {
+    function invariant4_totalSupply_times_exchangeRate_eq_totalAssets() external {
         if(rdToken.totalSupply() > 0) {
-            assertWithinDiff(rdToken.totalSupply() * rdToken.exchangeRate() / rdToken.precision(), rdToken.totalHoldings(), 1);  // One division
+            assertWithinDiff(rdToken.convertToAssets(rdToken.totalSupply()), rdToken.totalAssets(), 1);  // One division
         }
     }
 
-    function invariant5_exchangeRate_gte_precision() external {
-        assertTrue(rdToken.exchangeRate() >= rdToken.precision());
+    // TODO: figure out if there's a replacement for this one involving convertTo* functions. I think Invariant 3: totalSupply <= totalAssets covers this.
+    // function invariant5_exchangeRate_gte_precision() external {
+    //     assertTrue(rdToken.exchangeRate() >= rdToken.precision());
+    // }
+
+    function invariant6_freeAssets_lte_totalAssets() external {
+        assertTrue(rdToken.freeAssets() <= rdToken.totalAssets());
     }
 
-    function invariant6_freeUnderlying_lte_totalHoldings() external {
-        assertTrue(rdToken.freeUnderlying() <= rdToken.totalHoldings());
-    }
-
-    function invariant7_balanceOfUnderlying_gte_balanceOf() public {
+    function invariant7_balanceOfAssets_gte_balanceOf() public {
         for(uint256 i; i < stakerManager.getStakerCount(); ++i) {
             address staker = address(stakerManager.stakers(i));
-            assertTrue(rdToken.balanceOfUnderlying(staker) >= rdToken.balanceOf(staker));
+            assertTrue(rdToken.balanceOfAssets(staker) >= rdToken.balanceOf(staker));
         }
     }
 

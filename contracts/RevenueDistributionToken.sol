@@ -1,30 +1,30 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.7;
 
-import { ERC20 }       from "../modules/erc20/contracts/ERC20.sol";
+import { ERC20Permit }       from "../modules/erc20/contracts/ERC20Permit.sol";
 import { ERC20Helper } from "../modules/erc20-helper/src/ERC20Helper.sol";
 
 import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
 
-contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
+contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     uint256 public immutable override precision;  // Precision of rates, equals max deposit amounts before rounding errors occur
 
     address public override owner;
     address public override pendingOwner;
-    address public override underlying;
+    address public override asset;
 
-    uint256 public override freeUnderlying;       // Amount of underlying unlocked regardless of time passed
-    uint256 public override issuanceRate;         // underlying/second rate dependent on aggregate vesting schedule (needs increased precision)
-    uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated
-    uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends
+    uint256 public override freeAssets;           // Amount of assets unlocked regardless of time passed.
+    uint256 public override issuanceRate;         // asset/second rate dependent on aggregate vesting schedule (needs increased precision).
+    uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated.
+    uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends.
 
-    constructor(string memory name_, string memory symbol_, address owner_, address underlying_, uint256 precision_)
-        ERC20(name_, symbol_, ERC20(underlying_).decimals())
+    constructor(string memory name_, string memory symbol_, address owner_, address asset_, uint256 precision_)
+        ERC20Permit(name_, symbol_, ERC20Permit(asset_).decimals())
     {
-        owner      = owner_;
-        precision  = precision_;
-        underlying = underlying_;
+        owner     = owner_;
+        precision = precision_;
+        asset     = asset_;
     }
 
     /********************************/
@@ -43,14 +43,14 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     // TODO: Revisit returns
-    function updateVestingSchedule(uint256 vestingPeriod_) external override returns (uint256 issuanceRate_, uint256 freeUnderlying_) {
+    function updateVestingSchedule(uint256 vestingPeriod_) external override returns (uint256 issuanceRate_, uint256 freeAssets_) {
         require(msg.sender == owner, "RDT:UVS:NOT_OWNER");
 
-        // Update "y-intercept" to reflect current available underlying
-        freeUnderlying = freeUnderlying_ = totalHoldings();
+        // Update "y-intercept" to reflect current available asset.
+        freeAssets = freeAssets_ = totalAssets();
 
-        // Calculate slope, update timestamp and period finish
-        issuanceRate        = issuanceRate_ = (ERC20(underlying).balanceOf(address(this)) - freeUnderlying_) * precision / vestingPeriod_;
+        // Calculate slope, update timestamp and period finish.
+        issuanceRate        = issuanceRate_ = (ERC20Permit(asset).balanceOf(address(this)) - freeAssets_) * precision / vestingPeriod_;
         lastUpdated         = block.timestamp;
         vestingPeriodFinish = block.timestamp + vestingPeriod_;
     }
@@ -59,48 +59,63 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** Staker Functions ***/
     /************************/
 
-    function deposit(uint256 amount_) external virtual override returns (uint256 shares_) {
-        return _deposit(msg.sender, amount_);
+    function deposit(uint256 assets_, address receiver_) external virtual override returns (uint256 shares_) {
+        shares_ = _deposit(assets_, receiver_, msg.sender);
     }
 
-    function redeem(uint256 rdTokenAmount_) external virtual override returns (uint256 underlyingAmount_) {
-        return _redeem(msg.sender, rdTokenAmount_);
+    function mint(uint256 shares_, address receiver_) external virtual override returns (uint256 assets_) {
+        assets_ = _mint(shares_, receiver_, msg.sender);
     }
 
-    function withdraw(uint256 underlyingAmount_) external virtual override returns (uint256 shares_) {
-        return _withdraw(msg.sender, underlyingAmount_);
+    function redeem(uint256 shares_, address receiver_, address owner_) external virtual override returns (uint256 assets_) {
+        assets_ = _redeem(shares_, receiver_, owner_, msg.sender);
+    }
+
+    function withdraw(uint256 assets_, address receiver_, address owner_) external virtual override returns (uint256 shares_) {
+        shares_ = _withdraw(assets_, receiver_, owner_, msg.sender);
     }
 
     /**************************/
     /*** Internal Functions ***/
     /**************************/
 
-    function _deposit(address account_, uint256 amount_) internal returns (uint256 shares_) {
-        require(amount_ != 0, "RDT:D:AMOUNT");
-        _mint(account_, shares_ = previewDeposit(amount_));
-        freeUnderlying = totalHoldings() + amount_;
+    function _deposit(uint256 assets_, address receiver_, address caller_) internal returns (uint256 shares_) {
+        require(assets_ != 0, "RDT:D:AMOUNT");
+        _mint(receiver_, shares_ = previewDeposit(assets_));
+        freeAssets = totalAssets() + assets_;
         _updateIssuanceParams();
-        require(ERC20Helper.transferFrom(address(underlying), account_, address(this), amount_), "RDT:D:TRANSFER_FROM");
-        emit Deposit(account_, amount_);
+        require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:D:TRANSFER_FROM");
+        emit Deposit(caller_, receiver_, assets_, shares_);
     }
 
-    function _redeem(address account_, uint256 rdTokenAmount_) internal returns (uint256 underlyingAmount_) {
-        require(rdTokenAmount_ != 0, "RDT:W:AMOUNT");
-        underlyingAmount_ = previewRedeem(rdTokenAmount_);
-        _burn(account_, rdTokenAmount_);
-        freeUnderlying = totalHoldings() - underlyingAmount_;
+    function _mint(uint256 shares_, address receiver_, address caller_) internal returns (uint256 assets_) {
+        require(shares_ != 0, "RDT:M:AMOUNT");
+        _mint(receiver_, assets_ = previewMint(shares_));
+        freeAssets = totalAssets() + assets_;
         _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(underlying), account_, underlyingAmount_), "RDT:D:TRANSFER");
-        emit Withdraw(account_, underlyingAmount_);
+        require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:M:TRANSFER_FROM");
+        emit Deposit(caller_, receiver_, assets_, shares_);
     }
 
-    function _withdraw(address account_, uint256 underlyingAmount_) internal returns (uint256 shares_) {
-        require(underlyingAmount_ != 0, "RDT:W:AMOUNT");
-        _burn(account_, shares_ = previewWithdraw(underlyingAmount_));
-        freeUnderlying = totalHoldings() - underlyingAmount_;
+    function _redeem(uint256 shares_, address receiver_, address owner_, address caller_) internal returns (uint256 assets_) {
+        require(owner_ == msg.sender, "RDT:R:NOT_OWNER");
+        require(shares_ != 0, "RDT:R:AMOUNT");
+        assets_ = previewRedeem(shares_);
+        _burn(owner_, shares_);
+        freeAssets = totalAssets() - assets_;
         _updateIssuanceParams();
-        require(ERC20Helper.transfer(address(underlying), account_, underlyingAmount_), "RDT:D:TRANSFER");
-        emit Withdraw(account_, underlyingAmount_);
+        require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:R:TRANSFER");
+        emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
+    }
+
+    function _withdraw(uint256 assets_, address receiver_, address owner_, address caller_) internal returns (uint256 shares_) {
+        require(owner_ == msg.sender, "RDT:W:NOT_OWNER");
+        require(assets_ != 0, "RDT:W:AMOUNT");
+        _burn(owner_, shares_ = previewWithdraw(assets_));
+        freeAssets = totalAssets() - assets_;
+        _updateIssuanceParams();
+        require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:W:TRANSFER");
+        emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
     }
 
     function _updateIssuanceParams() internal {
@@ -113,40 +128,62 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /**********************/
 
     function APR() external view override returns (uint256 apr_) {
-        return issuanceRate * 365 days * ERC20(underlying).decimals() / totalSupply / precision;
+        return issuanceRate * 365 days * ERC20Permit(asset).decimals() / totalSupply / precision;
     }
 
-    function balanceOfUnderlying(address account_) external view override returns (uint256 balanceOfUnderlying_) {
-        return balanceOf[account_] * exchangeRate() / precision;
+    function balanceOfAssets(address account_) public view override returns (uint256 balanceOfAssets_) {
+        return convertToAssets(balanceOf[account_]);
     }
 
-    function exchangeRate() public view override returns (uint256 exchangeRate_) {
-        uint256 _totalSupply = totalSupply;
-        if (_totalSupply == uint256(0)) return precision;
-        return totalHoldings() * precision / _totalSupply;
+    function convertToAssets(uint256 shares_) public view override returns (uint256 assets_) {
+        assets_ = totalSupply != uint256(0) ? shares_ * totalAssets() / totalSupply : shares_;
     }
 
-    function previewDeposit(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
-        shareAmount_ = underlyingAmount_ * precision / exchangeRate();
+    function convertToShares(uint256 assets_) public view override returns (uint256 shares_) {
+        shares_ = totalSupply != uint256(0) ? assets_ * totalSupply / totalAssets() : assets_;
     }
 
-    function previewWithdraw(uint256 underlyingAmount_) public view override returns (uint256 shareAmount_) {
-        shareAmount_ = underlyingAmount_ * precision / exchangeRate();
+    function maxDeposit(address receiver_) external pure virtual override returns (uint256 maxAssets_) {
+        maxAssets_ = type(uint256).max;
     }
 
-    function previewRedeem(uint256 shareAmount_) public view override returns (uint256 underlyingAmount_) {
-        underlyingAmount_ = shareAmount_ * exchangeRate() / precision;
+    function maxMint(address receiver_) external pure virtual override returns (uint256 maxShares_) {
+        maxShares_ = type(uint256).max;
     }
 
-    function totalHoldings() public view override returns (uint256 totalHoldings_) {
-        if (issuanceRate == 0) return freeUnderlying;
+    function maxRedeem(address owner_) external view virtual override returns (uint256 maxShares_) {
+        maxShares_ = balanceOf[owner_]; 
+    }
+
+    function maxWithdraw(address owner_) external view virtual override returns (uint256 maxAssets_) {
+        maxAssets_ = balanceOfAssets(owner_);
+    }
+
+    function previewDeposit(uint256 assets_) public view virtual override returns (uint256 shares_) {
+        shares_ = convertToShares(assets_);
+    }
+
+    function previewMint(uint256 shares_) public view virtual override returns (uint256 assets_) {
+        assets_ = convertToAssets(shares_);
+    }
+
+    function previewRedeem(uint256 shares_) public view virtual override returns (uint256 assets_) {
+        assets_ = convertToAssets(shares_);
+    }
+
+    function previewWithdraw(uint256 assets_) public view virtual override returns (uint256 shares_) {
+        shares_ = convertToShares(assets_);
+    }
+
+    function totalAssets() public view override returns (uint256 totalManagedAssets_) {
+        if (issuanceRate == 0) return freeAssets;
 
         uint256 vestingTimePassed =
             block.timestamp > vestingPeriodFinish ?
                 vestingPeriodFinish - lastUpdated :
                 block.timestamp - lastUpdated;
 
-        return issuanceRate * vestingTimePassed / precision + freeUnderlying;
+        return issuanceRate * vestingTimePassed / precision + freeAssets;
     }
 
 }

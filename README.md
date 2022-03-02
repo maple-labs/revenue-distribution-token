@@ -16,7 +16,9 @@ Each new revenue distribution updates the issuance rate, issuing the unvested re
 
 The first revenue deposit arrives at t0, scheduled to vest until t2 (Period 1, or P1). Upon arrival of the second revenue deposit at t1, scheduled to vest until t3 (P2), the issuance rate is increased to vest the P1 unvested amount + the P2 deposited amount, over P2. A linear revenue issuance mechanism solves the issue of stakers entering at favorable times when a revenue distribution is expected, unfairly earning an equal share of the distribution as other stakers who have been in the contract since last distribution, as well as help smoothen out the revenue distribution. 
 
-RDT also implements ERC2612 permit approvals for improved contract UX and gas savings.
+The ERC4626 standard helps RDT conform to a new set of tokens that are used to represent shares of an underlying asset, commonly seen in yield optimization vaults and in our case, interest/revenue bearing tokens. Implementing the standard will improve RDT's composability within DeFi and make it easier for projects and developers familiar with the standard to integrate with RDT.
+
+RDT implements ERC2612 permit approvals for improved contract UX and gas savings.
 
 ## Testing and Development
 #### Setup

@@ -8,7 +8,7 @@ This repo contains a set of contracts to facilitate on-chain distribution of ves
 
 ## Capabilities
 
-The Revenue Distribution Token (RDT) is a token implementing the [ERC4626 Tokenized Vault standard](https://eips.ethereum.org/EIPS/eip-4626) with a linear revenue issuance mechanism, intended to distribute protocol revenue to staked users. 
+The Revenue Distribution Token (RDT) is a token implementing the [ERC4626 Tokenized Vault standard](https://eips.ethereum.org/EIPS/eip-4626) featuring a linear revenue issuance mechanism, intended to distribute protocol revenue to staked users. 
 
 Each new revenue distribution updates the issuance rate, issuing the unvested revenue along with the new revenue over the newly specified vesting schedule. The diagram below visualizes the vesting mechanism across revenue deposits: 
 

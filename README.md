@@ -34,6 +34,9 @@ forge update
 
 This project was built using [Foundry](https://github.com/gakonst/Foundry).
 
+## Acknowledgements
+Authors of the [EIP-4626 standard](https://eips.ethereum.org/EIPS/eip-4626), who worked towards standardizing the common tokenized vault use case in DeFi and therefore shaped the interface of the Revenue Distribution Token.
+
 ## About Maple
 [Maple Finance](https://maple.finance) is a decentralized corporate credit market. Maple provides capital to institutional borrowers through globally accessible fixed-income yield opportunities.
 

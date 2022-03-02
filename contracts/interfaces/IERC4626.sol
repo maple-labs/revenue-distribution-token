@@ -9,10 +9,11 @@ interface IERC4626 is IERC20 {
     /*** Events ***/
     /**************/
 
+    // TODO: Fix natspec to reflect our implementation.
     /**
       @notice `caller_` has exchanged `assets_ for `shares_`, and transferred those `shares_` to `owner_`.
               MUST be emitted when tokens are deposited into the Vault via the `mint` and `deposit` methods.
-      @param  caller_   The caller of the function that emitted the `Deposit` event`
+      @param  caller_   The caller of the function that emitted the `Deposit` event`.
       @param  owner_    The owner of the shares minted.
       @param  assets_   The amount of assets deposited.
       @param  shares_   The amount of shares minted.
@@ -22,7 +23,7 @@ interface IERC4626 is IERC20 {
     /**
       @notice `caller_` has exchanged `shares_`, owned by `owner_`, for `assets_`, and transferred those `assets_` to `receiver_`.
               MUST be emitted when shares are withdrawn from the Vault in `ERC4626.redeem` or `ERC4626.withdraw` methods.
-      @param  caller_   The caller of the function that emitted the `Withdraw` event`
+      @param  caller_   The caller of the function that emitted the `Withdraw` event`.
       @param  receiver_ The receiver of the `assets_`.
       @param  owner_    The owner of the shares.
       @param  assets_   The amount of assets withdrawn.

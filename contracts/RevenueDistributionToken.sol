@@ -22,9 +22,9 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     constructor(string memory name_, string memory symbol_, address owner_, address asset_, uint256 precision_)
         ERC20(name_, symbol_, ERC20(asset_).decimals())
     {
-        owner      = owner_;
-        precision  = precision_;
-        asset = asset_;
+        owner     = owner_;
+        precision = precision_;
+        asset     = asset_;
     }
 
     /********************************/
@@ -46,10 +46,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     function updateVestingSchedule(uint256 vestingPeriod_) external override returns (uint256 issuanceRate_, uint256 freeAssets_) {
         require(msg.sender == owner, "RDT:UVS:NOT_OWNER");
 
-        // Update "y-intercept" to reflect current available asset
+        // Update "y-intercept" to reflect current available asset.
         freeAssets = freeAssets_ = totalAssets();
 
-        // Calculate slope, update timestamp and period finish
+        // Calculate slope, update timestamp and period finish.
         issuanceRate        = issuanceRate_ = (ERC20(asset).balanceOf(address(this)) - freeAssets_) * precision / vestingPeriod_;
         lastUpdated         = block.timestamp;
         vestingPeriodFinish = block.timestamp + vestingPeriod_;
@@ -167,12 +167,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         assets_ = convertToAssets(shares_);
     }
 
-    function previewWithdraw(uint256 assets_) public view virtual override returns (uint256 shares_) {
-        shares_ = convertToShares(assets_);
-    }
-
     function previewRedeem(uint256 shares_) public view virtual override returns (uint256 assets_) {
         assets_ = convertToAssets(shares_);
+    }
+
+    function previewWithdraw(uint256 assets_) public view virtual override returns (uint256 shares_) {
+        shares_ = convertToShares(assets_);
     }
 
     function totalAssets() public view override returns (uint256 totalManagedAssets_) {

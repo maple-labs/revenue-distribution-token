@@ -11,29 +11,51 @@ import { IRevenueDistributionToken as IRDT } from "../../interfaces/IRevenueDist
 contract Staker is ERC20PermitUser {
 
     function rdToken_deposit(address token_, uint256 assets_) external returns (uint256 shares_) {
-        return IRDT(token_).deposit(assets_, address(this));
+        shares_ = IRDT(token_).deposit(assets_, address(this));
+    }
+
+    function rdToken_depositWithPermit(
+        address token_,
+        uint256 assets_,
+        uint256 deadline_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
+    ) external returns (uint256 shares_) {
+        shares_ = IRDT(token_).depositWithPermit(assets_, address(this), deadline_, v_, r_, s_);
     }
 
     function rdToken_mint(address token_, uint256 shares_) external returns (uint256 assets_) {
-        return IRDT(token_).mint(shares_, address(this));
+        assets_ = IRDT(token_).mint(shares_, address(this));
+    }
+
+    function rdToken_mintWithPermit(
+        address token_,
+        uint256 shares_,
+        uint256 deadline_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
+    ) external returns (uint256 assets_) {
+        assets_ = IRDT(token_).mintWithPermit(shares_, address(this), deadline_, v_, r_, s_);
     }
 
     function rdToken_redeem(address token_, uint256 shares_) external returns (uint256 assets_) {
-        return IRDT(token_).redeem(shares_, address(this), address(this));
+        assets_ = IRDT(token_).redeem(shares_, address(this), address(this));
     }
 
     function rdToken_withdraw(address token_, uint256 assets_) external returns (uint256 shares_) {
-        return IRDT(token_).withdraw(assets_, address(this), address(this));
+        shares_ = IRDT(token_).withdraw(assets_, address(this), address(this));
     }
 
     // Below two are for acl tests only.
 
     function rdToken_redeem(address token_, uint256 shares_, address owner_) external returns (uint256 assets_) {
-        return IRDT(token_).redeem(shares_, address(this), owner_);
+        assets_ = IRDT(token_).redeem(shares_, address(this), owner_);
     }
 
     function rdToken_withdraw(address token_, uint256 assets_, address owner_) external returns (uint256 shares_) {
-        return IRDT(token_).withdraw(assets_, address(this), owner_);
+        shares_ = IRDT(token_).withdraw(assets_, address(this), owner_);
     }
 
 }

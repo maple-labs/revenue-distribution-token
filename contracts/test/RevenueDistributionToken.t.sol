@@ -69,6 +69,38 @@ contract AuthTest is TestUtils {
         assertEq(rdToken.vestingPeriodFinish(), 10_100);
     }
 
+    function test_redeem_acl() external {
+        Staker shareOwner    = new Staker();
+        Staker notShareOwner = new Staker();
+
+        uint256 depositAmount = 1e18;
+        asset.mint(address(shareOwner), depositAmount);
+
+        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
+        uint256 shares = shareOwner.rdToken_deposit(address(rdToken), depositAmount);
+
+        vm.expectRevert("RDT:R:NOT_OWNER");
+        notShareOwner.rdToken_redeem(address(rdToken), shares, address(shareOwner));
+
+        shareOwner.rdToken_redeem(address(rdToken), shares, address(shareOwner));
+    }
+
+    function test_withdraw_acl() external {
+        Staker shareOwner    = new Staker();
+        Staker notShareOwner = new Staker();
+
+        uint256 depositAmount = 1e18;
+        asset.mint(address(shareOwner), depositAmount);
+
+        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
+        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
+
+        vm.expectRevert("RDT:W:NOT_OWNER");
+        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner));
+
+        shareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner));
+    }
+
 }
 
 contract DepositTest is TestUtils {
@@ -523,7 +555,7 @@ contract ExitTest is TestUtils {
     function test_redeem_zeroAmount(uint256 depositAmount) external {
         _depositAsset(constrictToRange(depositAmount, 1, 1e29));
 
-        vm.expectRevert("RDT:W:AMOUNT");
+        vm.expectRevert("RDT:R:AMOUNT");
         staker.rdToken_redeem(address(rdToken), 0);
 
         staker.rdToken_redeem(address(rdToken), 1);

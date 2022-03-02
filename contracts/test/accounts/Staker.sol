@@ -22,6 +22,16 @@ contract Staker is ERC20User {
         return IRDT(token_).withdraw(assets_, address(this), address(this));
     }
 
+    // Below two are for acl tests only.
+
+    function rdToken_redeem(address token_, uint256 shares_, address owner_) external returns (uint256 assets_) {
+        return IRDT(token_).redeem(shares_, address(this), owner_);
+    }
+
+    function rdToken_withdraw(address token_, uint256 assets_, address owner_) external returns (uint256 shares_) {
+        return IRDT(token_).withdraw(assets_, address(this), owner_);
+    }
+
 }
 
 contract InvariantStaker is TestUtils {

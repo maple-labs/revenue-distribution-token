@@ -99,7 +99,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     function _redeem(uint256 shares_, address receiver_, address owner_, address caller_) internal returns (uint256 assets_) {
         require(owner_ == msg.sender, "RDT:R:NOT_OWNER");
-        require(shares_ != 0, "RDT:W:AMOUNT");
+        require(shares_ != 0, "RDT:R:AMOUNT");
         assets_ = previewRedeem(shares_);
         _burn(owner_, shares_);
         freeAssets = totalAssets() - assets_;

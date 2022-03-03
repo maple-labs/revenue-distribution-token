@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.7;
 
-import { ERC20Permit }       from "../modules/erc20/contracts/ERC20Permit.sol";
+import { ERC20Permit } from "../modules/erc20/contracts/ERC20Permit.sol";
 import { ERC20Helper } from "../modules/erc20-helper/src/ERC20Helper.sol";
 
 import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
 
 contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
+    address public immutable override asset;
     uint256 public immutable override precision;  // Precision of rates, equals max deposit amounts before rounding errors occur
 
     address public override owner;
     address public override pendingOwner;
-    address public override asset;
 
     uint256 public override freeAssets;           // Amount of assets unlocked regardless of time passed.
     uint256 public override issuanceRate;         // asset/second rate dependent on aggregate vesting schedule (needs increased precision).

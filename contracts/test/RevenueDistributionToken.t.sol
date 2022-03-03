@@ -239,7 +239,7 @@ contract PermitTest is TestUtils {
         assertEq(asset.allowance(staker, address(rdToken)), 0); // Should have used whole allowance
         assertEq(asset.nonces(staker),                      1);
 
-        assertEq(mintAmount, rdToken.balanceOf(staker));
+        assertEq(mintAmount,    rdToken.balanceOf(staker));
         assertEq(depositAmount, assets);
 
         assertEq(rdToken.balanceOf(address(staker)),             mintAmount);
@@ -255,7 +255,7 @@ contract PermitTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)), mintAmount);
     }
 
-    // No need to test *withPermit functionality anymore, as in-depth deposit and mint testing will be done with the deposit() and mint() functions.
+    // No need to further test *withPermit functionality, as in-depth deposit and mint testing will be done with the deposit() and mint() functions.
 
     // Returns an ERC-2612 `permit` digest for the `owner` to sign
     function _getDigest(address owner_, address spender_, uint256 value_, uint256 nonce_, uint256 deadline_) internal view returns (bytes32) {

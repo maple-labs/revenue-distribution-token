@@ -81,7 +81,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     function _deposit(uint256 assets_, address receiver_, address caller_) internal returns (uint256 shares_) {
         require(assets_ != 0, "RDT:D:AMOUNT");
-        _mint(receiver_, shares_ = previewDeposit(assets_));
+        _mint(receiver_, shares_ = convertToShares(assets_));
         freeAssets = totalAssets() + assets_;
         _updateIssuanceParams();
         require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:D:TRANSFER_FROM");
@@ -90,7 +90,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     function _mint(uint256 shares_, address receiver_, address caller_) internal returns (uint256 assets_) {
         require(shares_ != 0, "RDT:M:AMOUNT");
-        _mint(receiver_, assets_ = previewMint(shares_));
+        _mint(receiver_, assets_ = convertToAssets(shares_));
         freeAssets = totalAssets() + assets_;
         _updateIssuanceParams();
         require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:M:TRANSFER_FROM");
@@ -100,7 +100,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     function _redeem(uint256 shares_, address receiver_, address owner_, address caller_) internal returns (uint256 assets_) {
         require(owner_ == msg.sender, "RDT:R:NOT_OWNER");
         require(shares_ != 0, "RDT:R:AMOUNT");
-        assets_ = previewRedeem(shares_);
+        assets_ = convertToAssets(shares_);
         _burn(owner_, shares_);
         freeAssets = totalAssets() - assets_;
         _updateIssuanceParams();
@@ -111,7 +111,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     function _withdraw(uint256 assets_, address receiver_, address owner_, address caller_) internal returns (uint256 shares_) {
         require(owner_ == msg.sender, "RDT:W:NOT_OWNER");
         require(assets_ != 0, "RDT:W:AMOUNT");
-        _burn(owner_, shares_ = previewWithdraw(assets_));
+        _burn(owner_, shares_ = convertToShares(assets_));
         freeAssets = totalAssets() - assets_;
         _updateIssuanceParams();
         require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:W:TRANSFER");
@@ -159,19 +159,19 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         maxAssets_ = balanceOfAssets(owner_);
     }
 
-    function previewDeposit(uint256 assets_) public view virtual override returns (uint256 shares_) {
+    function previewDeposit(uint256 assets_) external view virtual override returns (uint256 shares_) {
         shares_ = convertToShares(assets_);
     }
 
-    function previewMint(uint256 shares_) public view virtual override returns (uint256 assets_) {
+    function previewMint(uint256 shares_) external view virtual override returns (uint256 assets_) {
         assets_ = convertToAssets(shares_);
     }
 
-    function previewRedeem(uint256 shares_) public view virtual override returns (uint256 assets_) {
+    function previewRedeem(uint256 shares_) external view virtual override returns (uint256 assets_) {
         assets_ = convertToAssets(shares_);
     }
 
-    function previewWithdraw(uint256 assets_) public view virtual override returns (uint256 shares_) {
+    function previewWithdraw(uint256 assets_) external view virtual override returns (uint256 shares_) {
         shares_ = convertToShares(assets_);
     }
 

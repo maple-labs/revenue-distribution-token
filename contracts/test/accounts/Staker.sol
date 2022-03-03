@@ -14,30 +14,8 @@ contract Staker is ERC20PermitUser {
         shares_ = IRDT(token_).deposit(assets_, address(this));
     }
 
-    function rdToken_depositWithPermit(
-        address token_,
-        uint256 assets_,
-        uint256 deadline_,
-        uint8 v_,
-        bytes32 r_,
-        bytes32 s_
-    ) external returns (uint256 shares_) {
-        shares_ = IRDT(token_).depositWithPermit(assets_, address(this), deadline_, v_, r_, s_);
-    }
-
     function rdToken_mint(address token_, uint256 shares_) external returns (uint256 assets_) {
         assets_ = IRDT(token_).mint(shares_, address(this));
-    }
-
-    function rdToken_mintWithPermit(
-        address token_,
-        uint256 shares_,
-        uint256 deadline_,
-        uint8 v_,
-        bytes32 r_,
-        bytes32 s_
-    ) external returns (uint256 assets_) {
-        assets_ = IRDT(token_).mintWithPermit(shares_, address(this), deadline_, v_, r_, s_);
     }
 
     function rdToken_redeem(address token_, uint256 shares_) external returns (uint256 assets_) {

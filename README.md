@@ -8,7 +8,7 @@ RevenueDistributionToken (RDT) is a token implementing the [ERC4626 Tokenized Va
 
 Each new revenue distribution updates the issuance rate, issuing the unvested revenue along with the new revenue over the newly specified vesting schedule. The diagram below visualizes the vesting mechanism across revenue deposits:
 
-![RDT issuance mechanism](https://user-images.githubusercontent.com/44272939/156641535-353acbcf-b4af-4e4d-8e90-fe70b57ee348.png)
+![RDT issuance mechanism](https://user-images.githubusercontent.com/44272939/156643098-fb7cf6e4-91c3-477f-a59c-a1a6c5cf6dc8.svg)
 
 The first revenue deposit is performed at `t0`, scheduled to vest until `t2` (Period 1, or P1), depicted by the green arrow. On this deposit, the balance change of the contract is depicted by the purple arrow, and the issuance rate (`IR1` in the diagram) is set to `depositAmount / (t2 - t0)`.
 

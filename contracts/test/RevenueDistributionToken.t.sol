@@ -49,22 +49,6 @@ contract PermitTest is TestUtils {
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
     }
 
-    function test_mintWithPermit_zeroAddress() external {
-        uint256 depositAmount = 1e18;
-        asset.mint(address(staker), depositAmount);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
-
-        uint mintAmount = depositAmount;
-        
-        vm.startPrank(staker);
-
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
-        rdToken.mintWithPermit(mintAmount, staker, deadline, 17, r, s);
-        
-        rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
-    }
-
     function test_depositWithPermit_notStakerSignature() external {
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount);
@@ -79,25 +63,6 @@ contract PermitTest is TestUtils {
         ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
 
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-    
-    }
-
-    function test_mintWithPermit_notStakerSignature() external {
-        uint256 depositAmount = 1e18;
-        asset.mint(address(staker), depositAmount);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, notStaker, address(rdToken), notStakerPrivateKey, deadline);
-
-        uint mintAmount = depositAmount;
-
-        vm.startPrank(staker);
-
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
-        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
-        
-        ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
-
-        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
     
     }
 
@@ -119,26 +84,6 @@ contract PermitTest is TestUtils {
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
     }
 
-    function test_mintWithPermit_pastDeadline() external {
-        uint256 depositAmount = 1e18;
-        asset.mint(address(staker), depositAmount);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
-
-        uint mintAmount = depositAmount;
-        
-        vm.startPrank(staker);
-
-        vm.warp(deadline + 1);
-
-        vm.expectRevert(bytes("ERC20Permit:EXPIRED"));
-        rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
-
-        vm.warp(deadline);
-        
-        rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
-    }
-
     function test_depositWithPermit_replay() external {
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount * 2);
@@ -151,22 +96,6 @@ contract PermitTest is TestUtils {
 
         vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-    }
-
-    function test_mintWithPermit_replay() external {
-        uint256 depositAmount = 1e18;
-        asset.mint(address(staker), depositAmount * 2);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
-
-        uint256 mintAmount = depositAmount;
-
-        vm.startPrank(staker);
-
-        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
-
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
-        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
     }
 
     function test_depositWithPermit_preVesting(uint256 depositAmount) external {
@@ -209,6 +138,77 @@ contract PermitTest is TestUtils {
 
         assertEq(asset.balanceOf(address(staker)),  0);
         assertEq(asset.balanceOf(address(rdToken)), depositAmount);
+    }
+
+    function test_mintWithPermit_zeroAddress() external {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        uint mintAmount = depositAmount;
+        
+        vm.startPrank(staker);
+
+        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        rdToken.mintWithPermit(mintAmount, staker, deadline, 17, r, s);
+        
+        rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
+    }
+
+    function test_mintWithPermit_notStakerSignature() external {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, notStaker, address(rdToken), notStakerPrivateKey, deadline);
+
+        uint mintAmount = depositAmount;
+
+        vm.startPrank(staker);
+
+        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
+        
+        ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
+    
+    }
+
+    function test_mintWithPermit_pastDeadline() external {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        uint mintAmount = depositAmount;
+        
+        vm.startPrank(staker);
+
+        vm.warp(deadline + 1);
+
+        vm.expectRevert(bytes("ERC20Permit:EXPIRED"));
+        rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
+
+        vm.warp(deadline);
+        
+        rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
+    }
+
+    function test_mintWithPermit_replay() external {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount * 2);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        uint256 mintAmount = depositAmount;
+
+        vm.startPrank(staker);
+
+        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
+
+        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
     }
 
     function test_mintWithPermit_preVesting(uint256 mintAmount) external {

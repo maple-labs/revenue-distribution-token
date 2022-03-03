@@ -8,8 +8,9 @@ import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToke
 
 contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
-    address public immutable override asset;
     uint256 public immutable override precision;  // Precision of rates, equals max deposit amounts before rounding errors occur
+
+    address public override asset;
 
     address public override owner;
     address public override pendingOwner;

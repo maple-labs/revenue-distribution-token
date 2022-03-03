@@ -49,9 +49,8 @@ interface IERC4626 is IERC20 {
 
     /**
      *  @dev    Mints `shares_` to `receiver_` by depositing `assets_` into the Vault.
-     *          MUST emit the `Deposit` event.
+     *          MUST emit the {Deposit} event.
      *          MUST revert if all of the assets cannot be deposited (due to insufficient approval, deposit limits, slippage, etc).
-     *          Note that most implementations will require approval of the assets that are being deposited.
      *  @param  assets_   The amount of assets to deposit.
      *  @param  receiver_ The receiver of the shares.
      *  @return shares_   The amount of shares minted.
@@ -60,9 +59,8 @@ interface IERC4626 is IERC20 {
 
     /**
      *  @dev    Mints `shares_` to `receiver_` by depositing `assets_` into the Vault.
-     *          MUST emit the `Deposit` event.
+     *          MUST emit the {Deposit} event.
      *          MUST revert if all of shares cannot be minted (due to insufficient approval, deposit limits, slippage, etc).
-     *          Note that most implementations will require approval of the assets that are being deposited.
      *  @param  shares_   The amount of shares to mint.
      *  @param  receiver_ The receiver of the shares.
      *  @return assets_   The amount of assets deposited.
@@ -71,9 +69,8 @@ interface IERC4626 is IERC20 {
 
     /**
      *  @dev    Burns `shares_` from `owner_` and sends `assets_` to `receiver_`.
-     *          MUST emit the `Withdraw` event.
+     *          MUST emit the {Withdraw} event.
      *          NUST revert if all of the shares cannot be redeemed (due to insufficent shares, withdrawal limits, slippage, etc).
-     *          Note that some implementations will require a request to be submitted in advance before this function can be called.
      *  @param  shares_   The amount of shares to redeem.
      *  @param  receiver_ The receiver of the assets.
      *  @param  owner_    The owner of the shares.
@@ -83,9 +80,8 @@ interface IERC4626 is IERC20 {
 
     /**
      *  @dev    Burns `shares_` from `owner_` and sends `assets_` to `receiver_`.
-     *          MUST emit the `Withdraw` event.
+     *          MUST emit the {Withdraw} event.
      *          MUST revert if all of the assets cannot be withdrawn (due to insufficient assets, withdrawal limits, slippage, etc).
-     *          Note that some implementations will require a request to be submitted in advance before this function can be called.
      *  @param  assets_   The amount of assets to withdraw.
      *  @param  receiver_ The receiver of the assets.
      *  @param  owner_    The owner of the assets.
@@ -161,7 +157,6 @@ interface IERC4626 is IERC20 {
      *          MUST NOT account for deposit limits like those returned from `maxDeposit` and should always act as though the deposit would be accepted.
      *          MUST be inclusive of deposit fees. Integrators should be aware of the existence of deposit fees.
      *          MUST NOT revert.
-     *          Note that any difference between `convertToShares` and `previewDeposit` SHOULD be considered as slippage.
      *  @param  assets_ The amount of assets to deposit.
      *  @return shares_ The amount of shares that would be minted.
      */
@@ -173,7 +168,6 @@ interface IERC4626 is IERC20 {
      *          MUST NOT account for mint limits like those returned from `maxMint` and should always act as though the minting would be accepted.
      *          MUST be inclusive of deposit fees. Integrators should be aware of the existence of deposit fees.
      *          MUST NOT revert.
-     *          Note that any difference between `convertToAssets` and `previewMint` SHOULD be considered as slippage.
      *  @param  shares_ The amount of shares to mint.
      *  @return assets_ The amount of assets that would be deposited.
      */
@@ -185,7 +179,6 @@ interface IERC4626 is IERC20 {
      *          MUST NOT account for redemption limits like those returned from `maxRedeem` and should always act as though the redemption would be accepted.
      *          MUST be inclusive of withdrawal fees. Integrators should be aware of the existence of withdrawal fees.
      *          MUST NOT revert.
-     *          Note that any difference between `convertToAssets` and `previewRedeem` SHOULD be considered as slippage.
      *  @param  shares_ The amount of shares to redeem.
      *  @return assets_ The amount of assets that would be withdrawn.
      */
@@ -197,7 +190,6 @@ interface IERC4626 is IERC20 {
      *          MUST NOT account for withdrawal limits like those returned from `maxWithdraw` and should always act as though the withdrawal would be accepted.
      *          MUST be inclusive of withdrawal fees. Integrators should be aware of the existence of withdrawal fees.
      *          MUST NOT revert.
-     *          Note that any difference between `convertToShares` and `previewWithdraw` SHOULD be considered as slippage.
      *  @param  assets_ The amount of assets to withdraw.
      *  @return shares_ The amount of shares that would be redeemed.
      */

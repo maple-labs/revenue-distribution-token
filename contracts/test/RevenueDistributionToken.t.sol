@@ -615,14 +615,18 @@ contract ExitTest is TestUtils {
         Staker notShareOwner = new Staker();
 
         uint256 expectedSharesBurned = rdToken.convertToShares(withdrawAmount);
+
+        assertEq(expectedSharesBurned, 19.047619047619047619e18);
+
         staker.erc20_approve(address(rdToken), address(notShareOwner), expectedSharesBurned);
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), expectedSharesBurned);
 
-        notShareOwner.rdToken_withdraw(address(rdToken), withdrawAmount, address(staker), address(staker));
+        uint256 sharesBurned = notShareOwner.rdToken_withdraw(address(rdToken), withdrawAmount, address(staker), address(staker));
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), 0);
 
+        assertEq(sharesBurned,                                   19.047619047619047619e18);
         assertEq(rdToken.balanceOf(address(staker)),             80.952380952380952381e18);  // 100 - 80 / 1.05
         assertEq(rdToken.totalSupply(),                          80.952380952380952381e18);
         assertEq(rdToken.freeAssets(),                           85e18);                     // totalAssets - 20 withdrawn

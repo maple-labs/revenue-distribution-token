@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.7;
 
-import { ERC20Permit }       from "../modules/erc20/contracts/ERC20Permit.sol";
+import { ERC20Permit } from "../modules/erc20/contracts/ERC20Permit.sol";
 import { ERC20Helper } from "../modules/erc20-helper/src/ERC20Helper.sol";
 
 import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
@@ -10,9 +10,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     uint256 public immutable override precision;  // Precision of rates, equals max deposit amounts before rounding errors occur
 
+    address public override asset;
+
     address public override owner;
     address public override pendingOwner;
-    address public override asset;
 
     uint256 public override freeAssets;           // Amount of assets unlocked regardless of time passed.
     uint256 public override issuanceRate;         // asset/second rate dependent on aggregate vesting schedule (needs increased precision).
@@ -63,7 +64,17 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         shares_ = _deposit(assets_, receiver_, msg.sender);
     }
 
+    function depositWithPermit(uint256 assets_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external virtual override returns (uint256 shares_) {
+        ERC20Permit(asset).permit(msg.sender, address(this), assets_, deadline_, v_, r_, s_);
+        shares_ = _deposit(assets_, receiver_, msg.sender);
+    }
+
     function mint(uint256 shares_, address receiver_) external virtual override returns (uint256 assets_) {
+        assets_ = _mint(shares_, receiver_, msg.sender);
+    }
+
+    function mintWithPermit(uint256 shares_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external virtual override returns (uint256 assets_) {
+        ERC20Permit(asset).permit(msg.sender, address(this), convertToAssets(shares_), deadline_, v_, r_, s_);
         assets_ = _mint(shares_, receiver_, msg.sender);
     }
 
@@ -149,10 +160,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     }
 
     function maxDeposit(address receiver_) external pure virtual override returns (uint256 maxAssets_) {
+        receiver_;  // Silence warning
         maxAssets_ = type(uint256).max;
     }
 
     function maxMint(address receiver_) external pure virtual override returns (uint256 maxShares_) {
+        receiver_;  // Silence warning
         maxShares_ = type(uint256).max;
     }
 

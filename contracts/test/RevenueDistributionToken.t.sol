@@ -69,38 +69,6 @@ contract AuthTest is TestUtils {
         assertEq(rdToken.vestingPeriodFinish(), 10_100);
     }
 
-    function test_redeem_acl() external {
-        Staker shareOwner    = new Staker();
-        Staker notShareOwner = new Staker();
-
-        uint256 depositAmount = 1e18;
-        asset.mint(address(shareOwner), depositAmount);
-
-        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
-        uint256 shares = shareOwner.rdToken_deposit(address(rdToken), depositAmount);
-
-        vm.expectRevert("RDT:R:NOT_OWNER");
-        notShareOwner.rdToken_redeem(address(rdToken), shares, address(shareOwner));
-
-        shareOwner.rdToken_redeem(address(rdToken), shares, address(shareOwner));
-    }
-
-    function test_withdraw_acl() external {
-        Staker shareOwner    = new Staker();
-        Staker notShareOwner = new Staker();
-
-        uint256 depositAmount = 1e18;
-        asset.mint(address(shareOwner), depositAmount);
-
-        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
-        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
-
-        vm.expectRevert("RDT:W:NOT_OWNER");
-        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner));
-
-        shareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner));
-    }
-
 }
 
 contract DepositTest is TestUtils {
@@ -391,6 +359,49 @@ contract ExitTest is TestUtils {
         staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount);
     }
 
+    function test_withdraw_callerNotOwner_badApproval() external {
+        Staker shareOwner    = new Staker();
+        Staker notShareOwner = new Staker();
+
+        uint256 depositAmount = 1e18;
+        asset.mint(address(shareOwner), depositAmount);
+
+        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
+        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
+
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount - 1);
+        vm.expectRevert("RDT:CALLER_ALLOWANCE");
+        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner));
+
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
+
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), depositAmount);
+        
+        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner));
+        
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
+    }
+
+    function test_withdraw_callerNotOwner_infiniteApprovalForCaller() external {
+        Staker shareOwner    = new Staker();
+        Staker notShareOwner = new Staker();
+
+        uint256 depositAmount = 1e18;
+        asset.mint(address(shareOwner), depositAmount);
+
+        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
+        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
+
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), type(uint256).max);
+
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
+        
+        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner));
+        
+        // Infinite approval stays infinite.
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
+    }
+
     function test_withdraw(uint256 depositAmount, uint256 withdrawAmount) public {
         depositAmount  = constrictToRange(depositAmount,  1, 1e29);
         withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
@@ -586,6 +597,49 @@ contract ExitTest is TestUtils {
         staker.rdToken_redeem(address(rdToken), 100e18 + 1);
 
         staker.rdToken_redeem(address(rdToken), 100e18);
+    }
+
+    function test_redeem_callerNotOwner_badApproval() external {
+        Staker shareOwner    = new Staker();
+        Staker notShareOwner = new Staker();
+
+        uint256 depositAmount = 1e18;
+        asset.mint(address(shareOwner), depositAmount);
+
+        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
+        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
+
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount - 1);
+        vm.expectRevert("RDT:CALLER_ALLOWANCE");
+        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner));
+
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
+
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), depositAmount);
+        
+        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner));
+        
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
+    }
+
+    function test_redeem_callerNotOwner_infiniteApprovalForCaller() external {
+        Staker shareOwner    = new Staker();
+        Staker notShareOwner = new Staker();
+
+        uint256 depositAmount = 1e18;
+        asset.mint(address(shareOwner), depositAmount);
+
+        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
+        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
+
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), type(uint256).max);
+
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
+        
+        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner));
+        
+        // Infinite approval stays infinite.
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
     }
 
     function test_redeem(uint256 depositAmount, uint256 redeemAmount) public {

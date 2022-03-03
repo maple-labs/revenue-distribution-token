@@ -198,7 +198,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     function _updateCallerAllowanceOnOwnerShares(address caller_, address owner_, uint256 shares_) internal {
         uint256 callerAllowance = allowance[owner_][caller_]; // Cache to memory.
         
-        require(callerAllowance >= shares_, "RDT:ALLOWANCE");
+        require(callerAllowance >= shares_, "RDT:CALLER_ALLOWANCE");
         
         if (callerAllowance != type(uint256).max) {
             allowance[owner_][caller_] = callerAllowance - shares_;

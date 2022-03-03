@@ -64,7 +64,17 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         shares_ = _deposit(assets_, receiver_, msg.sender);
     }
 
+    function depositWithPermit(uint256 assets_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external virtual override returns (uint256 shares_) {
+        ERC20Permit(asset).permit(msg.sender, address(this), assets_, deadline_, v_, r_, s_);
+        shares_ = _deposit(assets_, receiver_, msg.sender);
+    }
+
     function mint(uint256 shares_, address receiver_) external virtual override returns (uint256 assets_) {
+        assets_ = _mint(shares_, receiver_, msg.sender);
+    }
+
+    function mintWithPermit(uint256 shares_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external virtual override returns (uint256 assets_) {
+        ERC20Permit(asset).permit(msg.sender, address(this), convertToAssets(shares_), deadline_, v_, r_, s_);
         assets_ = _mint(shares_, receiver_, msg.sender);
     }
 

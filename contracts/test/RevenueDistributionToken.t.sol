@@ -2,16 +2,283 @@
 pragma solidity 0.8.7;
 
 import { TestUtils } from "../../modules/contract-test-utils/contracts/test.sol";
-import { MockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
+import { MockERC20Permit } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { Owner }  from "./accounts/Owner.sol";
 import { Staker } from "./accounts/Staker.sol";
 
 import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol";
 
+contract PermitTest is TestUtils {
+
+    MockERC20Permit asset;
+    RDT             rdToken;
+
+    uint256 stakerPrivateKey    = 1;
+    uint256 notStakerPrivateKey = 2;
+    uint256 nonce               = 0;
+    uint256 deadline            = 5_000_000_000;  // Timestamp far in the future
+
+    uint256 constant sampleAssetsToConvert = 1e18;
+    uint256 constant sampleSharesToConvert = 1e18;
+
+    address staker;
+    address notStaker;
+
+    function setUp() public virtual {
+        asset   = new MockERC20Permit("MockToken", "MT", 18);
+        rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
+
+        staker    = vm.addr(stakerPrivateKey);
+        notStaker = vm.addr(notStakerPrivateKey);
+
+        vm.warp(10_000_000);  // Warp to non-zero timestamp
+    }
+
+    function test_depositWithPermit_zeroAddress() external {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        vm.startPrank(staker);
+
+        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        rdToken.depositWithPermit(depositAmount, staker, deadline, 17, r, s);
+        
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
+    }
+
+    function test_depositWithPermit_notStakerSignature() external {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, notStaker, address(rdToken), notStakerPrivateKey, deadline);
+
+        vm.startPrank(staker);
+
+        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
+        
+        ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
+    
+    }
+
+    function test_depositWithPermit_pastDeadline() external {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        vm.startPrank(staker);
+
+        vm.warp(deadline + 1);
+
+        vm.expectRevert(bytes("ERC20Permit:EXPIRED"));
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
+
+        vm.warp(deadline);
+        
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
+    }
+
+    function test_depositWithPermit_replay() external {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount * 2);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        vm.startPrank(staker);
+
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
+
+        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
+    }
+
+    function test_depositWithPermit_preVesting(uint256 depositAmount) external {
+        depositAmount = constrictToRange(depositAmount, 1, 1e29);
+
+        asset.mint(address(staker), depositAmount);
+
+        assertEq(rdToken.balanceOf(address(staker)),             0);
+        assertEq(rdToken.totalSupply(),                          0);
+        assertEq(rdToken.freeAssets(),                           0);
+        assertEq(rdToken.totalAssets(),                          0);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         0);
+        assertEq(rdToken.lastUpdated(),                          0);
+
+        assertEq(asset.balanceOf(address(staker)),  depositAmount);
+        assertEq(asset.balanceOf(address(rdToken)), 0);
+
+        assertEq(asset.nonces(staker),                      0);
+        assertEq(asset.allowance(staker, address(rdToken)), 0);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+        vm.prank(staker);
+        uint256 shares = rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
+
+        assertEq(asset.allowance(staker, address(rdToken)), 0); // Should have used whole allowance
+        assertEq(asset.nonces(staker),                      1);
+
+        assertEq(shares, rdToken.balanceOf(staker));
+
+        assertEq(rdToken.balanceOf(address(staker)),             depositAmount);
+        assertEq(rdToken.totalSupply(),                          depositAmount);
+        assertEq(rdToken.freeAssets(),                           depositAmount);
+        assertEq(rdToken.totalAssets(),                          depositAmount);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert); // No revenue, conversion should be the same.
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         0);
+        assertEq(rdToken.lastUpdated(),                          block.timestamp);
+
+        assertEq(asset.balanceOf(address(staker)),  0);
+        assertEq(asset.balanceOf(address(rdToken)), depositAmount);
+    }
+
+    function test_mintWithPermit_zeroAddress() external {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        uint mintAmount = depositAmount;
+        
+        vm.startPrank(staker);
+
+        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        rdToken.mintWithPermit(mintAmount, staker, deadline, 17, r, s);
+        
+        rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
+    }
+
+    function test_mintWithPermit_notStakerSignature() external {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, notStaker, address(rdToken), notStakerPrivateKey, deadline);
+
+        uint mintAmount = depositAmount;
+
+        vm.startPrank(staker);
+
+        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
+        
+        ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
+    
+    }
+
+    function test_mintWithPermit_pastDeadline() external {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        uint mintAmount = depositAmount;
+        
+        vm.startPrank(staker);
+
+        vm.warp(deadline + 1);
+
+        vm.expectRevert(bytes("ERC20Permit:EXPIRED"));
+        rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
+
+        vm.warp(deadline);
+        
+        rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
+    }
+
+    function test_mintWithPermit_replay() external {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount * 2);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        uint256 mintAmount = depositAmount;
+
+        vm.startPrank(staker);
+
+        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
+
+        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
+    }
+
+    function test_mintWithPermit_preVesting(uint256 mintAmount) external {
+        mintAmount = constrictToRange(mintAmount, 1, 1e29);
+
+        uint256 depositAmount = mintAmount; // totalSupply = totalAssets, so they will be equal.
+        asset.mint(address(staker), depositAmount);
+
+        assertEq(rdToken.balanceOf(address(staker)),             0);
+        assertEq(rdToken.totalSupply(),                          0);
+        assertEq(rdToken.freeAssets(),                           0);
+        assertEq(rdToken.totalAssets(),                          0);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         0);
+        assertEq(rdToken.lastUpdated(),                          0);
+
+        assertEq(asset.balanceOf(address(staker)),  depositAmount);
+        assertEq(asset.balanceOf(address(rdToken)), 0);
+
+        assertEq(asset.nonces(staker),                      0);
+        assertEq(asset.allowance(staker, address(rdToken)), 0);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(mintAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+        vm.prank(staker);
+        uint256 assets = rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
+
+        assertEq(asset.allowance(staker, address(rdToken)), 0); // Should have used whole allowance
+        assertEq(asset.nonces(staker),                      1);
+
+        assertEq(mintAmount,    rdToken.balanceOf(staker));
+        assertEq(depositAmount, assets);
+
+        assertEq(rdToken.balanceOf(address(staker)),             mintAmount);
+        assertEq(rdToken.totalSupply(),                          mintAmount);
+        assertEq(rdToken.freeAssets(),                           depositAmount);
+        assertEq(rdToken.totalAssets(),                          depositAmount);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert); // No revenue, conversion should be the same.
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         0);
+        assertEq(rdToken.lastUpdated(),                          block.timestamp);
+
+        assertEq(asset.balanceOf(address(staker)),  0);
+        assertEq(asset.balanceOf(address(rdToken)), mintAmount);
+    }
+
+    // No need to further test *withPermit functionality, as in-depth deposit and mint testing will be done with the deposit() and mint() functions.
+
+    // Returns an ERC-2612 `permit` digest for the `owner` to sign
+    function _getDigest(address owner_, address spender_, uint256 value_, uint256 nonce_, uint256 deadline_) internal view returns (bytes32) {
+        return keccak256(
+            abi.encodePacked(
+                '\x19\x01',
+                asset.DOMAIN_SEPARATOR(),
+                keccak256(abi.encode(asset.PERMIT_TYPEHASH(), owner_, spender_, value_, nonce_, deadline_))
+            )
+        );
+    }
+
+    // Returns a valid `permit` signature signed by this contract's `owner` address
+    function _getValidPermitSignature(uint256 value_, address owner_, address spender_, uint256 ownerSk_, uint256 deadline_) internal returns (uint8 v_, bytes32 r_, bytes32 s_) {
+        bytes32 digest = _getDigest(owner_, spender_, value_, nonce, deadline_);
+        ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(ownerSk_, digest);
+        return (v, r, s);
+    }
+}
+
 contract AuthTest is TestUtils {
 
-    MockERC20 asset;
+    MockERC20Permit asset;
     Owner     notOwner;
     Owner     owner;
     RDT       rdToken;
@@ -19,7 +286,7 @@ contract AuthTest is TestUtils {
     function setUp() public virtual {
         notOwner = new Owner();
         owner    = new Owner();
-        asset    = new MockERC20("MockToken", "MT", 18);
+        asset    = new MockERC20Permit("MockToken", "MT", 18);
         rdToken  = new RDT("Revenue Distribution Token", "RDT", address(owner), address(asset), 1e30);
     }
 
@@ -105,7 +372,7 @@ contract AuthTest is TestUtils {
 
 contract DepositTest is TestUtils {
 
-    MockERC20 asset;
+    MockERC20Permit asset;
     RDT       rdToken;
     Staker    staker;
 
@@ -113,7 +380,7 @@ contract DepositTest is TestUtils {
     uint256 constant sampleSharesToConvert = 1e18;
 
     function setUp() public virtual {
-        asset   = new MockERC20("MockToken", "MT", 18);
+        asset   = new MockERC20Permit("MockToken", "MT", 18);
         rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
         staker  = new Staker();
 
@@ -332,7 +599,7 @@ contract DepositTest is TestUtils {
 }
 
 contract ExitTest is TestUtils {
-    MockERC20 asset;
+    MockERC20Permit asset;
     RDT       rdToken;
     Staker    staker;
 
@@ -342,7 +609,7 @@ contract ExitTest is TestUtils {
     bytes constant ARITHMETIC_ERROR = abi.encodeWithSignature("Panic(uint256)", 0x11);
 
     function setUp() public virtual {
-        asset   = new MockERC20("MockToken", "MT", 18);
+        asset   = new MockERC20Permit("MockToken", "MT", 18);
         rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
         staker  = new Staker();
 
@@ -735,7 +1002,7 @@ contract ExitTest is TestUtils {
 
 contract RevenueStreamingTest is TestUtils {
 
-    MockERC20 asset;
+    MockERC20Permit asset;
     RDT       rdToken;
 
     uint256 constant sampleAssetsToConvert = 1e18;
@@ -750,7 +1017,7 @@ contract RevenueStreamingTest is TestUtils {
         start = 10_000;
         vm.warp(start);
 
-        asset   = new MockERC20("MockToken", "MT", 18);
+        asset   = new MockERC20Permit("MockToken", "MT", 18);
         rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
     }
 

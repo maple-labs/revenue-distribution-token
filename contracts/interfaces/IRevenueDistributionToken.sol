@@ -89,4 +89,11 @@ interface IRevenueDistributionToken is IERC4626, IERC20Permit {
      */
     function balanceOfAssets(address account_) external view returns (uint256 assets_);
 
+    /************************/
+    /*** Staker Functions ***/
+    /************************/
+
+    function depositWithPermit(uint256 assets_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external returns (uint256 shares_);
+    function mintWithPermit(uint256 shares_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external returns (uint256 assets_);
+
 }

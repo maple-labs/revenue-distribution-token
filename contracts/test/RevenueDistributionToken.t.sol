@@ -10,8 +10,9 @@ import { Staker } from "./accounts/Staker.sol";
 import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol";
 
 contract PermitTest is TestUtils {
+
     MockERC20Permit asset;
-    RDT       rdToken;
+    RDT             rdToken;
 
     uint256 stakerPrivateKey    = 1;
     uint256 notStakerPrivateKey = 2;
@@ -46,8 +47,6 @@ contract PermitTest is TestUtils {
         rdToken.depositWithPermit(depositAmount, staker, deadline, 17, r, s);
         
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-
-        vm.stopPrank();
     }
 
     function test_mintWithPermit_zeroAddress() external {
@@ -64,8 +63,6 @@ contract PermitTest is TestUtils {
         rdToken.mintWithPermit(mintAmount, staker, deadline, 17, r, s);
         
         rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
-
-        vm.stopPrank();
     }
 
     function test_depositWithPermit_notStakerSignature() external {
@@ -82,8 +79,7 @@ contract PermitTest is TestUtils {
         ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
 
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-        
-        vm.stopPrank();
+    
     }
 
     function test_mintWithPermit_notStakerSignature() external {
@@ -102,8 +98,7 @@ contract PermitTest is TestUtils {
         ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
 
         rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
-        
-        vm.stopPrank();
+    
     }
 
     function test_depositWithPermit_pastDeadline() external {
@@ -122,8 +117,6 @@ contract PermitTest is TestUtils {
         vm.warp(deadline);
         
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-
-        vm.stopPrank();
     }
 
     function test_mintWithPermit_pastDeadline() external {
@@ -144,8 +137,6 @@ contract PermitTest is TestUtils {
         vm.warp(deadline);
         
         rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
-
-        vm.stopPrank();
     }
 
     function test_depositWithPermit_replay() external {
@@ -160,8 +151,6 @@ contract PermitTest is TestUtils {
 
         vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-
-        vm.stopPrank();
     }
 
     function test_mintWithPermit_replay() external {
@@ -178,8 +167,6 @@ contract PermitTest is TestUtils {
 
         vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
-
-        vm.stopPrank();
     }
 
     function test_depositWithPermit_preVesting(uint256 depositAmount) external {

@@ -540,7 +540,6 @@ contract ExitTest is TestUtils {
     function test_withdraw_callerNotOwner(uint256 depositAmount, uint256 withdrawAmount, uint256 callerAllowance) public {
         depositAmount  = constrictToRange(depositAmount,  1, 1e29);
         withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
-        callerAllowance  = constrictToRange(callerAllowance, withdrawAmount, type(uint256).max - 1); // Allowance reduction doesn't happen with infinite approval.
 
         asset.mint(address(staker), depositAmount);
 
@@ -564,6 +563,9 @@ contract ExitTest is TestUtils {
         vm.warp(start + 10 days);
 
         Staker notShareOwner = new Staker();
+
+        uint256 expectedSharesBurned = rdToken.convertToShares(withdrawAmount);
+        callerAllowance              = constrictToRange(callerAllowance, expectedSharesBurned, type(uint256).max - 1); // Allowance reduction doesn't happen with infinite approval.
         staker.erc20_approve(address(rdToken), address(notShareOwner), callerAllowance);
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance);
@@ -642,12 +644,11 @@ contract ExitTest is TestUtils {
         uint256 warpTime,
         uint256 callerAllowance
     ) public {
-        depositAmount    = constrictToRange(depositAmount,  1, 1e29);
-        withdrawAmount   = constrictToRange(withdrawAmount, 1, depositAmount);
-        vestingAmount    = constrictToRange(vestingAmount,  1, 1e29);
-        vestingPeriod    = constrictToRange(vestingPeriod,  1, 100 days);
-        warpTime         = constrictToRange(warpTime,       1, vestingPeriod);
-        callerAllowance  = constrictToRange(callerAllowance, withdrawAmount, type(uint256).max - 1); // Allowance reduction doesn't happen with infinite approval.
+        depositAmount  = constrictToRange(depositAmount,  1, 1e29);
+        withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
+        vestingAmount  = constrictToRange(vestingAmount,  1, 1e29);
+        vestingPeriod  = constrictToRange(vestingPeriod,  1, 100 days);
+        warpTime       = constrictToRange(warpTime,       1, vestingPeriod);
 
         uint256 start = block.timestamp;
 
@@ -669,9 +670,10 @@ contract ExitTest is TestUtils {
         assertEq(asset.balanceOf(address(staker)),  0);
         assertEq(asset.balanceOf(address(rdToken)), depositAmount + vestingAmount);  // Balance is higher than totalAssets
 
-        uint256 expectedSharesBurned = rdToken.convertToShares(withdrawAmount);
-
         Staker notShareOwner = new Staker();
+
+        uint256 expectedSharesBurned = rdToken.convertToShares(withdrawAmount);
+        callerAllowance              = constrictToRange(callerAllowance, expectedSharesBurned, type(uint256).max - 1); // Allowance reduction doesn't happen with infinite approval.
         staker.erc20_approve(address(rdToken), address(notShareOwner), callerAllowance);
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance);
@@ -758,49 +760,6 @@ contract ExitTest is TestUtils {
         staker.rdToken_redeem(address(rdToken), 100e18 + 1);
 
         staker.rdToken_redeem(address(rdToken), 100e18);
-    }
-
-    function test_redeem_callerNotOwner_badApproval() external {
-        Staker shareOwner    = new Staker();
-        Staker notShareOwner = new Staker();
-
-        uint256 depositAmount = 1e18;
-        asset.mint(address(shareOwner), depositAmount);
-
-        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
-        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
-
-        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount - 1);
-        vm.expectRevert("RDT:CALLER_ALLOWANCE");
-        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
-
-        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
-
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), depositAmount);
-        
-        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
-        
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
-    }
-
-    function test_redeem_callerNotOwner_infiniteApprovalForCaller() external {
-        Staker shareOwner    = new Staker();
-        Staker notShareOwner = new Staker();
-
-        uint256 depositAmount = 1e18;
-        asset.mint(address(shareOwner), depositAmount);
-
-        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
-        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
-
-        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), type(uint256).max);
-
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
-        
-        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
-        
-        // Infinite approval stays infinite.
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
     }
 
     function test_redeem(uint256 depositAmount, uint256 redeemAmount) public {
@@ -919,6 +878,210 @@ contract ExitTest is TestUtils {
 
         uint256 expectedAssetsFromRedeem = rdToken.convertToAssets(redeemAmount);
         uint256 assetsFromRedeem         = staker.rdToken_redeem(address(rdToken), redeemAmount);
+
+        assertEq(assetsFromRedeem,                   expectedAssetsFromRedeem);
+        assertEq(rdToken.balanceOf(address(staker)), depositAmount - redeemAmount);
+        assertEq(rdToken.totalSupply(),              depositAmount - redeemAmount);
+        assertEq(rdToken.lastUpdated(),              start + warpTime);
+
+        // if (rdToken.totalSupply() > 0) assertWithinPrecision(rdToken.exchangeRate(), exchangeRate1, 8);  // TODO: Add specialized testing for this
+
+        assertWithinDiff(rdToken.issuanceRate(), vestingAmount * 1e30 / vestingPeriod, 1);
+        assertWithinDiff(rdToken.freeAssets(),           depositAmount + amountVested - expectedAssetsFromRedeem, 1);
+        assertWithinDiff(rdToken.totalAssets(),          depositAmount + amountVested - expectedAssetsFromRedeem, 1);
+
+        assertEq(asset.balanceOf(address(staker)),  expectedAssetsFromRedeem);
+        assertEq(asset.balanceOf(address(rdToken)), depositAmount + vestingAmount - expectedAssetsFromRedeem);  // Note that vestingAmount is used
+    }
+
+    function test_redeem_callerNotOwner_badApproval() external {
+        Staker shareOwner    = new Staker();
+        Staker notShareOwner = new Staker();
+
+        uint256 depositAmount = 1e18;
+        asset.mint(address(shareOwner), depositAmount);
+
+        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
+        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
+
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount - 1);
+        vm.expectRevert("RDT:CALLER_ALLOWANCE");
+        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
+
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
+
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), depositAmount);
+        
+        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
+        
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
+    }
+
+    function test_redeem_callerNotOwner_infiniteApprovalForCaller() external {
+        Staker shareOwner    = new Staker();
+        Staker notShareOwner = new Staker();
+
+        uint256 depositAmount = 1e18;
+        asset.mint(address(shareOwner), depositAmount);
+
+        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
+        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
+
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), type(uint256).max);
+
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
+        
+        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
+        
+        // Infinite approval stays infinite.
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
+    }
+
+    function test_redeem_callerNotOwner(uint256 depositAmount, uint256 redeemAmount, uint256 callerAllowance) external {
+        depositAmount   = constrictToRange(depositAmount, 1, 1e29);
+        redeemAmount    = constrictToRange(redeemAmount,  1, depositAmount);
+        callerAllowance = constrictToRange(callerAllowance,  redeemAmount, type(uint256).max - 1); // Allowance reduction doesn't happen with infinite approval.
+
+        asset.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), depositAmount);
+
+        uint256 start = block.timestamp;
+
+        assertEq(rdToken.balanceOf(address(staker)),             depositAmount);
+        assertEq(rdToken.totalSupply(),                          depositAmount);
+        assertEq(rdToken.freeAssets(),                           depositAmount);
+        assertEq(rdToken.totalAssets(),                          depositAmount);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         0);
+        assertEq(rdToken.lastUpdated(),                          start);
+
+        assertEq(asset.balanceOf(address(staker)),  0);
+        assertEq(asset.balanceOf(address(rdToken)), depositAmount);
+
+        vm.warp(start + 10 days);
+
+        uint256 expectedAssetsFromRedeem = rdToken.convertToAssets(redeemAmount);
+
+        Staker notShareOwner = new Staker();
+        staker.erc20_approve(address(rdToken), address(notShareOwner), callerAllowance);
+
+        assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance);
+
+        uint256 assetsFromRedeem = notShareOwner.rdToken_redeem(address(rdToken), redeemAmount, address(staker), address(staker));
+
+        assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance - redeemAmount);
+
+        assertEq(assetsFromRedeem,                               expectedAssetsFromRedeem);
+        assertEq(rdToken.balanceOf(address(staker)),             depositAmount - redeemAmount);
+        assertEq(rdToken.totalSupply(),                          depositAmount - redeemAmount);
+        assertEq(rdToken.freeAssets(),                           depositAmount - redeemAmount);
+        assertEq(rdToken.totalAssets(),                          depositAmount - redeemAmount);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         0);
+        assertEq(rdToken.lastUpdated(),                          start + 10 days);
+
+        assertEq(asset.balanceOf(address(staker)),  redeemAmount);
+        assertEq(asset.balanceOf(address(rdToken)), depositAmount - redeemAmount);
+    }
+
+    function test_redeem_callerNotOwner_totalAssetsGtTotalSupply_explicitVals() external {
+        uint256 depositAmount = 100e18;
+        uint256 redeemAmount  = 20e18;
+        uint256 vestingAmount = 10e18;
+        uint256 vestingPeriod = 200 seconds;
+        uint256 warpTime      = 100 seconds;
+        uint256 start         = block.timestamp;
+
+        _depositAsset(depositAmount);
+        _transferAndUpdateVesting(vestingAmount, vestingPeriod);
+
+        vm.warp(block.timestamp + warpTime);
+
+        assertEq(rdToken.balanceOf(address(staker)),             100e18);
+        assertEq(rdToken.totalSupply(),                          100e18);
+        assertEq(rdToken.freeAssets(),                           100e18);
+        assertEq(rdToken.totalAssets(),                          105e18);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.05e18);               // sampleSharesToConvert * 105e18 / 100e18
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.5238095238095238e17); // sampleAssetsToConvert * 100e18 / 105e18
+        assertEq(rdToken.issuanceRate(),                         0.05e18 * 1e30);
+        assertEq(rdToken.lastUpdated(),                          start);
+
+        assertEq(asset.balanceOf(address(staker)),  0);
+        assertEq(asset.balanceOf(address(rdToken)), 110e18);
+
+        Staker notShareOwner = new Staker();
+        staker.erc20_approve(address(rdToken), address(notShareOwner), redeemAmount);
+
+        assertEq(rdToken.allowance(address(staker), address(notShareOwner)), 20e18);
+
+        uint256 assetsFromRedeem = notShareOwner.rdToken_redeem(address(rdToken), redeemAmount, address(staker), address(staker));
+
+        assertEq(rdToken.allowance(address(staker), address(notShareOwner)), 0);
+
+        assertEq(assetsFromRedeem,                               21e18);
+        assertEq(rdToken.balanceOf(address(staker)),             80e18);
+        assertEq(rdToken.totalSupply(),                          80e18);
+        assertEq(rdToken.freeAssets(),                           84e18);                 // 105 * 0.8
+        assertEq(rdToken.totalAssets(),                          84e18);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.05e18);               // sampleSharesToConvert * 84e18 / 80e18
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.5238095238095238e17); // sampleAssetsToConvert * 80e18 / 84e18
+        assertEq(rdToken.issuanceRate(),                         0.05e18 * 1e30);
+        assertEq(rdToken.lastUpdated(),                          start + 100 seconds);
+
+        assertEq(asset.balanceOf(address(staker)),  21e18);
+        assertEq(asset.balanceOf(address(rdToken)), 89e18);
+    }
+
+    function test_redeem_callerNotOwner_totalAssetsGtTotalSupply(
+        uint256 depositAmount,
+        uint256 redeemAmount,
+        uint256 vestingAmount,
+        uint256 vestingPeriod,
+        uint256 warpTime,
+        uint256 callerAllowance
+    ) external {
+        depositAmount   = constrictToRange(depositAmount, 1, 1e29);
+        redeemAmount    = constrictToRange(redeemAmount,  1, depositAmount);
+        vestingAmount   = constrictToRange(vestingAmount, 1, 1e29);
+        vestingPeriod   = constrictToRange(vestingPeriod, 1, 100 days);
+        warpTime        = constrictToRange(warpTime,      1, vestingPeriod);
+        callerAllowance = constrictToRange(callerAllowance, redeemAmount, type(uint256).max - 1); // Allowance reduction doesn't happen with infinite approval.
+
+        uint256 start = block.timestamp;
+
+        _depositAsset(depositAmount);
+        _transferAndUpdateVesting(vestingAmount, vestingPeriod);
+
+        vm.warp(block.timestamp + warpTime);
+
+        assertEq(rdToken.balanceOf(address(staker)), depositAmount);
+        assertEq(rdToken.totalSupply(),              depositAmount);
+        assertEq(rdToken.freeAssets(),               depositAmount);
+        assertEq(rdToken.lastUpdated(),              start);
+
+        uint256 totalAssets  = depositAmount + vestingAmount * warpTime / vestingPeriod;
+        uint256 amountVested = vestingAmount * 1e30 * warpTime / vestingPeriod / 1e30;
+
+        assertWithinDiff(rdToken.totalAssets(),  totalAssets,                          1);
+        assertWithinDiff(rdToken.issuanceRate(), vestingAmount * 1e30 / vestingPeriod, 1);
+
+        assertEq(asset.balanceOf(address(staker)),  0);
+        assertEq(asset.balanceOf(address(rdToken)), depositAmount + vestingAmount);  // Balance is higher than totalAssets
+
+        uint256 expectedAssetsFromRedeem = rdToken.convertToAssets(redeemAmount);
+        
+        Staker notShareOwner = new Staker();
+        staker.erc20_approve(address(rdToken), address(notShareOwner), callerAllowance);
+
+        assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance);
+
+        uint256 assetsFromRedeem = notShareOwner.rdToken_redeem(address(rdToken), redeemAmount, address(staker), address(staker));
+
+        assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance - redeemAmount);
 
         assertEq(assetsFromRedeem,                   expectedAssetsFromRedeem);
         assertEq(rdToken.balanceOf(address(staker)), depositAmount - redeemAmount);

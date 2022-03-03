@@ -70,7 +70,7 @@ interface IERC4626 is IERC20 {
     /**
      *  @dev    Burns `shares_` from `owner_` and sends `assets_` to `receiver_`.
      *          MUST emit the {Withdraw} event.
-     *          NUST revert if all of the shares cannot be redeemed (due to insufficent shares, withdrawal limits, slippage, etc).
+     *          MUST revert if all of the shares cannot be redeemed (due to insufficent shares, withdrawal limits, slippage, etc).
      *  @param  shares_   The amount of shares to redeem.
      *  @param  receiver_ The receiver of the assets.
      *  @param  owner_    The owner of the shares.
@@ -155,7 +155,6 @@ interface IERC4626 is IERC20 {
      *  @dev    Allows an on-chain or off-chain user to simulate the effects of their deposit at the current block, given current on-chain conditions.
      *          MUST return as close to and no more than the exact amount of shares that would be minted in a `deposit` call in the same transaction.
      *          MUST NOT account for deposit limits like those returned from `maxDeposit` and should always act as though the deposit would be accepted.
-     *          MUST be inclusive of deposit fees. Integrators should be aware of the existence of deposit fees.
      *          MUST NOT revert.
      *  @param  assets_ The amount of assets to deposit.
      *  @return shares_ The amount of shares that would be minted.
@@ -166,7 +165,6 @@ interface IERC4626 is IERC20 {
      *  @dev    Allows an on-chain or off-chain user to simulate the effects of their mint at the current block, given current on-chain conditions.
      *          MUST return as close to and no fewer than the exact amount of assets that would be deposited in a `mint` call in the same transaction.
      *          MUST NOT account for mint limits like those returned from `maxMint` and should always act as though the minting would be accepted.
-     *          MUST be inclusive of deposit fees. Integrators should be aware of the existence of deposit fees.
      *          MUST NOT revert.
      *  @param  shares_ The amount of shares to mint.
      *  @return assets_ The amount of assets that would be deposited.
@@ -174,10 +172,9 @@ interface IERC4626 is IERC20 {
     function previewMint(uint256 shares_) external view returns (uint256 assets_);
 
     /**
-     *  @dev    Allows an on-chain or off-chain user to simulate the effects of their redeemption at the current block, given current on-chain conditions.
+     *  @dev    Allows an on-chain or off-chain user to simulate the effects of their redemption at the current block, given current on-chain conditions.
      *          MUST return as close to and no more than the exact amount of assets that would be withdrawn in a `redeem` call in the same transaction.
      *          MUST NOT account for redemption limits like those returned from `maxRedeem` and should always act as though the redemption would be accepted.
-     *          MUST be inclusive of withdrawal fees. Integrators should be aware of the existence of withdrawal fees.
      *          MUST NOT revert.
      *  @param  shares_ The amount of shares to redeem.
      *  @return assets_ The amount of assets that would be withdrawn.
@@ -188,7 +185,6 @@ interface IERC4626 is IERC20 {
      *  @dev    Allows an on-chain or off-chain user to simulate the effects of their withdrawal at the current block, given current on-chain conditions.
      *          MUST return as close to and no fewer than the exact amount of shares that would be burned in a `withdraw` call in the same transaction.
      *          MUST NOT account for withdrawal limits like those returned from `maxWithdraw` and should always act as though the withdrawal would be accepted.
-     *          MUST be inclusive of withdrawal fees. Integrators should be aware of the existence of withdrawal fees.
      *          MUST NOT revert.
      *  @param  assets_ The amount of assets to withdraw.
      *  @return shares_ The amount of shares that would be redeemed.
@@ -198,7 +194,6 @@ interface IERC4626 is IERC20 {
     /**
      *  @dev    Total amount of the underlying asset that is managed by the Vault.
      *          SHOULD include compounding that occurs from any yields.
-     *          MUST include any fees that are charged against assets in the Vault.
      *          MUST NOT revert.
      *  @return totalAssets_ The total amount of assets the Vault manages.
      */

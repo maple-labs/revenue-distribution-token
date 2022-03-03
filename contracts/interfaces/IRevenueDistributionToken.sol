@@ -12,18 +12,20 @@ interface IRevenueDistributionToken is IERC4626, IERC20Permit {
     /***********************/
 
     /**
-     *  @dev The total amount of the underlying asset that is currently unlocked.
+     *  @dev The total amount of the underlying asset that is currently unlocked and is not time-dependent.
+     *       Analogous to the y-intercept in a linear function.
      */
     function freeAssets() external view returns (uint256 freeAssets_);
 
     /**
-     *  @dev The estimated rate of the vesting schedule that is currently active.
+     *  @dev The rate of issuance of the vesting schedule that is currently active.
      *       Denominated as the amount of underlying assets vesting per second.
      */
     function issuanceRate() external view returns (uint256 issuanceRate_);
 
     /**
-     *  @dev The last time the vesting schedule has been updated.
+     *  @dev The timestamp of when the linear function was last recalculated.
+     *       Analogous to t0 in a linear function.
      */
     function lastUpdated() external view returns (uint256 lastUpdated_);
 
@@ -53,19 +55,19 @@ interface IRevenueDistributionToken is IERC4626, IERC20Permit {
 
     /**
      *  @dev Sets the pending owner as the new owner.
-     *       Can be called only by the pending owner, and only after his nomination by the current owner.
+     *       Can be called only by the pending owner, and only after their nomination by the current owner.
      */
     function acceptOwnership() external;
 
     /**
      *  @dev   Sets a new address as the pending owner.
-     *  @param pendingOwner_ The next potential owner.
+     *  @param pendingOwner_ The address of the next potential owner.
      */
     function setPendingOwner(address pendingOwner_) external;
 
     /**
-     *  @dev    Updates the current vesting schedule based on how much time has elapsed since the last update.
-     *  @param  vestingPeriod_ The amount of time over which all so far unaccounted underlying assets will be vested over.
+     *  @dev    Updates the current vesting formula based on the amount of total unvested funds in the contract and the new `vestingPeriod_`.
+     *  @param  vestingPeriod_ The amount of time over which all currently unaccounted underlying assets will be vested over.
      *  @return issuanceRate_  The new issuance rate.
      *  @return freeAssets_    The new amount of underlying assets that are unlocked.
      */

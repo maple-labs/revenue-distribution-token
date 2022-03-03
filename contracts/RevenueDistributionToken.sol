@@ -144,11 +144,11 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         shares_ = totalSupply != uint256(0) ? assets_ * totalSupply / totalAssets() : assets_;
     }
 
-    function maxDeposit(address receiver_) external pure virtual override returns (uint256 maxAssets_) {
+    function maxDeposit(address) external pure virtual override returns (uint256 maxAssets_) {
         maxAssets_ = type(uint256).max;
     }
 
-    function maxMint(address receiver_) external pure virtual override returns (uint256 maxShares_) {
+    function maxMint(address) external pure virtual override returns (uint256 maxShares_) {
         maxShares_ = type(uint256).max;
     }
 

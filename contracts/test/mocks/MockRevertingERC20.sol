@@ -3,22 +3,17 @@ pragma solidity ^0.8.7;
 
 contract MockRevertingERC20 {
 
-    string public  name;
-    string public  symbol;
+    string public name;
+    string public symbol;
 
-    uint8 public immutable  decimals;
+    uint8 public immutable decimals;
 
-    uint256 public  totalSupply;
+    uint256 public totalSupply;
 
-    mapping(address => uint256) public  balanceOf;
+    mapping(address => uint256) public balanceOf;
 
-    mapping(address => mapping(address => uint256)) public  allowance;
+    mapping(address => mapping(address => uint256)) public allowance;
 
-    /**
-     * @param name_     The name of the token.
-     * @param symbol_   The symbol of the token.
-     * @param decimals_ The decimal precision used by the token.
-     */
     constructor(string memory name_, string memory symbol_, uint8 decimals_) {
         name     = name_;
         symbol   = symbol_;
@@ -37,18 +32,18 @@ contract MockRevertingERC20 {
         _burn(from_, value_);
     }
 
-    function approve(address spender_, uint256 amount_) external  returns (bool success_) {
+    function approve(address spender_, uint256 amount_) external returns (bool success_) {
         _approve(msg.sender, spender_, amount_);
         return true;
     }
 
-    function transfer(address recipient_, uint256 amount_) external  returns (bool success_) {
-        require(recipient_ != address(0), "invalid");
+    function transfer(address recipient_, uint256 amount_) external returns (bool success_) {
+        require(recipient_ != address(0), "INVALID");
         _transfer(msg.sender, recipient_, amount_);
         return true;
     }
 
-    function transferFrom(address owner_, address recipient_, uint256 amount_) external  returns (bool success_) {
+    function transferFrom(address owner_, address recipient_, uint256 amount_) external returns (bool success_) {
         _approve(owner_, msg.sender, allowance[owner_][msg.sender] - amount_);
         _transfer(owner_, recipient_, amount_);
         return true;
@@ -65,19 +60,16 @@ contract MockRevertingERC20 {
     function _transfer(address owner_, address recipient_, uint256 amount_) internal {
         balanceOf[owner_]     -= amount_;
         balanceOf[recipient_] += amount_;
-
     }
 
     function _mint(address recipient_, uint256 amount_) internal {
         totalSupply           += amount_;
         balanceOf[recipient_] += amount_;
-
     }
 
     function _burn(address owner_, uint256 amount_) internal {
         balanceOf[owner_] -= amount_;
         totalSupply       -= amount_;
-
     }
 
 }

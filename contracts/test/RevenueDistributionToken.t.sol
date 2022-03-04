@@ -1077,7 +1077,7 @@ contract ExitTest is TestUtils {
 
         Staker notShareOwner = new Staker();
 
-        uint256 expectedSharesBurned = rdToken.convertToShares(withdrawAmount);
+        uint256 expectedSharesBurned = rdToken.previewWithdraw(withdrawAmount);
         callerAllowance              = constrictToRange(callerAllowance, expectedSharesBurned, type(uint256).max - 1); // Allowance reduction doesn't happen with infinite approval.
         staker.erc20_approve(address(rdToken), address(notShareOwner), callerAllowance);
 

@@ -1800,4 +1800,3 @@ contract RevenueStreamingTest is TestUtils {
     // todo test preview Withdraw
 
     // todo test totalAssets
-    

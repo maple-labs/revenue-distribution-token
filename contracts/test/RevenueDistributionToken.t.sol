@@ -871,7 +871,7 @@ contract ExitTest is TestUtils {
         assertEq(asset.balanceOf(address(staker)),  0);
         assertEq(asset.balanceOf(address(rdToken)), depositAmount + vestingAmount);  // Balance is higher than totalAssets
 
-        uint256 expectedSharesBurned = rdToken.convertToShares(withdrawAmount);
+        uint256 expectedSharesBurned = rdToken.previewWithdraw(withdrawAmount);
         uint256 sharesBurned         = staker.rdToken_withdraw(address(rdToken), withdrawAmount);
 
         totalAssets -= withdrawAmount;

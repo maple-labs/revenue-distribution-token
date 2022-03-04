@@ -193,7 +193,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     function previewMint(uint256 shares_) public view virtual override returns (uint256 assets_) {
         uint256 supply = totalSupply;  // Cache to memory.
 
-        // Round up to favor the vault as recommended by EIP-4626: https://eips.ethereum.org/EIPS/eip-4626#security-considerations
+        // Round up to favor the vault as recommended in EIP-4626: https://eips.ethereum.org/EIPS/eip-4626#security-considerations
         assets_ = supply == 0 ? shares_ : _mulDivRoundUp(shares_, totalAssets(), supply);
     }
 
@@ -204,7 +204,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     function previewWithdraw(uint256 assets_) public view virtual override returns (uint256 shares_) {
         uint256 supply = totalSupply;  // Cache to memory.
 
-        // Round up to favor the vault as recommended by EIP-4626: https://eips.ethereum.org/EIPS/eip-4626#security-considerations
+        // Round up to favor the vault as recommended in EIP-4626: https://eips.ethereum.org/EIPS/eip-4626#security-considerations
         shares_ = supply == 0 ? assets_ : _mulDivRoundUp(assets_, supply, totalAssets());
     }
 

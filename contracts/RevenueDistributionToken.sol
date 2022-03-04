@@ -84,11 +84,13 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     function depositWithPermit(
         uint256 assets_,
         address receiver_,
-        uint256 deadline_, 
-        uint8 v_,
+        uint256 deadline_,
+        uint8   v_,
         bytes32 r_,
         bytes32 s_
-    ) external virtual override nonReentrant returns (uint256 shares_) {
+    )
+        external virtual override nonReentrant returns (uint256 shares_)
+    {
         ERC20Permit(asset).permit(msg.sender, address(this), assets_, deadline_, v_, r_, s_);
         shares_ = _deposit(assets_, receiver_, msg.sender);
     }
@@ -101,10 +103,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         uint256 shares_,
         address receiver_,
         uint256 deadline_,
-        uint8 v_,
+        uint8   v_,
         bytes32 r_,
         bytes32 s_
-    ) external virtual override nonReentrant returns (uint256 assets_) {
+    )
+        external virtual override nonReentrant returns (uint256 assets_)
+    {
         ERC20Permit(asset).permit(msg.sender, address(this), convertToAssets(shares_), deadline_, v_, r_, s_);
         assets_ = _mint(shares_, receiver_, msg.sender);
     }
@@ -201,7 +205,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     }
 
     function maxRedeem(address owner_) external view virtual override returns (uint256 maxShares_) {
-        maxShares_ = balanceOf[owner_]; 
+        maxShares_ = balanceOf[owner_];
     }
 
     function maxWithdraw(address owner_) external view virtual override returns (uint256 maxAssets_) {
@@ -241,10 +245,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     function _reduceCallerAllowance(address caller_, address owner_, uint256 shares_) internal {
         uint256 callerAllowance = allowance[owner_][caller_];  // Cache to memory.
-        
+
         // TODO: investigate whether leave this `require()` in for clarity from error message, or let the safe math check in `callerAllowance - shares_` handle the underflow.
         require(callerAllowance >= shares_, "RDT:CALLER_ALLOWANCE");
-        
+
         if (callerAllowance != type(uint256).max) {
             allowance[owner_][caller_] = callerAllowance - shares_;
         }

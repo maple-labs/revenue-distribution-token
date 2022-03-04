@@ -109,8 +109,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     }
 
     function _redeem(uint256 shares_, address receiver_, address owner_, address caller_) internal returns (uint256 assets_) {
-        require(owner_ == msg.sender, "RDT:R:NOT_OWNER");
         require(shares_ != 0, "RDT:R:AMOUNT");
+        if (caller_ != owner_) {
+            _reduceCallerAllowance(caller_, owner_, shares_);
+        }
         assets_ = convertToAssets(shares_);
         _burn(owner_, shares_);
         freeAssets = totalAssets() - assets_;
@@ -120,9 +122,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     }
 
     function _withdraw(uint256 assets_, address receiver_, address owner_, address caller_) internal returns (uint256 shares_) {
-        require(owner_ == msg.sender, "RDT:W:NOT_OWNER");
         require(assets_ != 0, "RDT:W:AMOUNT");
-        _burn(owner_, shares_ = convertToShares(assets_));
+        shares_ = convertToShares(assets_);
+        if (caller_ != owner_) {
+            _reduceCallerAllowance(caller_, owner_, shares_);
+        }
+        _burn(owner_, shares_);
         freeAssets = totalAssets() - assets_;
         _updateIssuanceParams();
         require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:W:TRANSFER");
@@ -197,6 +202,21 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
                 block.timestamp - lastUpdated;
 
         return issuanceRate * vestingTimePassed / precision + freeAssets;
+    }
+
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
+
+    function _reduceCallerAllowance(address caller_, address owner_, uint256 shares_) internal {
+        uint256 callerAllowance = allowance[owner_][caller_];  // Cache to memory.
+        
+        // TODO: investigate whether leave this `require()` in for clarity from error message, or let the safe math check in `callerAllowance - shares_` handle the underflow.
+        require(callerAllowance >= shares_, "RDT:CALLER_ALLOWANCE");
+        
+        if (callerAllowance != type(uint256).max) {
+            allowance[owner_][caller_] = callerAllowance - shares_;
+        }
     }
 
 }

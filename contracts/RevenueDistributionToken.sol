@@ -157,11 +157,15 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     }
 
     function convertToAssets(uint256 shares_) public view override returns (uint256 assets_) {
-        assets_ = totalSupply != uint256(0) ? shares_ * totalAssets() / totalSupply : shares_;
+        uint256 supply = totalSupply;  // Cache to memory.
+
+        assets_ = supply == 0 ? shares_ : shares_ * totalAssets() / supply;
     }
 
     function convertToShares(uint256 assets_) public view override returns (uint256 shares_) {
-        shares_ = totalSupply != uint256(0) ? assets_ * totalSupply / totalAssets() : assets_;
+        uint256 supply = totalSupply;  // Cache to memory.
+
+        shares_ = supply == 0 ? assets_ : assets_ * supply / totalAssets();
     }
 
     function maxDeposit(address receiver_) external pure virtual override returns (uint256 maxAssets_) {

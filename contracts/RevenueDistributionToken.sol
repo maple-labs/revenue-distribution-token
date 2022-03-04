@@ -209,7 +209,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     /**************************/
 
     function _reduceCallerAllowance(address caller_, address owner_, uint256 shares_) internal {
-        uint256 callerAllowance = allowance[owner_][caller_]; // Cache to memory.
+        uint256 callerAllowance = allowance[owner_][caller_];  // Cache to memory.
         
         // TODO: investigate whether leave this `require()` in for clarity from error message, or let the safe math check in `callerAllowance - shares_` handle the underflow.
         require(callerAllowance >= shares_, "RDT:CALLER_ALLOWANCE");

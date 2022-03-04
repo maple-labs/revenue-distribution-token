@@ -832,7 +832,7 @@ contract ExitTest is TestUtils {
         Staker notShareOwner = new Staker();
 
         uint256 expectedSharesBurned = rdToken.convertToShares(withdrawAmount);
-        callerAllowance              = constrictToRange(callerAllowance, expectedSharesBurned, type(uint256).max - 1); // Allowance reduction doesn't happen with infinite approval.
+        callerAllowance              = constrictToRange(callerAllowance, expectedSharesBurned, type(uint256).max - 1);  // Allowance reduction doesn't happen with infinite approval.
         staker.erc20_approve(address(rdToken), address(notShareOwner), callerAllowance);
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance);
@@ -871,8 +871,8 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.totalSupply(),                          100e18);
         assertEq(rdToken.freeAssets(),                           100e18);
         assertEq(rdToken.totalAssets(),                          105e18);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.05e18);               // sampleSharesToConvert * 105e18 / 100e18
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.5238095238095238e17); // sampleAssetsToConvert * 100e18 / 105e18
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.05e18);                // sampleSharesToConvert * 105e18 / 100e18
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.5238095238095238e17);  // sampleAssetsToConvert * 100e18 / 105e18
         assertEq(rdToken.issuanceRate(),                         0.05e18 * 1e30);
         assertEq(rdToken.lastUpdated(),                          start);
 

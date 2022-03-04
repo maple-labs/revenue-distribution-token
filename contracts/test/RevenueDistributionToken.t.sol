@@ -667,11 +667,8 @@ contract DepositAndMintTest is TestUtils {
         /*** Setup ***/
         /*************/
 
-        uint256 minAmount = 1e2;
-
-        initialAmount = constrictToRange(initialAmount, minAmount, 1e29);
-        depositAmount = constrictToRange(depositAmount, minAmount, 1e29);
-        vestingAmount = constrictToRange(vestingAmount, minAmount, initialAmount);
+        initialAmount = constrictToRange(initialAmount, 1, 1e29);
+        vestingAmount = constrictToRange(vestingAmount, 1, initialAmount);
 
         // Do a deposit so that totalSupply is non-zero
         asset.mint(address(this), initialAmount);
@@ -684,7 +681,6 @@ contract DepositAndMintTest is TestUtils {
 
         vm.warp(start + 11 seconds);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
 
-        asset.mint(address(staker), depositAmount);
 
         /********************/
         /*** Before state ***/
@@ -699,12 +695,16 @@ contract DepositAndMintTest is TestUtils {
         assertEq(rdToken.issuanceRate(),                         vestingAmount * 1e30 / 10 seconds);
         assertEq(rdToken.lastUpdated(),                          start);
 
-        assertEq(asset.balanceOf(address(staker)),  depositAmount);
         assertEq(asset.balanceOf(address(rdToken)), initialAmount + vestingAmount);
 
         /***************/
         /*** Deposit ***/
         /***************/
+
+        uint256 minDeposit = (initialAmount + vestingAmount) / initialAmount;
+        depositAmount = constrictToRange(depositAmount, minDeposit, 1e29);
+        asset.mint(address(staker), depositAmount);
+        assertEq(asset.balanceOf(address(staker)),  depositAmount);
 
         staker.erc20_approve(address(asset), address(rdToken), depositAmount);
         uint256 stakerShares = staker.rdToken_deposit(address(rdToken), depositAmount);

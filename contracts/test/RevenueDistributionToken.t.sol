@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.7;
 
-import { TestUtils }       from "../../modules/contract-test-utils/contracts/test.sol";
-import { MockERC20Permit } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
+import { TestUtils }                  from "../../modules/contract-test-utils/contracts/test.sol";
+import { MockERC20, MockERC20Permit } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { Owner }  from "./accounts/Owner.sol";
 import { Staker } from "./accounts/Staker.sol";
@@ -274,19 +274,65 @@ contract DepositAndMintWithPermitTest is TestUtils {
         ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(ownerSk_, digest);
         return (v, r, s);
     }
+
+}
+
+contract APRViewTest is TestUtils {
+
+    MockERC20 asset;
+    Owner     owner;
+    RDT       rdToken;
+    Staker    staker;
+
+    uint256 START = 10_000_000;
+
+    function setUp() public virtual {
+        asset   = new MockERC20("MockToken", "MT", 18);
+        owner   = new Owner();
+        rdToken = new RDT("Revenue Distribution Token", "RDT", address(owner), address(asset), 1e30);
+        staker  = new Staker();
+        vm.warp(START);
+    }
+
+    function test_APR(uint256 mintAmount_, uint256 vestingAmount_, uint256 vestingPeriod_) external {
+        mintAmount_    = constrictToRange(mintAmount_,    0.0001e18, 1e29);
+        vestingAmount_ = constrictToRange(mintAmount_,    0.0001e18, 1e29);
+        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days,    10_000 days);
+
+        asset.mint(address(staker), mintAmount_);
+
+        staker.erc20_approve(address(asset), address(rdToken), mintAmount_);
+        staker.rdToken_mint(address(rdToken), mintAmount_);
+
+        asset.mint(address(owner), vestingAmount_);
+
+        owner.erc20_transfer(address(asset), address(rdToken), vestingAmount_);
+        owner.rdToken_updateVestingSchedule(address(rdToken), vestingPeriod_);
+
+        uint256 apr = rdToken.APR2();
+
+        vm.warp(START + vestingPeriod_);
+
+        staker.rdToken_redeem(address(rdToken), mintAmount_);  // Redeem entire balance
+
+        uint256 aprProjectedEarnings = mintAmount_ * apr * vestingPeriod_ / 365 days / 1e6;
+
+        assertWithinPrecision(asset.balanceOf(address(staker)), mintAmount_ + aprProjectedEarnings, 4);
+    }
+
 }
 
 contract AuthTest is TestUtils {
 
-    MockERC20Permit asset;
-    Owner           notOwner;
-    Owner           owner;
-    RDT             rdToken;
+    MockERC20 asset;
+    Owner     notOwner;
+    Owner     owner;
+    RDT       rdToken;
 
     function setUp() public virtual {
         notOwner = new Owner();
         owner    = new Owner();
-        asset    = new MockERC20Permit("MockToken", "MT", 18);
+        asset    = new MockERC20("MockToken", "MT", 18);
         rdToken  = new RDT("Revenue Distribution Token", "RDT", address(owner), address(asset), 1e30);
     }
 
@@ -340,7 +386,7 @@ contract AuthTest is TestUtils {
 
 contract DepositTest is TestUtils {
 
-    MockERC20Permit asset;
+    MockERC20 asset;
     RDT       rdToken;
     Staker    staker;
 
@@ -348,7 +394,7 @@ contract DepositTest is TestUtils {
     uint256 constant sampleSharesToConvert = 1e18;
 
     function setUp() public virtual {
-        asset   = new MockERC20Permit("MockToken", "MT", 18);
+        asset   = new MockERC20("MockToken", "MT", 18);
         rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
         staker  = new Staker();
 
@@ -567,7 +613,7 @@ contract DepositTest is TestUtils {
 }
 
 contract ExitTest is TestUtils {
-    MockERC20Permit asset;
+    MockERC20 asset;
     RDT       rdToken;
     Staker    staker;
 
@@ -577,7 +623,7 @@ contract ExitTest is TestUtils {
     bytes constant ARITHMETIC_ERROR = abi.encodeWithSignature("Panic(uint256)", 0x11);
 
     function setUp() public virtual {
-        asset   = new MockERC20Permit("MockToken", "MT", 18);
+        asset   = new MockERC20("MockToken", "MT", 18);
         rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
         staker  = new Staker();
 
@@ -1387,11 +1433,12 @@ contract ExitTest is TestUtils {
         asset.transfer(address(rdToken), vestingAmount_);
         rdToken.updateVestingSchedule(vestingPeriod_);
     }
+
 }
 
 contract RevenueStreamingTest is TestUtils {
 
-    MockERC20Permit asset;
+    MockERC20 asset;
     RDT       rdToken;
 
     uint256 constant sampleAssetsToConvert = 1e18;
@@ -1406,7 +1453,7 @@ contract RevenueStreamingTest is TestUtils {
         start = 10_000;
         vm.warp(start);
 
-        asset   = new MockERC20Permit("MockToken", "MT", 18);
+        asset   = new MockERC20("MockToken", "MT", 18);
         rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
     }
 
@@ -1770,4 +1817,5 @@ contract RevenueStreamingTest is TestUtils {
         asset.transfer(address(rdToken), vestingAmount_);
         rdToken.updateVestingSchedule(vestingPeriod_);
     }
+
 }

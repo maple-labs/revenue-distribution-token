@@ -3,6 +3,7 @@ pragma solidity ^0.8.7;
 
 import { TestUtils } from "../../../modules/contract-test-utils/contracts/test.sol";
 
+import { IERC20 }    from "../../../modules/erc20/contracts/interfaces/IERC20.sol";
 import { MockERC20 } from "../../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { IRevenueDistributionToken as IRDT } from "../../interfaces/IRevenueDistributionToken.sol";
@@ -19,6 +20,10 @@ contract Owner {
 
     function rdToken_updateVestingSchedule(address rdt_, uint256 vestingPeriod_) external {
         IRDT(rdt_).updateVestingSchedule(vestingPeriod_);
+    }
+
+    function erc20_transfer(address token_, address receiver_, uint256 amount_) external {
+        IERC20(token_).transfer(receiver_, amount_);
     }
 
 }

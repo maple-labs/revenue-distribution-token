@@ -824,11 +824,11 @@ contract ExitTest is TestUtils {
 
         staker.rdToken_withdraw(address(rdToken), withdrawAmount);
 
-        assertEq(rdToken.balanceOf(address(staker)),             80.952380952380952381e18);  // 100 - 80 / 1.05
-        assertEq(rdToken.totalSupply(),                          80.952380952380952381e18);
+        assertEq(rdToken.balanceOf(address(staker)),             80.952380952380952380e18);
+        assertEq(rdToken.totalSupply(),                          80.952380952380952380e18);
         assertEq(rdToken.freeAssets(),                           85e18);                     // totalAssets - 20 withdrawn
         assertEq(rdToken.totalAssets(),                          85e18);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.049999999999999999e18);   // sampleSharesToConvert * 85e18 / 80.952380952380952381e18
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.05e18);                   // sampleSharesToConvert * 85e18 / 80.952380952380952381e18
         assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.5238095238095238e17);     // sampleAssetsToConvert * 80.952380952380952381e18 / 85e18
         assertEq(rdToken.issuanceRate(),                         0.05e18 * 1e30);
         assertEq(rdToken.lastUpdated(),                          start + 100 seconds);

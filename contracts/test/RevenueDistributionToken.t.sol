@@ -1388,7 +1388,6 @@ contract ExitTest is TestUtils {
         rdToken.updateVestingSchedule(vestingPeriod_);
     }
 
-    // todo _redeem transfer failed
 }
 
 contract RevenueStreamingTest is TestUtils {
@@ -1780,6 +1779,8 @@ contract RevenueStreamingTest is TestUtils {
 
     // todo mint failure on transferFrom 
 
+    // todo _redeem transfer failed
+
     // todo test get APR
 
     // todo test convert to Assets
@@ -1799,3 +1800,4 @@ contract RevenueStreamingTest is TestUtils {
     // todo test preview Withdraw
 
     // todo test totalAssets
+    

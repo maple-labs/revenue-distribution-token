@@ -148,7 +148,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     /**********************/
 
     function APR() external view override returns (uint256 apr_) {
-        return issuanceRate * 365 days * ERC20Permit(asset).decimals() / totalSupply / precision;
+        return issuanceRate * 365 days * 1e6 / totalSupply / precision;
     }
 
     function balanceOfAssets(address account_) public view override returns (uint256 balanceOfAssets_) {
@@ -174,7 +174,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     }
 
     function maxRedeem(address owner_) external view virtual override returns (uint256 maxShares_) {
-        maxShares_ = balanceOf[owner_]; 
+        maxShares_ = balanceOf[owner_];
     }
 
     function maxWithdraw(address owner_) external view virtual override returns (uint256 maxAssets_) {
@@ -214,10 +214,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     function _reduceCallerAllowance(address caller_, address owner_, uint256 shares_) internal {
         uint256 callerAllowance = allowance[owner_][caller_];  // Cache to memory.
-        
+
         // TODO: investigate whether leave this `require()` in for clarity from error message, or let the safe math check in `callerAllowance - shares_` handle the underflow.
         require(callerAllowance >= shares_, "RDT:CALLER_ALLOWANCE");
-        
+
         if (callerAllowance != type(uint256).max) {
             allowance[owner_][caller_] = callerAllowance - shares_;
         }

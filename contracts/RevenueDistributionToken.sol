@@ -92,19 +92,21 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     function _deposit(uint256 assets_, address receiver_, address caller_) internal returns (uint256 shares_) {
         require(assets_ != 0, "RDT:D:AMOUNT");
-        _mint(receiver_, shares_ = convertToShares(assets_));
+        shares_ = convertToShares(assets_);
         freeAssets = totalAssets() + assets_;
         _updateIssuanceParams();
         require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:D:TRANSFER_FROM");
+        _mint(receiver_, shares_);
         emit Deposit(caller_, receiver_, assets_, shares_);
     }
 
     function _mint(uint256 shares_, address receiver_, address caller_) internal returns (uint256 assets_) {
         require(shares_ != 0, "RDT:M:AMOUNT");
-        _mint(receiver_, assets_ = convertToAssets(shares_));
+        assets_ = convertToAssets(shares_);
         freeAssets = totalAssets() + assets_;
         _updateIssuanceParams();
         require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:M:TRANSFER_FROM");
+        _mint(receiver_, assets_);
         emit Deposit(caller_, receiver_, assets_, shares_);
     }
 
@@ -114,9 +116,9 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
             _reduceCallerAllowance(caller_, owner_, shares_);
         }
         assets_ = convertToAssets(shares_);
-        _burn(owner_, shares_);
         freeAssets = totalAssets() - assets_;
         _updateIssuanceParams();
+        _burn(owner_, shares_);
         require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:R:TRANSFER");
         emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
     }
@@ -127,9 +129,9 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         if (caller_ != owner_) {
             _reduceCallerAllowance(caller_, owner_, shares_);
         }
-        _burn(owner_, shares_);
         freeAssets = totalAssets() - assets_;
         _updateIssuanceParams();
+        _burn(owner_, shares_);
         require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:W:TRANSFER");
         emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
     }

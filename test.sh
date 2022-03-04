@@ -17,4 +17,4 @@ echo Using profile: $FOUNDRY_PROFILE
 
 rm -rf out
 
-forge test --match "$test" -vvv
+forge test --match "$test"

@@ -144,7 +144,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     /**********************/
 
     function APR() external view override returns (uint256 apr_) {
-        return issuanceRate * 365 days * 1e18 / totalSupply / precision;
+        return issuanceRate * 365 days * 1e6 / totalSupply / precision;
     }
 
     function balanceOfAssets(address account_) public view override returns (uint256 balanceOfAssets_) {

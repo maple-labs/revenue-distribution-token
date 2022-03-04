@@ -309,7 +309,7 @@ contract APRViewTest is TestUtils {
         owner.erc20_transfer(address(asset), address(rdToken), vestingAmount_);
         owner.rdToken_updateVestingSchedule(address(rdToken), vestingPeriod_);
 
-        uint256 apr = rdToken.APR2();
+        uint256 apr = rdToken.APR();
 
         vm.warp(START + vestingPeriod_);
 

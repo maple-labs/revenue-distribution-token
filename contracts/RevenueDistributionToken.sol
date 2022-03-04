@@ -143,15 +143,6 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     /*** View Functions ***/
     /**********************/
 
-    event log_named_uint(string key, uint256 val);
-
-    function APR2() external returns (uint256 apr_) {
-        emit log_named_uint("issuanceRate", issuanceRate);
-        emit log_named_uint("totalSupply ", totalSupply);
-        emit log_named_uint("precision   ", precision);
-        return issuanceRate * 365 days * 1e6 / totalSupply / precision;
-    }
-
     function APR() external view override returns (uint256 apr_) {
         return issuanceRate * 365 days * 1e18 / totalSupply / precision;
     }

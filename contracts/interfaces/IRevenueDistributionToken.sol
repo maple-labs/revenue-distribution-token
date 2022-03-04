@@ -12,7 +12,7 @@ interface IRevenueDistributionToken is IERC4626, IERC20Permit {
     /**************/
 
     /**
-     *  @dev   `newOwner_` has accepted the transferal of RDT ownership from `previousOwner_`.
+     *  @dev   `newOwner_` has accepted the transferral of RDT ownership from `previousOwner_`.
      *  @param previousOwner_ The previous RDT owner.
      *  @param newOwner_      The new RDT owner.
      */

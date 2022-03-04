@@ -1,4 +1,4 @@
-# RevenueDistributionToken
+# Revenue Distribution Token
 
 ![Foundry CI](https://github.com/maple-labs/revenue-distribution-token/actions/workflows/push-to-main.yml/badge.svg) [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
@@ -8,7 +8,7 @@ RevenueDistributionToken (RDT) is a token implementing the [ERC4626 Tokenized Va
 
 Each new revenue distribution updates the issuance rate, issuing the unvested revenue along with the new revenue over the newly specified vesting schedule. The diagram below visualizes the vesting mechanism across revenue deposits:
 
-![RDT issuance mechanism](https://user-images.githubusercontent.com/44272939/156452984-f0eca70d-dfca-4b84-85e7-8b3ca92fa8d6.png)
+![RDT issuance mechanism](https://user-images.githubusercontent.com/44272939/156643098-fb7cf6e4-91c3-477f-a59c-a1a6c5cf6dc8.svg)
 
 The first revenue deposit is performed at `t0`, scheduled to vest until `t2` (Period 1, or P1), depicted by the green arrow. On this deposit, the balance change of the contract is depicted by the purple arrow, and the issuance rate (`IR1` in the diagram) is set to `depositAmount / (t2 - t0)`.
 

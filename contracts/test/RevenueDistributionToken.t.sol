@@ -1387,6 +1387,8 @@ contract ExitTest is TestUtils {
         asset.transfer(address(rdToken), vestingAmount_);
         rdToken.updateVestingSchedule(vestingPeriod_);
     }
+
+    // todo _redeem transfer failed
 }
 
 contract RevenueStreamingTest is TestUtils {
@@ -1771,3 +1773,29 @@ contract RevenueStreamingTest is TestUtils {
         rdToken.updateVestingSchedule(vestingPeriod_);
     }
 }
+
+    // todo test "vanilla" mint (whitout permit)
+
+    // todo mint with zero shares amt
+
+    // todo mint failure on transferFrom 
+
+    // todo test get APR
+
+    // todo test convert to Assets
+
+    // todo test convert to shares
+
+    // todo testmax deposit
+
+    // todo test max mint
+
+    // todo test max Redem
+
+    // todo test preview Deposit
+
+    // todo test preview Mint
+
+    // todo test preview Withdraw
+
+    // todo test totalAssets

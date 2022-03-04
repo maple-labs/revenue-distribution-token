@@ -15,4 +15,6 @@ if [ -z "$test" ]; then match="[src/test/*.t.sol]"; else match=$test; fi
 
 echo Using profile: $FOUNDRY_PROFILE
 
-forge test --match "$test"
+rm -rf out
+
+forge test --match "$test" -vvv

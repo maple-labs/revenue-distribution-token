@@ -415,17 +415,6 @@ contract DepositAndMintTest is TestUtils {
         staker.rdToken_deposit(address(rdToken), 1);
     }
 
-    function test_mint_zeroAmount() external {
-
-        asset.mint(address(staker), 1);
-        staker.erc20_approve(address(asset), address(rdToken), 1);
-
-        vm.expectRevert("RDT:M:AMOUNT");
-        staker.rdToken_mint(address(rdToken), 0);
-
-        staker.rdToken_mint(address(rdToken), 1);
-    }
-
     function test_deposit_badApprove(uint256 depositAmount) external {
 
         depositAmount = constrictToRange(depositAmount, 1, 1e29);
@@ -441,23 +430,6 @@ contract DepositAndMintTest is TestUtils {
         staker.rdToken_deposit(address(rdToken), depositAmount);
     }
 
-    function test_mint_badApprove(uint256 mintAmount) external {
-
-        mintAmount = constrictToRange(mintAmount, 1, 1e29);
-
-        uint256 depositAmount = rdToken.previewMint(mintAmount);
-
-        asset.mint(address(staker), depositAmount);
-
-        staker.erc20_approve(address(asset), address(rdToken), depositAmount - 1);
-
-        vm.expectRevert("RDT:M:TRANSFER_FROM");
-        staker.rdToken_mint(address(rdToken), mintAmount);
-
-        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
-        staker.rdToken_mint(address(rdToken), mintAmount);
-    }
-
     function test_deposit_insufficientBalance(uint256 depositAmount) external {
 
         depositAmount = constrictToRange(depositAmount, 1, 1e29);
@@ -470,22 +442,6 @@ contract DepositAndMintTest is TestUtils {
 
         staker.erc20_approve(address(asset), address(rdToken), depositAmount);
         staker.rdToken_deposit(address(rdToken), depositAmount);
-    }
-
-    function test_mint_insufficientBalance(uint256 mintAmount) external {
-
-        mintAmount = constrictToRange(mintAmount, 1, 1e29);
-
-        uint256 depositAmount = rdToken.previewMint(mintAmount);
-
-        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
-
-        vm.expectRevert("RDT:M:TRANSFER_FROM");
-        staker.rdToken_mint(address(rdToken), mintAmount);
-
-        asset.mint(address(staker), depositAmount);
-
-        staker.rdToken_mint(address(rdToken), mintAmount);
     }
 
     function test_deposit_preVesting(uint256 depositAmount) external {
@@ -523,6 +479,50 @@ contract DepositAndMintTest is TestUtils {
 
         assertEq(asset.balanceOf(address(staker)),  0);
         assertEq(asset.balanceOf(address(rdToken)), depositAmount);
+    }
+
+    function test_mint_zeroAmount() external {
+
+        asset.mint(address(staker), 1);
+        staker.erc20_approve(address(asset), address(rdToken), 1);
+
+        vm.expectRevert("RDT:M:AMOUNT");
+        staker.rdToken_mint(address(rdToken), 0);
+
+        staker.rdToken_mint(address(rdToken), 1);
+    }
+
+    function test_mint_badApprove(uint256 mintAmount) external {
+
+        mintAmount = constrictToRange(mintAmount, 1, 1e29);
+
+        uint256 depositAmount = rdToken.previewMint(mintAmount);
+
+        asset.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount - 1);
+
+        vm.expectRevert("RDT:M:TRANSFER_FROM");
+        staker.rdToken_mint(address(rdToken), mintAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+        staker.rdToken_mint(address(rdToken), mintAmount);
+    }
+
+    function test_mint_insufficientBalance(uint256 mintAmount) external {
+
+        mintAmount = constrictToRange(mintAmount, 1, 1e29);
+
+        uint256 depositAmount = rdToken.previewMint(mintAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+
+        vm.expectRevert("RDT:M:TRANSFER_FROM");
+        staker.rdToken_mint(address(rdToken), mintAmount);
+
+        asset.mint(address(staker), depositAmount);
+
+        staker.rdToken_mint(address(rdToken), mintAmount);
     }
 
     function test_mint_preVesting(uint256 mintAmount) external {

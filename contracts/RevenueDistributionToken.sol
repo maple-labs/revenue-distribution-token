@@ -20,12 +20,29 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated.
     uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends.
 
+    uint256 private locked = 1;                   // Used in reentrancy check.
+
+    /*****************/
+    /*** Modifiers ***/
+    /*****************/
+
+    modifier nonReentrant() {
+        require(locked == 1, "RDT:LOCKED");
+
+        locked = 2;
+
+        _;
+
+        locked = 1;
+    }
+
     constructor(string memory name_, string memory symbol_, address owner_, address asset_, uint256 precision_)
         ERC20Permit(name_, symbol_, ERC20Permit(asset_).decimals())
     {
-        owner     = owner_;
+        require((owner = owner_) != address(0), "RDT:C:OWNER_ZERO_ADDRESS");
+        asset = asset_;  // Don't need to check zero address as ERC20Permit(asset_).decimals() will fail in ERC20Permit constructor.
+
         precision = precision_;
-        asset     = asset_;
     }
 
     /********************************/
@@ -64,29 +81,47 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     /*** Staker Functions ***/
     /************************/
 
-    function deposit(uint256 assets_, address receiver_) external virtual override returns (uint256 shares_) {
+    function deposit(uint256 assets_, address receiver_) external virtual override nonReentrant returns (uint256 shares_) {
         shares_ = _deposit(assets_, receiver_, msg.sender);
     }
 
-    function depositWithPermit(uint256 assets_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external virtual override returns (uint256 shares_) {
+    function depositWithPermit(
+        uint256 assets_,
+        address receiver_,
+        uint256 deadline_,
+        uint8   v_,
+        bytes32 r_,
+        bytes32 s_
+    )
+        external virtual override nonReentrant returns (uint256 shares_)
+    {
         ERC20Permit(asset).permit(msg.sender, address(this), assets_, deadline_, v_, r_, s_);
         shares_ = _deposit(assets_, receiver_, msg.sender);
     }
 
-    function mint(uint256 shares_, address receiver_) external virtual override returns (uint256 assets_) {
+    function mint(uint256 shares_, address receiver_) external virtual override nonReentrant returns (uint256 assets_) {
         assets_ = _mint(shares_, receiver_, msg.sender);
     }
 
-    function mintWithPermit(uint256 shares_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external virtual override returns (uint256 assets_) {
+    function mintWithPermit(
+        uint256 shares_,
+        address receiver_,
+        uint256 deadline_,
+        uint8   v_,
+        bytes32 r_,
+        bytes32 s_
+    )
+        external virtual override nonReentrant returns (uint256 assets_)
+    {
         ERC20Permit(asset).permit(msg.sender, address(this), convertToAssets(shares_), deadline_, v_, r_, s_);
         assets_ = _mint(shares_, receiver_, msg.sender);
     }
 
-    function redeem(uint256 shares_, address receiver_, address owner_) external virtual override returns (uint256 assets_) {
+    function redeem(uint256 shares_, address receiver_, address owner_) external virtual override nonReentrant returns (uint256 assets_) {
         assets_ = _redeem(shares_, receiver_, owner_, msg.sender);
     }
 
-    function withdraw(uint256 assets_, address receiver_, address owner_) external virtual override returns (uint256 shares_) {
+    function withdraw(uint256 assets_, address receiver_, address owner_) external virtual override nonReentrant returns (uint256 shares_) {
         shares_ = _withdraw(assets_, receiver_, owner_, msg.sender);
     }
 

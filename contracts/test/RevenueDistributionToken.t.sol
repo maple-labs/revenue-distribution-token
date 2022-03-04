@@ -641,9 +641,11 @@ contract DepositAndMintTest is TestUtils {
         /*** Setup ***/
         /*************/
 
-        initialAmount = constrictToRange(initialAmount, 1, 1e29);
-        depositAmount = constrictToRange(depositAmount, 1, 1e29);
-        vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
+        uint256 minAmount = 1e2;
+
+        initialAmount = constrictToRange(initialAmount, minAmount, 1e29);
+        depositAmount = constrictToRange(depositAmount, minAmount, 1e29);
+        vestingAmount = constrictToRange(vestingAmount, minAmount, initialAmount);
 
         // Do a deposit so that totalSupply is non-zero
         asset.mint(address(this), initialAmount);
@@ -858,9 +860,11 @@ contract ExitTest is TestUtils {
         uint256 warpTime
     ) public {
 
-        depositAmount  = constrictToRange(depositAmount,  1, 1e29);
-        withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
-        vestingAmount  = constrictToRange(vestingAmount,  1, 1e29);
+        uint256 minAmount = 1e2;
+
+        depositAmount  = constrictToRange(depositAmount,  minAmount, 1e29);
+        withdrawAmount = constrictToRange(withdrawAmount, minAmount, depositAmount);
+        vestingAmount  = constrictToRange(vestingAmount,  minAmount, depositAmount);
         vestingPeriod  = constrictToRange(vestingPeriod,  1, 100 days);
         warpTime       = constrictToRange(warpTime,       1, vestingPeriod);
 
@@ -1062,9 +1066,11 @@ contract ExitTest is TestUtils {
         uint256 warpTime,
         uint256 callerAllowance
     ) public {
-        depositAmount  = constrictToRange(depositAmount,  1, 1e29);
-        withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
-        vestingAmount  = constrictToRange(vestingAmount,  1, 1e29);
+        uint256 minAmount = 1e2;
+
+        depositAmount  = constrictToRange(depositAmount,  minAmount, 1e29);
+        withdrawAmount = constrictToRange(withdrawAmount, minAmount, depositAmount);
+        vestingAmount  = constrictToRange(vestingAmount,  minAmount, depositAmount);
         vestingPeriod  = constrictToRange(vestingPeriod,  1, 100 days);
         warpTime       = constrictToRange(warpTime,       1, vestingPeriod);
 

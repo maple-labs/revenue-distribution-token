@@ -105,7 +105,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     function _mint(uint256 shares_, address receiver_, address caller_) internal returns (uint256 assets_) {
         require(shares_ != 0, "RDT:M:AMOUNT");
-        assets_  = convertToAssets(shares_);
+        assets_  = previewMint(shares_);
         _mint(receiver_, shares_);
         freeAssets = totalAssets() + assets_;
         _updateIssuanceParams();
@@ -128,7 +128,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     function _withdraw(uint256 assets_, address receiver_, address owner_, address caller_) internal returns (uint256 shares_) {
         require(assets_ != 0, "RDT:W:AMOUNT");
-        shares_ = convertToShares(assets_);
+        shares_ = previewWithdraw(assets_);
         if (caller_ != owner_) {
             _reduceCallerAllowance(caller_, owner_, shares_);
         }
@@ -186,16 +186,20 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         shares_ = convertToShares(assets_);
     }
 
-    function previewMint(uint256 shares_) external view virtual override returns (uint256 assets_) {
-        assets_ = convertToAssets(shares_);
+    function previewMint(uint256 shares_) public view virtual override returns (uint256 assets_) {
+        uint256 supply = totalSupply;  // Cache to memory.
+
+        assets_ = supply == 0 ? shares_ : _mulDivRoundUp(shares_, totalAssets(), supply);
     }
 
     function previewRedeem(uint256 shares_) external view virtual override returns (uint256 assets_) {
         assets_ = convertToAssets(shares_);
     }
 
-    function previewWithdraw(uint256 assets_) external view virtual override returns (uint256 shares_) {
-        shares_ = convertToShares(assets_);
+    function previewWithdraw(uint256 assets_) public view virtual override returns (uint256 shares_) {
+        uint256 supply = totalSupply;  // Cache to memory.
+
+        shares_ = supply == 0 ? assets_ : _mulDivRoundUp(assets_, supply, totalAssets());
     }
 
     function totalAssets() public view override returns (uint256 totalManagedAssets_) {
@@ -222,6 +226,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         if (callerAllowance != type(uint256).max) {
             allowance[owner_][caller_] = callerAllowance - shares_;
         }
+    }
+
+    function _mulDivRoundUp(uint256 multiplicand_, uint256 multiplier_, uint256 divisor_) internal pure returns (uint256 result_) {
+        result_ = (((multiplicand_ * multiplier_) - 1) / divisor_) + 1;
     }
 
 }

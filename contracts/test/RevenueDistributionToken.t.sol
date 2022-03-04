@@ -666,7 +666,7 @@ contract DepositAndMintTest is TestUtils {
         vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
 
         uint256 minDeposit = (initialAmount + vestingAmount - 1) / initialAmount + 1;
-        depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29);
+        depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
 
         // Do a deposit so that totalSupply is non-zero
         asset.mint(address(this), initialAmount);

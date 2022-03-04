@@ -550,8 +550,6 @@ contract DepositAndMintTest is TestUtils {
         uint256 assets = staker.rdToken_mint(address(rdToken), mintAmount);
         assertEq(assets, depositAmount);
 
-        assertEq(mintAmount, rdToken.balanceOf(address(staker)));
-
         assertEq(rdToken.balanceOf(address(staker)),             mintAmount);
         assertEq(rdToken.totalSupply(),                          mintAmount);
         assertEq(rdToken.freeAssets(),                           assets);
@@ -1943,6 +1941,25 @@ contract RedeemRevertOnTransfer is TestUtils {
         staker.rdToken_redeem(address(rdToken), depositAmount, address(0), address(staker));
 
         staker.rdToken_redeem(address(rdToken), depositAmount, address(1), address(staker));
+    }
+
+    function test_withdraw_revertOnTransfer(uint256 depositAmount, uint256 withdrawAmount) public {
+        depositAmount  = constrictToRange(depositAmount,  1, 1e29);
+        withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
+
+        asset.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), depositAmount);
+
+        uint256 start = block.timestamp;
+
+        vm.warp(start + 10 days);
+
+        vm.expectRevert(bytes("RDT:W:TRANSFER"));
+        staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(0), address(staker));
+
+        staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(1), address(staker));
     }
 
     function _depositAsset(uint256 depositAmount) internal {

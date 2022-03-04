@@ -665,6 +665,9 @@ contract DepositAndMintTest is TestUtils {
         initialAmount = constrictToRange(initialAmount, 1, 1e29);
         vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
 
+        uint256 minDeposit = (initialAmount + vestingAmount - 1) / initialAmount + 1;
+        depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29);
+
         // Do a deposit so that totalSupply is non-zero
         asset.mint(address(this), initialAmount);
         asset.approve(address(rdToken), initialAmount);
@@ -696,8 +699,6 @@ contract DepositAndMintTest is TestUtils {
         /*** Deposit ***/
         /***************/
 
-        uint256 minDeposit = (initialAmount + vestingAmount - 1) / initialAmount + 1;
-        depositAmount = constrictToRange(depositAmount, minDeposit, 1e29);
         asset.mint(address(staker), depositAmount);
         assertEq(asset.balanceOf(address(staker)),  depositAmount);
 
@@ -914,8 +915,8 @@ contract ExitTest is TestUtils {
 
         // Constrict depositAmount to range again, to make sure enough is deposited to meet the min withdraw requirement.
         uint256 minWithdraw = ((depositAmount + vestingAmount * warpTime / vestingPeriod) - 1) / depositAmount + 1;
-        depositAmount  = constrictToRange(depositAmount,  minWithdraw, 1e29);
-        withdrawAmount = constrictToRange(withdrawAmount, minWithdraw, depositAmount);
+        depositAmount       = constrictToRange(depositAmount,  minWithdraw, 1e29);
+        withdrawAmount      = constrictToRange(withdrawAmount, minWithdraw, depositAmount);
 
         uint256 start = block.timestamp;
 
@@ -1123,8 +1124,8 @@ contract ExitTest is TestUtils {
 
         // Constrict depositAmount to range again, to make sure enough is deposited to meet the min withdraw requirement.
         uint256 minWithdraw = ((depositAmount + vestingAmount * warpTime / vestingPeriod) - 1) / depositAmount + 1;
-        depositAmount  = constrictToRange(depositAmount,  minWithdraw, 1e29);
-        withdrawAmount = constrictToRange(withdrawAmount, minWithdraw, depositAmount);
+        depositAmount       = constrictToRange(depositAmount,  minWithdraw, 1e29);
+        withdrawAmount      = constrictToRange(withdrawAmount, minWithdraw, depositAmount);
 
         uint256 start = block.timestamp;
 

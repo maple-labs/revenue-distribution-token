@@ -779,7 +779,7 @@ contract ExitTest is TestUtils {
 
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), depositAmount);
         
-        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
+        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
         
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
     }
@@ -798,7 +798,7 @@ contract ExitTest is TestUtils {
 
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
         
-        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
+        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
         
         // Infinite approval stays infinite.
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
@@ -837,7 +837,8 @@ contract ExitTest is TestUtils {
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance);
 
-        uint256 sharesBurned = notShareOwner.rdToken_withdraw(address(rdToken), withdrawAmount, address(staker), address(staker));
+        // Withdraw assets to notShareOwner
+        uint256 sharesBurned = notShareOwner.rdToken_withdraw(address(rdToken), withdrawAmount, address(notShareOwner), address(staker));
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance - sharesBurned);
 
@@ -850,8 +851,9 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.issuanceRate(),                         0);
         assertEq(rdToken.lastUpdated(),                          start + 10 days);
 
-        assertEq(asset.balanceOf(address(staker)),  withdrawAmount);
-        assertEq(asset.balanceOf(address(rdToken)), depositAmount - withdrawAmount);
+        assertEq(asset.balanceOf(address(staker)),        0);
+        assertEq(asset.balanceOf(address(notShareOwner)), withdrawAmount);  // notShareOwner received the assets.
+        assertEq(asset.balanceOf(address(rdToken)),       depositAmount - withdrawAmount);
     }
 
     function test_withdraw_callerNotOwner_totalAssetsGtTotalSupply_explicitVals() public {
@@ -889,7 +891,7 @@ contract ExitTest is TestUtils {
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), expectedSharesBurned);
 
-        uint256 sharesBurned = notShareOwner.rdToken_withdraw(address(rdToken), withdrawAmount, address(staker), address(staker));
+        uint256 sharesBurned = notShareOwner.rdToken_withdraw(address(rdToken), withdrawAmount, address(notShareOwner), address(staker));
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), 0);
 
@@ -903,8 +905,9 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.issuanceRate(),                         0.05e18 * 1e30);
         assertEq(rdToken.lastUpdated(),                          start + 100 seconds);
 
-        assertEq(asset.balanceOf(address(staker)),  20e18);
-        assertEq(asset.balanceOf(address(rdToken)), 90e18);
+        assertEq(asset.balanceOf(address(staker)),        0);
+        assertEq(asset.balanceOf(address(notShareOwner)), 20e18);  // notShareOwner received the assets.
+        assertEq(asset.balanceOf(address(rdToken)),       90e18);
     }
 
     function test_withdraw_callerNotOwner_totalAssetsGtTotalSupply(
@@ -949,7 +952,7 @@ contract ExitTest is TestUtils {
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance);
 
-        uint256 sharesBurned = notShareOwner.rdToken_withdraw(address(rdToken), withdrawAmount, address(staker), address(staker));
+        uint256 sharesBurned = notShareOwner.rdToken_withdraw(address(rdToken), withdrawAmount, address(notShareOwner), address(staker));
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance - sharesBurned);
 
@@ -966,8 +969,9 @@ contract ExitTest is TestUtils {
         assertWithinDiff(rdToken.freeAssets(),   totalAssets,                          1);
         assertWithinDiff(rdToken.totalAssets(),  totalAssets,                          1);
 
-        assertEq(asset.balanceOf(address(staker)),  withdrawAmount);
-        assertEq(asset.balanceOf(address(rdToken)), depositAmount + vestingAmount - withdrawAmount);
+        assertEq(asset.balanceOf(address(staker)),        0);
+        assertEq(asset.balanceOf(address(notShareOwner)), withdrawAmount);  // notShareOwner received the assets.
+        assertEq(asset.balanceOf(address(rdToken)),       depositAmount + vestingAmount - withdrawAmount);
 
     }
 
@@ -1183,7 +1187,7 @@ contract ExitTest is TestUtils {
 
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), depositAmount);
         
-        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
+        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
         
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
     }
@@ -1202,7 +1206,7 @@ contract ExitTest is TestUtils {
 
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
         
-        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
+        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
         
         // Infinite approval stays infinite.
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
@@ -1241,7 +1245,7 @@ contract ExitTest is TestUtils {
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance);
 
-        uint256 assetsFromRedeem = notShareOwner.rdToken_redeem(address(rdToken), redeemAmount, address(staker), address(staker));
+        uint256 assetsFromRedeem = notShareOwner.rdToken_redeem(address(rdToken), redeemAmount, address(notShareOwner), address(staker));
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance - redeemAmount);
 
@@ -1255,8 +1259,9 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.issuanceRate(),                         0);
         assertEq(rdToken.lastUpdated(),                          start + 10 days);
 
-        assertEq(asset.balanceOf(address(staker)),  redeemAmount);
-        assertEq(asset.balanceOf(address(rdToken)), depositAmount - redeemAmount);
+        assertEq(asset.balanceOf(address(staker)),        0);
+        assertEq(asset.balanceOf(address(notShareOwner)), redeemAmount);  // notShareOwner received the assets.
+        assertEq(asset.balanceOf(address(rdToken)),       depositAmount - redeemAmount);
     }
 
     function test_redeem_callerNotOwner_totalAssetsGtTotalSupply_explicitVals() external {
@@ -1289,7 +1294,7 @@ contract ExitTest is TestUtils {
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), 20e18);
 
-        uint256 assetsFromRedeem = notShareOwner.rdToken_redeem(address(rdToken), redeemAmount, address(staker), address(staker));
+        uint256 assetsFromRedeem = notShareOwner.rdToken_redeem(address(rdToken), redeemAmount, address(notShareOwner), address(staker));
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), 0);
 
@@ -1303,8 +1308,9 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.issuanceRate(),                         0.05e18 * 1e30);
         assertEq(rdToken.lastUpdated(),                          start + 100 seconds);
 
-        assertEq(asset.balanceOf(address(staker)),  21e18);
-        assertEq(asset.balanceOf(address(rdToken)), 89e18);
+        assertEq(asset.balanceOf(address(staker)),        0);
+        assertEq(asset.balanceOf(address(notShareOwner)), 21e18);  // notShareOwner received the assets.
+        assertEq(asset.balanceOf(address(rdToken)),       89e18);
     }
 
     function test_redeem_callerNotOwner_totalAssetsGtTotalSupply(
@@ -1350,7 +1356,7 @@ contract ExitTest is TestUtils {
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance);
 
-        uint256 assetsFromRedeem = notShareOwner.rdToken_redeem(address(rdToken), redeemAmount, address(staker), address(staker));
+        uint256 assetsFromRedeem = notShareOwner.rdToken_redeem(address(rdToken), redeemAmount, address(notShareOwner), address(staker));
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance - redeemAmount);
 
@@ -1365,8 +1371,9 @@ contract ExitTest is TestUtils {
         assertWithinDiff(rdToken.freeAssets(),           depositAmount + amountVested - expectedAssetsFromRedeem, 1);
         assertWithinDiff(rdToken.totalAssets(),          depositAmount + amountVested - expectedAssetsFromRedeem, 1);
 
-        assertEq(asset.balanceOf(address(staker)),  expectedAssetsFromRedeem);
-        assertEq(asset.balanceOf(address(rdToken)), depositAmount + vestingAmount - expectedAssetsFromRedeem);  // Note that vestingAmount is used
+        assertEq(asset.balanceOf(address(staker)),        0);
+        assertEq(asset.balanceOf(address(notShareOwner)), expectedAssetsFromRedeem);  // notShareOwner received the assets.
+        assertEq(asset.balanceOf(address(rdToken)),       depositAmount + vestingAmount - expectedAssetsFromRedeem);  // Note that vestingAmount is used
     }
 
     function _depositAsset(uint256 depositAmount) internal {

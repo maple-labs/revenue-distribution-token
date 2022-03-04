@@ -9,7 +9,7 @@ import { Staker } from "./accounts/Staker.sol";
 
 import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol";
 
-contract PermitTest is TestUtils {
+contract DepositAndMintWithPermitTest is TestUtils {
 
     MockERC20Permit asset;
     RDT             rdToken;
@@ -45,7 +45,7 @@ contract PermitTest is TestUtils {
 
         vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, 17, r, s);
-        
+
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
     }
 
@@ -59,11 +59,11 @@ contract PermitTest is TestUtils {
 
         vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-        
+
         ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
 
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-    
+
     }
 
     function test_depositWithPermit_pastDeadline() external {
@@ -80,7 +80,7 @@ contract PermitTest is TestUtils {
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
         vm.warp(deadline);
-        
+
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
     }
 
@@ -147,12 +147,12 @@ contract PermitTest is TestUtils {
         ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
 
         uint mintAmount = depositAmount;
-        
+
         vm.startPrank(staker);
 
         vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
         rdToken.mintWithPermit(mintAmount, staker, deadline, 17, r, s);
-        
+
         rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
     }
 
@@ -168,11 +168,11 @@ contract PermitTest is TestUtils {
 
         vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
-        
+
         ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
 
         rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
-    
+
     }
 
     function test_mintWithPermit_pastDeadline() external {
@@ -182,7 +182,7 @@ contract PermitTest is TestUtils {
         ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
 
         uint mintAmount = depositAmount;
-        
+
         vm.startPrank(staker);
 
         vm.warp(deadline + 1);
@@ -191,7 +191,7 @@ contract PermitTest is TestUtils {
         rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
 
         vm.warp(deadline);
-        
+
         rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
     }
 

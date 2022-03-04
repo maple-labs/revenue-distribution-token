@@ -34,6 +34,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     function acceptOwnership() external override {
         require(msg.sender == pendingOwner, "RDT:AO:NOT_PO");
+        emit OwnershipAccepted(owner, msg.sender);
         owner        = msg.sender;
         pendingOwner = address(0);
     }
@@ -41,6 +42,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     function setPendingOwner(address pendingOwner_) external override {
         require(msg.sender == owner, "RDT:SPO:NOT_OWNER");
         pendingOwner = pendingOwner_;
+        emit PendingOwnerSet(msg.sender, pendingOwner_);
     }
 
     // TODO: Revisit returns
@@ -54,6 +56,8 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         issuanceRate        = issuanceRate_ = (ERC20Permit(asset).balanceOf(address(this)) - freeAssets_) * precision / vestingPeriod_;
         lastUpdated         = block.timestamp;
         vestingPeriodFinish = block.timestamp + vestingPeriod_;
+
+        emit VestingScheduleUpdated(msg.sender, vestingPeriodFinish, issuanceRate);
     }
 
     /************************/

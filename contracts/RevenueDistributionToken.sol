@@ -23,9 +23,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     constructor(string memory name_, string memory symbol_, address owner_, address asset_, uint256 precision_)
         ERC20Permit(name_, symbol_, ERC20Permit(asset_).decimals())
     {
-        owner     = owner_;
+        require((owner = owner_) != address(0), "RDT:C:ZERO_ADDRESS");
+        require((asset = asset_) != address(0), "RDT:C:ZERO_ADDRESS");
+
         precision = precision_;
-        asset     = asset_;
     }
 
     /********************************/

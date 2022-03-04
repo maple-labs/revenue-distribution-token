@@ -458,8 +458,6 @@ contract DepositAndMintTest is TestUtils {
     }
 
     function test_deposit_zeroShares() external {
-        uint256 depositAmount = 1;
-
         // Do a deposit so that totalSupply is non-zero
         asset.mint(address(this), 20e18);
         asset.approve(address(rdToken), 20e18);
@@ -469,18 +467,15 @@ contract DepositAndMintTest is TestUtils {
 
         vm.warp(block.timestamp + 2 seconds);
 
-        asset.mint(address(staker), depositAmount);
-        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+        uint256 minDeposit = (rdToken.totalAssets() - 1) / rdToken.totalSupply() + 1;
+
+        asset.mint(address(staker), minDeposit);
+        staker.erc20_approve(address(asset), address(rdToken), minDeposit);
 
         vm.expectRevert("RDT:D:ZERO_SHARES");
-        staker.rdToken_deposit(address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), minDeposit - 1);
 
-        // Deposit larger amount
-        depositAmount = 1e5;
-
-        asset.mint(address(staker), depositAmount);
-        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
-        staker.rdToken_deposit(address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), minDeposit);
     }
 
     function test_deposit_preVesting(uint256 depositAmount) external {

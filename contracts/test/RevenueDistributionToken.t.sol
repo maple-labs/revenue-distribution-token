@@ -422,7 +422,7 @@ contract DepositAndMintTest is TestUtils {
         asset.mint(address(staker), 1);
         staker.erc20_approve(address(asset), address(rdToken), 1);
 
-        vm.expectRevert("RDT:D:AMOUNT");
+        vm.expectRevert("RDT:D:ZERO_ASSETS");
         staker.rdToken_deposit(address(rdToken), 0);
 
         staker.rdToken_deposit(address(rdToken), 1);
@@ -735,7 +735,7 @@ contract ExitTest is TestUtils {
     function test_withdraw_zeroAmount(uint256 depositAmount) external {
         _depositAsset(constrictToRange(depositAmount, 1, 1e29));
 
-        vm.expectRevert("RDT:W:AMOUNT");
+        vm.expectRevert("RDT:W:ZERO_ASSETS");
         staker.rdToken_withdraw(address(rdToken), 0);
 
         staker.rdToken_withdraw(address(rdToken), 1);
@@ -1148,7 +1148,7 @@ contract ExitTest is TestUtils {
     function test_redeem_zeroAmount(uint256 depositAmount) external {
         _depositAsset(constrictToRange(depositAmount, 1, 1e29));
 
-        vm.expectRevert("RDT:R:AMOUNT");
+        vm.expectRevert("RDT:R:ZERO_SHARES");
         staker.rdToken_redeem(address(rdToken), 0);
 
         staker.rdToken_redeem(address(rdToken), 1);

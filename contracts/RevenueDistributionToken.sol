@@ -105,7 +105,8 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     function _mint(uint256 shares_, address receiver_, address caller_) internal returns (uint256 assets_) {
         require(shares_ != 0, "RDT:M:AMOUNT");
-        _mint(receiver_, assets_ = convertToAssets(shares_));
+        assets_  = convertToAssets(shares_);
+        _mint(receiver_, shares_);
         freeAssets = totalAssets() + assets_;
         _updateIssuanceParams();
         require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:M:TRANSFER_FROM");

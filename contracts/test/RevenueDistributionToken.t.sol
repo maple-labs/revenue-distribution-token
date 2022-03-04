@@ -4,6 +4,8 @@ pragma solidity 0.8.7;
 import { TestUtils }                  from "../../modules/contract-test-utils/contracts/test.sol";
 import { MockERC20, MockERC20Permit } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
+import { MockRevertingERC20 } from "./mocks/MockRevertingERC20.sol";
+
 import { Owner }  from "./accounts/Owner.sol";
 import { Staker } from "./accounts/Staker.sol";
 
@@ -384,7 +386,7 @@ contract AuthTest is TestUtils {
 
 }
 
-contract DepositTest is TestUtils {
+contract DepositAndMintTest is TestUtils {
 
     MockERC20 asset;
     RDT       rdToken;
@@ -399,6 +401,7 @@ contract DepositTest is TestUtils {
         staker  = new Staker();
 
         vm.warp(10_000_000);  // Warp to non-zero timestamp
+
     }
 
     function test_deposit_zeroAmount() external {
@@ -476,6 +479,88 @@ contract DepositTest is TestUtils {
 
         assertEq(asset.balanceOf(address(staker)),  0);
         assertEq(asset.balanceOf(address(rdToken)), depositAmount);
+    }
+
+    function test_mint_zeroAmount() external {
+
+        asset.mint(address(staker), 1);
+        staker.erc20_approve(address(asset), address(rdToken), 1);
+
+        vm.expectRevert("RDT:M:AMOUNT");
+        staker.rdToken_mint(address(rdToken), 0);
+
+        staker.rdToken_mint(address(rdToken), 1);
+    }
+
+    function test_mint_badApprove(uint256 mintAmount) external {
+
+        mintAmount = constrictToRange(mintAmount, 1, 1e29);
+
+        uint256 depositAmount = rdToken.previewMint(mintAmount);
+
+        asset.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount - 1);
+
+        vm.expectRevert("RDT:M:TRANSFER_FROM");
+        staker.rdToken_mint(address(rdToken), mintAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+        staker.rdToken_mint(address(rdToken), mintAmount);
+    }
+
+    function test_mint_insufficientBalance(uint256 mintAmount) external {
+
+        mintAmount = constrictToRange(mintAmount, 1, 1e29);
+
+        uint256 depositAmount = rdToken.previewMint(mintAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+
+        vm.expectRevert("RDT:M:TRANSFER_FROM");
+        staker.rdToken_mint(address(rdToken), mintAmount);
+
+        asset.mint(address(staker), depositAmount);
+
+        staker.rdToken_mint(address(rdToken), mintAmount);
+    }
+
+    function test_mint_preVesting(uint256 mintAmount) external {
+
+        mintAmount = constrictToRange(mintAmount, 1, 1e29);
+
+        uint256 depositAmount = rdToken.previewMint(mintAmount);
+
+        asset.mint(address(staker), depositAmount);
+
+        assertEq(rdToken.balanceOf(address(staker)),             0);
+        assertEq(rdToken.totalSupply(),                          0);
+        assertEq(rdToken.freeAssets(),                           0);
+        assertEq(rdToken.totalAssets(),                          0);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         0);
+        assertEq(rdToken.lastUpdated(),                          0);
+
+        assertEq(asset.balanceOf(address(staker)),  depositAmount);
+        assertEq(asset.balanceOf(address(rdToken)), 0);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+
+        uint256 assets = staker.rdToken_mint(address(rdToken), mintAmount);
+        assertEq(assets, depositAmount);
+
+        assertEq(rdToken.balanceOf(address(staker)),             mintAmount);
+        assertEq(rdToken.totalSupply(),                          mintAmount);
+        assertEq(rdToken.freeAssets(),                           assets);
+        assertEq(rdToken.totalAssets(),                          assets);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleAssetsToConvert); // No revenue, conversion should be the same.
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         0);
+        assertEq(rdToken.lastUpdated(),                          block.timestamp);
+
+        assertEq(asset.balanceOf(address(staker)),  0);
+        assertEq(asset.balanceOf(address(rdToken)), assets);
     }
 
     function test_deposit_totalAssetsGtTotalSupply_explicitVals() external {
@@ -1818,4 +1903,68 @@ contract RevenueStreamingTest is TestUtils {
         rdToken.updateVestingSchedule(vestingPeriod_);
     }
 
+}
+
+contract RedeemRevertOnTransfer is TestUtils {
+
+    MockRevertingERC20 asset;
+    RDT                rdToken;
+    Staker             staker;
+
+    uint256 constant sampleAssetsToConvert = 1e18;
+    uint256 constant sampleSharesToConvert = 1e18;
+
+    bytes constant ARITHMETIC_ERROR = abi.encodeWithSignature("Panic(uint256)", 0x11);
+
+    function setUp() public virtual {
+        asset   = new MockRevertingERC20("MockToken", "MT", 18);
+        rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
+        staker  = new Staker();
+
+        vm.warp(10_000_000);  // Warp to non-zero timestamp
+    }
+
+    function test_redeem_revertOnTransfer(uint256 depositAmount, uint256 redeemAmount) public {
+        depositAmount = constrictToRange(depositAmount, 1, 1e29);
+        redeemAmount  = constrictToRange(redeemAmount,  1, depositAmount);
+
+        asset.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), depositAmount);
+
+        uint256 start = block.timestamp;
+
+        vm.warp(start + 10 days);
+
+        vm.expectRevert(bytes("RDT:R:TRANSFER"));
+        staker.rdToken_redeem(address(rdToken), depositAmount, address(0), address(staker));
+
+        staker.rdToken_redeem(address(rdToken), depositAmount, address(1), address(staker));
+    }
+
+    function test_withdraw_revertOnTransfer(uint256 depositAmount, uint256 withdrawAmount) public {
+        depositAmount  = constrictToRange(depositAmount,  1, 1e29);
+        withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
+
+        asset.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), depositAmount);
+
+        uint256 start = block.timestamp;
+
+        vm.warp(start + 10 days);
+
+        vm.expectRevert(bytes("RDT:W:TRANSFER"));
+        staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(0), address(staker));
+
+        staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(1), address(staker));
+    }
+
+    function _depositAsset(uint256 depositAmount) internal {
+        asset.mint(address(staker), depositAmount);
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), depositAmount);
+    }
 }

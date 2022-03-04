@@ -131,7 +131,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     function _deposit(uint256 assets_, address receiver_, address caller_) internal returns (uint256 shares_) {
         require(assets_ != 0, "RDT:D:ZERO_ASSETS");
-        require((shares_ = convertToShares(assets_)) != 0, "RDT:W:ZERO_SHARES");
+        require((shares_ = convertToShares(assets_)) != 0, "RDT:D:ZERO_SHARES");
         _mint(receiver_, shares_);
         freeAssets = totalAssets() + assets_;
         _updateIssuanceParams();

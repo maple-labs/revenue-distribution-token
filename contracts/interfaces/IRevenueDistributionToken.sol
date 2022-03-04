@@ -73,6 +73,35 @@ interface IRevenueDistributionToken is IERC4626, IERC20Permit {
      */
     function updateVestingSchedule(uint256 vestingPeriod_) external returns (uint256 issuanceRate_, uint256 freeAssets_);
 
+    /************************/
+    /*** Staker Functions ***/
+    /************************/
+
+    /**
+     *  @dev    Does a ERC4626 `deposit` with a ERC-2612 `permit`.
+     *  @param  assets_   The amount of `asset` to deposit.
+     *  @param  receiver_ The receiver of the shares.
+     *  @param  deadline_ The timestamp after which the `permit` signature is no longer valid.
+     *  @param  v_        ECDSA signature v component.
+     *  @param  r_        ECDSA signature r component.
+     *  @param  s_        ECDSA signature s component.
+     *  @return shares_   The amount of shares minted.
+     */
+    function depositWithPermit(uint256 assets_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external returns (uint256 shares_);
+
+    /**
+     *  @dev    Does a ERC4626 `mint` with a ERC-2612 `permit`.
+     *  @param  shares_   The amount of `shares` to mint.
+     *  @param  receiver_ The receiver of the shares.
+     *  @param  deadline_ The timestamp after which the `permit` signature is no longer valid.
+     *  @param  v_        ECDSA signature v component.
+     *  @param  r_        ECDSA signature r component.
+     *  @param  s_        ECDSA signature s component.
+     *  @return assets_   The amount of shares deposited.
+     */
+    function mintWithPermit(uint256 shares_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external returns (uint256 assets_);
+
+
     /**********************/
     /*** View Functions ***/
     /**********************/
@@ -88,12 +117,5 @@ interface IRevenueDistributionToken is IERC4626, IERC20Permit {
      *  @return assets_  Amount of assets owned.
      */
     function balanceOfAssets(address account_) external view returns (uint256 assets_);
-
-    /************************/
-    /*** Staker Functions ***/
-    /************************/
-
-    function depositWithPermit(uint256 assets_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external returns (uint256 shares_);
-    function mintWithPermit(uint256 shares_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external returns (uint256 assets_);
 
 }

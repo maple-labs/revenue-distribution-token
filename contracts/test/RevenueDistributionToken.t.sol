@@ -701,7 +701,7 @@ contract DepositAndMintTest is TestUtils {
         /*** Deposit ***/
         /***************/
 
-        uint256 minDeposit = (initialAmount + vestingAmount) / initialAmount;
+        uint256 minDeposit = (initialAmount + vestingAmount - 1) / initialAmount + 1;
         depositAmount = constrictToRange(depositAmount, minDeposit, 1e29);
         asset.mint(address(staker), depositAmount);
         assertEq(asset.balanceOf(address(staker)),  depositAmount);

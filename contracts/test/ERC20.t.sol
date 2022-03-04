@@ -15,7 +15,7 @@ contract RDT_ERC20Test is ERC20Test {
 
     function setUp() override public {
         address asset = address(new MockERC20("MockToken", "MT", 18));
-        token = MockERC20(address(new MockERC20_RDT("Revenue Distribution Token", "RDT", address(this), asset, 1e30)));
+        token = MockERC20(address(new MockERC20_RDT("Token", "TKN", address(this), asset, 1e30)));
     }
 
 }
@@ -25,7 +25,7 @@ contract RDT_ERC20PermitTest is ERC20PermitTest {
     function setUp() override public {
         super.setUp();
         address asset = address(new MockERC20("MockToken", "MT", 18));
-        token = ERC20Permit(address(new RDT("ERC20Permit", "ERC20Permit", address(this), asset, 1e30)));
+        token = ERC20Permit(address(new RDT("Token", "TKN", address(this), asset, 1e30)));
     }
 
     function test_domainSeparator() external override {

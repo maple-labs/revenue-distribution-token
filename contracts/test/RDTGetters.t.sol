@@ -146,11 +146,11 @@ contract PreviewViewFunctionTest is TestUtils {
 
 }
 
-// TODO: test "vanilla" mint (whitout permit)
+// TODO: test "vanilla" mint (whitout permit) -- Done
 
-// TODO: mint with zero shares amt
+// TODO: mint with zero shares amt -- Done
 
-// TODO: mint failure on transferFrom
+// TODO: mint failure on transferFrom --Done
 
 // TODO: _redeem transfer failed
 

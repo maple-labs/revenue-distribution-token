@@ -7,6 +7,32 @@ import { IERC20Permit } from "../../modules/erc20/contracts/interfaces/IERC20Per
 /// @title A token that represents ownership of future revenues distributed linearly over time.
 interface IRevenueDistributionToken is IERC4626, IERC20Permit {
 
+    /**************/
+    /*** Events ***/
+    /**************/
+
+    /**
+     *  @dev   `newOwner_` has accepted the transferral of RDT ownership from `previousOwner_`.
+     *  @param previousOwner_ The previous RDT owner.
+     *  @param newOwner_      The new RDT owner.
+     */
+    event OwnershipAccepted(address indexed previousOwner_, address indexed newOwner_);
+
+    /**
+     *  @dev   `owner_` has set the new pending owner of RDT to `pendingOwner_`.
+     *  @param owner_        The current RDT owner.
+     *  @param pendingOwner_ The new pending RDT owner.
+     */
+    event PendingOwnerSet(address indexed owner_, address indexed pendingOwner_);
+
+    /**
+     *  @dev   `owner_` has updated the RDT vesting schedule to end at `vestingPeriodFinish_`, with an issuance rate of `issuanceRate_`.
+     *  @param owner_               The current RDT owner.
+     *  @param vestingPeriodFinish_ When the unvested balance will finish vesting.
+     *  @param issuanceRate_        The new issuance rate of `asset` until `vestingPeriodFinish_`.
+     */
+    event VestingScheduleUpdated(address indexed owner_, uint256 indexed vestingPeriodFinish_, uint256 issuanceRate_);
+
     /***********************/
     /*** State Variables ***/
     /***********************/

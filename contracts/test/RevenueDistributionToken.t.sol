@@ -9,6 +9,19 @@ import { Staker } from "./accounts/Staker.sol";
 
 import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol";
 
+contract ConstructorTest is TestUtils {
+
+    function test_constructor_ownerZeroAddress() external {
+        MockERC20Permit asset   = new MockERC20Permit("MockToken", "MT", 18);
+
+        vm.expectRevert("RDT:C:OWNER_ZERO_ADDRESS");
+        RDT rdToken = new RDT("Revenue Distribution Token", "RDT", address(0), address(asset), 1e30);
+
+        rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
+    }
+    
+}
+
 contract DepositAndMintWithPermitTest is TestUtils {
 
     MockERC20Permit asset;

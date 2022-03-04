@@ -20,11 +20,27 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated.
     uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends.
 
+    uint256 private locked = 1;                   // Used in reentrancy check.
+
+    /*****************/
+    /*** Modifiers ***/
+    /*****************/
+
+    modifier nonReentrant() {
+        require(locked == 1, "RDT:LOCKED");
+
+        locked = 2;
+
+        _;
+
+        locked = 1;
+    }
+
     constructor(string memory name_, string memory symbol_, address owner_, address asset_, uint256 precision_)
         ERC20Permit(name_, symbol_, ERC20Permit(asset_).decimals())
     {
-        require((owner = owner_) != address(0), "RDT:C:ZERO_ADDRESS");
-        require((asset = asset_) != address(0), "RDT:C:ZERO_ADDRESS");
+        require((owner = owner_) != address(0), "RDT:C:OWNER_ZERO_ADDRESS");
+        asset = asset_;  // Don't need to check zero address as ERC20Permit(asset_).decimals() will fail in ERC20Permit constructor.
 
         precision = precision_;
     }
@@ -91,7 +107,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     /*** Internal Functions ***/
     /**************************/
 
-    function _deposit(uint256 assets_, address receiver_, address caller_) internal returns (uint256 shares_) {
+    function _deposit(uint256 assets_, address receiver_, address caller_) internal nonReentrant returns (uint256 shares_) {
         require(assets_ != 0, "RDT:D:AMOUNT");
         _mint(receiver_, shares_ = convertToShares(assets_));
         freeAssets = totalAssets() + assets_;
@@ -100,7 +116,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         emit Deposit(caller_, receiver_, assets_, shares_);
     }
 
-    function _mint(uint256 shares_, address receiver_, address caller_) internal returns (uint256 assets_) {
+    function _mint(uint256 shares_, address receiver_, address caller_) internal nonReentrant returns (uint256 assets_) {
         require(shares_ != 0, "RDT:M:AMOUNT");
         _mint(receiver_, assets_ = convertToAssets(shares_));
         freeAssets = totalAssets() + assets_;
@@ -109,7 +125,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         emit Deposit(caller_, receiver_, assets_, shares_);
     }
 
-    function _redeem(uint256 shares_, address receiver_, address owner_, address caller_) internal returns (uint256 assets_) {
+    function _redeem(uint256 shares_, address receiver_, address owner_, address caller_) internal nonReentrant returns (uint256 assets_) {
         require(shares_ != 0, "RDT:R:AMOUNT");
         if (caller_ != owner_) {
             _reduceCallerAllowance(caller_, owner_, shares_);
@@ -122,7 +138,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
     }
 
-    function _withdraw(uint256 assets_, address receiver_, address owner_, address caller_) internal returns (uint256 shares_) {
+    function _withdraw(uint256 assets_, address receiver_, address owner_, address caller_) internal nonReentrant returns (uint256 shares_) {
         require(assets_ != 0, "RDT:W:AMOUNT");
         shares_ = convertToShares(assets_);
         if (caller_ != owner_) {

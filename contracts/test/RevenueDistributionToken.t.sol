@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.7;
 
-import { TestUtils } from "../../modules/contract-test-utils/contracts/test.sol";
+import { TestUtils }       from "../../modules/contract-test-utils/contracts/test.sol";
 import { MockERC20Permit } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { Owner }  from "./accounts/Owner.sol";
@@ -279,9 +279,9 @@ contract DepositAndMintWithPermitTest is TestUtils {
 contract AuthTest is TestUtils {
 
     MockERC20Permit asset;
-    Owner     notOwner;
-    Owner     owner;
-    RDT       rdToken;
+    Owner           notOwner;
+    Owner           owner;
+    RDT             rdToken;
 
     function setUp() public virtual {
         notOwner = new Owner();
@@ -778,9 +778,9 @@ contract ExitTest is TestUtils {
         shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
 
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), depositAmount);
-        
+
         notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
-        
+
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
     }
 
@@ -797,9 +797,9 @@ contract ExitTest is TestUtils {
         shareOwner.erc20_approve(address(rdToken), address(notShareOwner), type(uint256).max);
 
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
-        
+
         notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
-        
+
         // Infinite approval stays infinite.
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
     }
@@ -1186,9 +1186,9 @@ contract ExitTest is TestUtils {
         shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
 
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), depositAmount);
-        
+
         notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
-        
+
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
     }
 
@@ -1205,9 +1205,9 @@ contract ExitTest is TestUtils {
         shareOwner.erc20_approve(address(rdToken), address(notShareOwner), type(uint256).max);
 
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
-        
+
         notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
-        
+
         // Infinite approval stays infinite.
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
     }
@@ -1350,7 +1350,7 @@ contract ExitTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)), depositAmount + vestingAmount);  // Balance is higher than totalAssets
 
         uint256 expectedAssetsFromRedeem = rdToken.convertToAssets(redeemAmount);
-        
+
         Staker notShareOwner = new Staker();
         staker.erc20_approve(address(rdToken), address(notShareOwner), callerAllowance);
 

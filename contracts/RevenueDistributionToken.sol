@@ -154,7 +154,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         if (caller_ != owner_) {
             _reduceCallerAllowance(caller_, owner_, shares_);
         }
-        require((assets_ = convertToAssets(shares_)) != 0, "RDT:R:ZERO_ASSETS");
+        assets_ = convertToAssets(shares_);  // No zero assets check here as totalSupply <= totalAssets for RDT.
         _burn(owner_, shares_);
         freeAssets = totalAssets() - assets_;
         _updateIssuanceParams();

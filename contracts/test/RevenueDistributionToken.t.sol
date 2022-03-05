@@ -520,7 +520,7 @@ contract DepositAndMintTest is TestUtils {
         asset.mint(address(staker), 1);
         staker.erc20_approve(address(asset), address(rdToken), 1);
 
-        vm.expectRevert("RDT:M:AMOUNT");
+        vm.expectRevert("RDT:M:ZERO_SHARES");
         staker.rdToken_mint(address(rdToken), 0);
 
         staker.rdToken_mint(address(rdToken), 1);
@@ -792,32 +792,6 @@ contract ExitTest is TestUtils {
         staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount + 1);
 
         staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount);
-    }
-
-    function test_withdraw_zeroShares() external {
-        // Do a deposit so that totalSupply is non-zero
-        asset.mint(address(this), 20e18);
-        asset.approve(address(rdToken), 20e18);
-        rdToken.deposit(20e18, address(this));
-
-        _transferAndUpdateVesting(5e18, 10 seconds);
-
-        vm.warp(block.timestamp + 2 seconds);
-
-        uint256 minDeposit = (rdToken.totalAssets() - 1) / rdToken.totalSupply() + 1;
-
-        asset.mint(address(staker), minDeposit);
-        staker.erc20_approve(address(asset), address(rdToken), minDeposit);
-
-        staker.rdToken_deposit(address(rdToken), minDeposit);
-
-        uint256 minWithdraw = minDeposit;
-
-        vm.expectRevert("RDT:W:ZERO_SHARES");
-        staker.rdToken_withdraw(address(rdToken), minWithdraw - 1);
-
-        staker.rdToken_withdraw(address(rdToken), minWithdraw);
-        
     }
 
     function test_withdraw(uint256 depositAmount, uint256 withdrawAmount) public {

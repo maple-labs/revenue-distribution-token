@@ -117,15 +117,16 @@ interface IRevenueDistributionToken is IERC4626, IERC20Permit {
 
     /**
      *  @dev    Does a ERC4626 `mint` with a ERC-2612 `permit`.
-     *  @param  shares_   The amount of `shares` to mint.
-     *  @param  receiver_ The receiver of the shares.
-     *  @param  deadline_ The timestamp after which the `permit` signature is no longer valid.
-     *  @param  v_        ECDSA signature v component.
-     *  @param  r_        ECDSA signature r component.
-     *  @param  s_        ECDSA signature s component.
-     *  @return assets_   The amount of shares deposited.
+     *  @param  shares_    The amount of `shares` to mint.
+     *  @param  receiver_  The receiver of the shares.
+     *  @param  maxAssets_ The maximum amount of assets that can be taken, as per the permit.
+     *  @param  deadline_  The timestamp after which the `permit` signature is no longer valid.
+     *  @param  v_         ECDSA signature v component.
+     *  @param  r_         ECDSA signature r component.
+     *  @param  s_         ECDSA signature s component.
+     *  @return assets_    The amount of shares deposited.
      */
-    function mintWithPermit(uint256 shares_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external returns (uint256 assets_);
+    function mintWithPermit(uint256 shares_, address receiver_, uint256 maxAssets_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external returns (uint256 assets_);
 
 
     /**********************/

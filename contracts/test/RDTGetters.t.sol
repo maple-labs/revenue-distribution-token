@@ -146,7 +146,7 @@ contract PreviewViewFunctionTest is TestUtils {
 
 }
 
-// TODO: test "vanilla" mint (whitout permit) --Done
+// TODO: test "vanilla" mint (without permit) --Done
 
 // TODO: mint with zero shares amt --Done
 
@@ -160,11 +160,11 @@ contract PreviewViewFunctionTest is TestUtils {
 
 // TODO: test convert to shares --DONE
 
-// TODO: testmax deposit --DONE
+// TODO: test max deposit --DONE
 
 // TODO: test max mint --DONE
 
-// TODO: test max Redem --DONE
+// TODO: test max redeem --DONE
 
 // TODO: test preview Deposit --DONE
 

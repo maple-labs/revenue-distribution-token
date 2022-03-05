@@ -141,7 +141,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
 
     function _mint(uint256 shares_, address receiver_, address caller_) internal returns (uint256 assets_) {
         require(shares_ != 0, "RDT:M:ZERO_SHARES");
-        assets_ = previewMint(shares_);
+        assets_ = previewMint(shares_);  // No zero assets require check here as mint rounds up.
         _mint(receiver_, shares_);
         freeAssets = totalAssets() + assets_;
         _updateIssuanceParams();
@@ -154,7 +154,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         if (caller_ != owner_) {
             _reduceCallerAllowance(caller_, owner_, shares_);
         }
-        assets_ = convertToAssets(shares_);
+        require((assets_ = convertToAssets(shares_)) != 0, "RDT:R:ZERO_ASSETS");
         _burn(owner_, shares_);
         freeAssets = totalAssets() - assets_;
         _updateIssuanceParams();
@@ -163,8 +163,8 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     }
 
     function _withdraw(uint256 assets_, address receiver_, address owner_, address caller_) internal returns (uint256 shares_) {
-        require(assets_ != 0,                              "RDT:W:ZERO_ASSETS");
-        require((shares_ = previewWithdraw(assets_)) != 0, "RDT:W:ZERO_SHARES");
+        require(assets_ != 0, "RDT:W:ZERO_ASSETS");
+        shares_ = previewWithdraw(assets_);  // No zero shares require check here as withdraw rounds up.
         if (caller_ != owner_) {
             _reduceCallerAllowance(caller_, owner_, shares_);
         }

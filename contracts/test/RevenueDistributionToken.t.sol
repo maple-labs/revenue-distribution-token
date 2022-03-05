@@ -883,14 +883,11 @@ contract ExitTest is TestUtils {
     ) public {
 
         depositAmount  = constrictToRange(depositAmount,  1, 1e29);
+        withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
         vestingAmount  = constrictToRange(vestingAmount,  1, 1e29);
         vestingPeriod  = constrictToRange(vestingPeriod,  1, 100 days);
         warpTime       = constrictToRange(warpTime,       1, vestingPeriod);
 
-        // Constrict depositAmount to range again, to make sure enough is deposited to meet the min withdraw requirement.
-        uint256 minDeposit = ((depositAmount + vestingAmount * warpTime / vestingPeriod) - 1) / depositAmount + 1;
-        depositAmount      = constrictToRange(depositAmount,  minDeposit, 1e29 + 1); // + 1 Since we round up
-        withdrawAmount     = constrictToRange(withdrawAmount, minDeposit, depositAmount);
 
         uint256 start = block.timestamp;
 
@@ -1095,11 +1092,6 @@ contract ExitTest is TestUtils {
         vestingAmount  = constrictToRange(vestingAmount,  1, 1e29);
         vestingPeriod  = constrictToRange(vestingPeriod,  1, 100 days);
         warpTime       = constrictToRange(warpTime,       1, vestingPeriod);
-
-        // Constrict depositAmount to range again, to make sure enough is deposited to meet the min withdraw requirement.
-        uint256 minDeposit = ((depositAmount + vestingAmount * warpTime / vestingPeriod) - 1) / depositAmount + 1;
-        depositAmount      = constrictToRange(depositAmount,  minDeposit, 1e29 + 1); // + 1 since we round up
-        withdrawAmount     = constrictToRange(withdrawAmount, minDeposit, depositAmount);
 
         uint256 start = block.timestamp;
 

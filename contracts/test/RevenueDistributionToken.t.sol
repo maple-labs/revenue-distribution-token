@@ -11,8 +11,6 @@ import { Staker } from "./accounts/Staker.sol";
 
 import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol";
 
-import { console } from "../../modules/contract-test-utils/contracts/log.sol";
-
 contract ConstructorTest is TestUtils {
 
     function test_constructor_ownerZeroAddress() external {

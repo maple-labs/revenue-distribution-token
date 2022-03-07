@@ -1192,7 +1192,7 @@ contract ExitTest is TestUtils {
     function test_redeem_zeroShares(uint256 depositAmount) external {
         _depositAsset(constrictToRange(depositAmount, 1, 1e29));
 
-        vm.expectRevert("RDT:R:ZERO_ASSETS");
+        vm.expectRevert("RDT:B:ZERO_SHARES");
         staker.rdToken_redeem(address(rdToken), 0);
 
         staker.rdToken_redeem(address(rdToken), 1);

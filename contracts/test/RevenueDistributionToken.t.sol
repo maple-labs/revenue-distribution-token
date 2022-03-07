@@ -21,7 +21,7 @@ contract ConstructorTest is TestUtils {
 
         rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
     }
-    
+
 }
 
 contract DepositAndMintWithPermitTest is TestUtils {
@@ -156,81 +156,99 @@ contract DepositAndMintWithPermitTest is TestUtils {
     }
 
     function test_mintWithPermit_zeroAddress() external {
-        uint256 depositAmount = 1e18;
-        asset.mint(address(staker), depositAmount);
+        uint256 mintAmount = 1e18;
+        uint256 maxAssets = rdToken.previewMint(mintAmount);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+        asset.mint(address(staker), maxAssets);
 
-        uint mintAmount = depositAmount;
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
 
         vm.startPrank(staker);
 
         vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
-        rdToken.mintWithPermit(mintAmount, staker, deadline, 17, r, s);
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, 17, r, s);
 
-        rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
     }
 
     function test_mintWithPermit_notStakerSignature() external {
-        uint256 depositAmount = 1e18;
-        asset.mint(address(staker), depositAmount);
+        uint256 mintAmount = 1e18;
+        uint256 maxAssets = rdToken.previewMint(mintAmount);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, notStaker, address(rdToken), notStakerPrivateKey, deadline);
+        asset.mint(address(staker), maxAssets);
 
-        uint mintAmount = depositAmount;
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(maxAssets, notStaker, address(rdToken), notStakerPrivateKey, deadline);
 
         vm.startPrank(staker);
 
         vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
-        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 
-        ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( v, r, s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
 
-        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 
     }
 
     function test_mintWithPermit_pastDeadline() external {
-        uint256 depositAmount = 1e18;
-        asset.mint(address(staker), depositAmount);
+        uint256 mintAmount = 1e18;
+        uint256 maxAssets = rdToken.previewMint(mintAmount);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+        asset.mint(address(staker), maxAssets);
 
-        uint mintAmount = depositAmount;
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
 
         vm.startPrank(staker);
 
         vm.warp(deadline + 1);
 
         vm.expectRevert(bytes("ERC20Permit:EXPIRED"));
-        rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 
         vm.warp(deadline);
 
-        rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
     }
 
-    function test_mintWithPermit_replay() external {
-        uint256 depositAmount = 1e18;
-        asset.mint(address(staker), depositAmount * 2);
+    function test_mintWithPermit_insufficientPermit() external {
+        uint256 mintAmount = 1e18;
+        uint256 maxAssets = rdToken.previewMint(mintAmount);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+        asset.mint(address(staker), maxAssets);
 
-        uint256 mintAmount = depositAmount;
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(maxAssets - 1, staker, address(rdToken), stakerPrivateKey, deadline);
 
         vm.startPrank(staker);
 
-        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
+        vm.expectRevert(bytes("RDT:MWP:INSUFFICIENT_PERMIT"));
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets - 1, deadline, v, r, s);
+
+        ( v, r, s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
+    }
+
+    function test_mintWithPermit_replay() external {
+        uint256 mintAmount = 1e18;
+        uint256 maxAssets = rdToken.previewMint(mintAmount);
+
+        asset.mint(address(staker), maxAssets * 2);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
+
+        vm.startPrank(staker);
+
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 
         vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
-        rdToken.depositWithPermit(mintAmount, staker, deadline, v, r, s);
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
     }
 
     function test_mintWithPermit_preVesting(uint256 mintAmount) external {
         mintAmount = constrictToRange(mintAmount, 1, 1e29);
+        uint256 maxAssets = rdToken.previewMint(mintAmount);
 
-        uint256 depositAmount = mintAmount; // totalSupply = totalAssets, so they will be equal.
-        asset.mint(address(staker), depositAmount);
+        asset.mint(address(staker), maxAssets);
 
         assertEq(rdToken.balanceOf(address(staker)),             0);
         assertEq(rdToken.totalSupply(),                          0);
@@ -241,26 +259,26 @@ contract DepositAndMintWithPermitTest is TestUtils {
         assertEq(rdToken.issuanceRate(),                         0);
         assertEq(rdToken.lastUpdated(),                          0);
 
-        assertEq(asset.balanceOf(address(staker)),  depositAmount);
+        assertEq(asset.balanceOf(address(staker)),  maxAssets);
         assertEq(asset.balanceOf(address(rdToken)), 0);
 
         assertEq(asset.nonces(staker),                      0);
         assertEq(asset.allowance(staker, address(rdToken)), 0);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(mintAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
         vm.prank(staker);
-        uint256 assets = rdToken.mintWithPermit(mintAmount, staker, deadline, v, r, s);
+        uint256 assets = rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 
         assertEq(asset.allowance(staker, address(rdToken)), 0); // Should have used whole allowance
         assertEq(asset.nonces(staker),                      1);
 
-        assertEq(mintAmount,    rdToken.balanceOf(staker));
-        assertEq(depositAmount, assets);
+        assertEq(mintAmount, rdToken.balanceOf(staker));
+        assertEq(maxAssets,  assets);
 
         assertEq(rdToken.balanceOf(address(staker)),             mintAmount);
         assertEq(rdToken.totalSupply(),                          mintAmount);
-        assertEq(rdToken.freeAssets(),                           depositAmount);
-        assertEq(rdToken.totalAssets(),                          depositAmount);
+        assertEq(rdToken.freeAssets(),                           maxAssets);
+        assertEq(rdToken.totalAssets(),                          maxAssets);
         assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert); // No revenue, conversion should be the same.
         assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
         assertEq(rdToken.issuanceRate(),                         0);
@@ -422,7 +440,7 @@ contract DepositAndMintTest is TestUtils {
         asset.mint(address(staker), 1);
         staker.erc20_approve(address(asset), address(rdToken), 1);
 
-        vm.expectRevert("RDT:D:AMOUNT");
+        vm.expectRevert("RDT:M:AMOUNT");
         staker.rdToken_deposit(address(rdToken), 0);
 
         staker.rdToken_deposit(address(rdToken), 1);
@@ -436,7 +454,7 @@ contract DepositAndMintTest is TestUtils {
 
         staker.erc20_approve(address(asset), address(rdToken), depositAmount - 1);
 
-        vm.expectRevert("RDT:D:TRANSFER_FROM");
+        vm.expectRevert("RDT:M:TRANSFER_FROM");
         staker.rdToken_deposit(address(rdToken), depositAmount);
 
         staker.erc20_approve(address(asset), address(rdToken), depositAmount);
@@ -450,7 +468,7 @@ contract DepositAndMintTest is TestUtils {
         asset.mint(address(staker), depositAmount);
         staker.erc20_approve(address(asset), address(rdToken), depositAmount + 1);
 
-        vm.expectRevert("RDT:D:TRANSFER_FROM");
+        vm.expectRevert("RDT:M:TRANSFER_FROM");
         staker.rdToken_deposit(address(rdToken), depositAmount + 1);
 
         staker.erc20_approve(address(asset), address(rdToken), depositAmount);
@@ -576,7 +594,7 @@ contract DepositAndMintTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)), assets);
     }
 
-    function test_deposit_totalAssetsGtTotalSupply_explicitVals() external {
+    function test_deposit_totalAssetsGtTotalSupply_explicitValues() external {
         /*************/
         /*** Setup ***/
         /*************/
@@ -641,9 +659,10 @@ contract DepositAndMintTest is TestUtils {
         /*** Setup ***/
         /*************/
 
-        initialAmount = constrictToRange(initialAmount, 1, 1e29);
-        depositAmount = constrictToRange(depositAmount, 1, 1e29);
-        vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
+        // Since this is a test with an initial state, need to ensure amounts aren't small enough to result in 0 after conversion.
+        initialAmount = constrictToRange(initialAmount, 1e18, 1e29);
+        depositAmount = constrictToRange(depositAmount, 1e18, 1e29);
+        vestingAmount = constrictToRange(vestingAmount, 1e18, 1e29);
 
         // Do a deposit so that totalSupply is non-zero
         asset.mint(address(this), initialAmount);
@@ -735,7 +754,7 @@ contract ExitTest is TestUtils {
     function test_withdraw_zeroAmount(uint256 depositAmount) external {
         _depositAsset(constrictToRange(depositAmount, 1, 1e29));
 
-        vm.expectRevert("RDT:W:AMOUNT");
+        vm.expectRevert("RDT:B:AMOUNT");
         staker.rdToken_withdraw(address(rdToken), 0);
 
         staker.rdToken_withdraw(address(rdToken), 1);
@@ -751,7 +770,7 @@ contract ExitTest is TestUtils {
         staker.rdToken_withdraw(address(rdToken), depositAmount);
     }
 
-    function test_withdraw_burnUnderflow_totalAssetsGtTotalSupply_explicitVals() external {
+    function test_withdraw_burnUnderflow_totalAssetsGtTotalSupply_explicitValues() external {
         uint256 depositAmount = 100e18;
         uint256 vestingAmount = 10e18;
         uint256 vestingPeriod = 10 days;
@@ -810,7 +829,7 @@ contract ExitTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)), depositAmount - withdrawAmount);
     }
 
-    function test_withdraw_totalAssetsGtTotalSupply_explicitVals() public {
+    function test_withdraw_totalAssetsGtTotalSupply_explicitValues() public {
         uint256 depositAmount  = 100e18;
         uint256 withdrawAmount = 20e18;
         uint256 vestingAmount  = 10e18;
@@ -1000,7 +1019,7 @@ contract ExitTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)),       depositAmount - withdrawAmount);
     }
 
-    function test_withdraw_callerNotOwner_totalAssetsGtTotalSupply_explicitVals() public {
+    function test_withdraw_callerNotOwner_totalAssetsGtTotalSupply_explicitValues() public {
         uint256 depositAmount  = 100e18;
         uint256 withdrawAmount = 20e18;
         uint256 vestingAmount  = 10e18;
@@ -1148,7 +1167,7 @@ contract ExitTest is TestUtils {
     function test_redeem_zeroAmount(uint256 depositAmount) external {
         _depositAsset(constrictToRange(depositAmount, 1, 1e29));
 
-        vm.expectRevert("RDT:R:AMOUNT");
+        vm.expectRevert("RDT:B:AMOUNT");
         staker.rdToken_redeem(address(rdToken), 0);
 
         staker.rdToken_redeem(address(rdToken), 1);
@@ -1164,7 +1183,7 @@ contract ExitTest is TestUtils {
         staker.rdToken_redeem(address(rdToken), depositAmount);
     }
 
-    function test_redeem_burnUnderflow_totalAssetsGtTotalSupply_explicitVals() external {
+    function test_redeem_burnUnderflow_totalAssetsGtTotalSupply_explicitValues() external {
         uint256 depositAmount = 100e18;
         uint256 vestingAmount = 10e18;
         uint256 vestingPeriod = 10 days;
@@ -1221,7 +1240,7 @@ contract ExitTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)), depositAmount - redeemAmount);
     }
 
-    function test_redeem_totalAssetsGtTotalSupply_explicitVals() public {
+    function test_redeem_totalAssetsGtTotalSupply_explicitValues() public {
         uint256 depositAmount = 100e18;
         uint256 redeemAmount  = 20e18;
         uint256 vestingAmount = 10e18;
@@ -1408,7 +1427,7 @@ contract ExitTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)),       depositAmount - redeemAmount);
     }
 
-    function test_redeem_callerNotOwner_totalAssetsGtTotalSupply_explicitVals() external {
+    function test_redeem_callerNotOwner_totalAssetsGtTotalSupply_explicitValues() external {
         uint256 depositAmount = 100e18;
         uint256 redeemAmount  = 20e18;
         uint256 vestingAmount = 10e18;
@@ -1737,7 +1756,7 @@ contract RevenueStreamingTest is TestUtils {
     /*** End to end vesting tests ***/
     /********************************/
 
-    function test_vesting_singleSchedule_explicit_vals() public {
+    function test_vesting_singleSchedule_explicitValues() public {
         uint256 depositAmount = 1_000_000e18;
         uint256 vestingAmount = 100_000e18;
         uint256 vestingPeriod = 200_000 seconds;
@@ -1865,14 +1884,14 @@ contract RevenueStreamingTest is TestUtils {
         for (uint256 i = 1; i < 10; ++i) {
             vm.warp(start + vestingPeriod * i / 10);  // 10% intervals of vesting schedule
 
-            uint256 expectedtotalAssets = depositAmount + expectedRate * (block.timestamp - start) / 1e30;
+            uint256 expectedTotalAssets = depositAmount + expectedRate * (block.timestamp - start) / 1e30;
 
-            assertWithinDiff(rdToken.balanceOfAssets(address(staker)), expectedtotalAssets, 1);
+            assertWithinDiff(rdToken.balanceOfAssets(address(staker)), expectedTotalAssets, 1);
 
             assertEq(rdToken.totalSupply(),                          depositAmount);
-            assertEq(rdToken.totalAssets(),                          expectedtotalAssets);
-            assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert * expectedtotalAssets / depositAmount);
-            assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert * depositAmount / expectedtotalAssets);
+            assertEq(rdToken.totalAssets(),                          expectedTotalAssets);
+            assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert * expectedTotalAssets / depositAmount);
+            assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert * depositAmount / expectedTotalAssets);
         }
 
         vm.warp(start + vestingPeriod);
@@ -1950,7 +1969,7 @@ contract RedeemRevertOnTransfer is TestUtils {
 
         vm.warp(start + 10 days);
 
-        vm.expectRevert(bytes("RDT:R:TRANSFER"));
+        vm.expectRevert(bytes("RDT:B:TRANSFER"));
         staker.rdToken_redeem(address(rdToken), depositAmount, address(0), address(staker));
 
         staker.rdToken_redeem(address(rdToken), depositAmount, address(1), address(staker));
@@ -1969,7 +1988,7 @@ contract RedeemRevertOnTransfer is TestUtils {
 
         vm.warp(start + 10 days);
 
-        vm.expectRevert(bytes("RDT:W:TRANSFER"));
+        vm.expectRevert(bytes("RDT:B:TRANSFER"));
         staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(0), address(staker));
 
         staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(1), address(staker));

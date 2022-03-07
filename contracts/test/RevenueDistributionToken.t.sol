@@ -435,12 +435,12 @@ contract DepositAndMintTest is TestUtils {
 
     }
 
-    function test_deposit_zeroAmount() external {
+    function test_deposit_zeroAssets() external {
 
         asset.mint(address(staker), 1);
         staker.erc20_approve(address(asset), address(rdToken), 1);
 
-        vm.expectRevert("RDT:M:AMOUNT");
+        vm.expectRevert("RDT:M:ZERO_SHARES");
         staker.rdToken_deposit(address(rdToken), 0);
 
         staker.rdToken_deposit(address(rdToken), 1);
@@ -473,6 +473,27 @@ contract DepositAndMintTest is TestUtils {
 
         staker.erc20_approve(address(asset), address(rdToken), depositAmount);
         staker.rdToken_deposit(address(rdToken), depositAmount);
+    }
+
+    function test_deposit_zeroShares() external {
+        // Do a deposit so that totalSupply is non-zero
+        asset.mint(address(this), 20e18);
+        asset.approve(address(rdToken), 20e18);
+        rdToken.deposit(20e18, address(this));
+
+        _transferAndUpdateVesting(5e18, 10 seconds);
+
+        vm.warp(block.timestamp + 2 seconds);
+
+        uint256 minDeposit = (rdToken.totalAssets() - 1) / rdToken.totalSupply() + 1;
+
+        asset.mint(address(staker), minDeposit);
+        staker.erc20_approve(address(asset), address(rdToken), minDeposit);
+
+        vm.expectRevert("RDT:M:ZERO_SHARES");
+        staker.rdToken_deposit(address(rdToken), minDeposit - 1);
+
+        staker.rdToken_deposit(address(rdToken), minDeposit);
     }
 
     function test_deposit_preVesting(uint256 depositAmount) external {
@@ -517,7 +538,7 @@ contract DepositAndMintTest is TestUtils {
         asset.mint(address(staker), 1);
         staker.erc20_approve(address(asset), address(rdToken), 1);
 
-        vm.expectRevert("RDT:M:AMOUNT");
+        vm.expectRevert("RDT:M:ZERO_SHARES");
         staker.rdToken_mint(address(rdToken), 0);
 
         staker.rdToken_mint(address(rdToken), 1);
@@ -659,10 +680,12 @@ contract DepositAndMintTest is TestUtils {
         /*** Setup ***/
         /*************/
 
-        // Since this is a test with an initial state, need to ensure amounts aren't small enough to result in 0 after conversion.
-        initialAmount = constrictToRange(initialAmount, 1e18, 1e29);
-        depositAmount = constrictToRange(depositAmount, 1e18, 1e29);
-        vestingAmount = constrictToRange(vestingAmount, 1e18, 1e29);
+        initialAmount = constrictToRange(initialAmount, 1, 1e29);
+        vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
+
+        // Since this is a test where totalAssets > totalSupply, need to ensure deposit amount is at least minimum to avoid 0 shares after conversion.
+        uint256 minDeposit = (initialAmount + vestingAmount - 1) / initialAmount + 1;
+        depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
 
         // Do a deposit so that totalSupply is non-zero
         asset.mint(address(this), initialAmount);
@@ -675,7 +698,6 @@ contract DepositAndMintTest is TestUtils {
 
         vm.warp(start + 11 seconds);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
 
-        asset.mint(address(staker), depositAmount);
 
         /********************/
         /*** Before state ***/
@@ -690,12 +712,14 @@ contract DepositAndMintTest is TestUtils {
         assertEq(rdToken.issuanceRate(),                         vestingAmount * 1e30 / 10 seconds);
         assertEq(rdToken.lastUpdated(),                          start);
 
-        assertEq(asset.balanceOf(address(staker)),  depositAmount);
         assertEq(asset.balanceOf(address(rdToken)), initialAmount + vestingAmount);
 
         /***************/
         /*** Deposit ***/
         /***************/
+
+        asset.mint(address(staker), depositAmount);
+        assertEq(asset.balanceOf(address(staker)),  depositAmount);
 
         staker.erc20_approve(address(asset), address(rdToken), depositAmount);
         uint256 stakerShares = staker.rdToken_deposit(address(rdToken), depositAmount);
@@ -754,7 +778,7 @@ contract ExitTest is TestUtils {
     function test_withdraw_zeroAmount(uint256 depositAmount) external {
         _depositAsset(constrictToRange(depositAmount, 1, 1e29));
 
-        vm.expectRevert("RDT:B:AMOUNT");
+        vm.expectRevert("RDT:B:ZERO_SHARES");
         staker.rdToken_withdraw(address(rdToken), 0);
 
         staker.rdToken_withdraw(address(rdToken), 1);
@@ -882,6 +906,7 @@ contract ExitTest is TestUtils {
         vestingAmount  = constrictToRange(vestingAmount,  1, 1e29);
         vestingPeriod  = constrictToRange(vestingPeriod,  1, 100 days);
         warpTime       = constrictToRange(warpTime,       1, vestingPeriod);
+
 
         uint256 start = block.timestamp;
 
@@ -1164,10 +1189,10 @@ contract ExitTest is TestUtils {
     /*** `redeem` tests ***/
     /************************/
 
-    function test_redeem_zeroAmount(uint256 depositAmount) external {
+    function test_redeem_zeroShares(uint256 depositAmount) external {
         _depositAsset(constrictToRange(depositAmount, 1, 1e29));
 
-        vm.expectRevert("RDT:B:AMOUNT");
+        vm.expectRevert("RDT:B:ZERO_SHARES");
         staker.rdToken_redeem(address(rdToken), 0);
 
         staker.rdToken_redeem(address(rdToken), 1);

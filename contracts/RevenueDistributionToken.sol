@@ -136,7 +136,8 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     /**************************/
 
     function _mint(uint256 shares_, uint256 assets_, address receiver_, address caller_) internal {
-        require(shares_ != 0, "RDT:M:AMOUNT");
+        require(shares_ != 0, "RDT:M:ZERO_SHARES");
+        require(assets_ != 0, "RDT:M:ZERO_ASSETS");
 
         _mint(receiver_, shares_);
         freeAssets = totalAssets() + assets_;
@@ -148,7 +149,8 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     }
 
     function _burn(uint256 shares_, uint256 assets_, address receiver_, address owner_, address caller_) internal {
-        require(shares_ != 0, "RDT:B:AMOUNT");
+        require(shares_ != 0, "RDT:B:ZERO_SHARES");
+        require(assets_ != 0, "RDT:B:ZERO_ASSETS");
 
         if (caller_ != owner_) {
             _reduceCallerAllowance(caller_, owner_, shares_);

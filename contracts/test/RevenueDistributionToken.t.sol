@@ -11,6 +11,8 @@ import { Staker } from "./accounts/Staker.sol";
 
 import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol";
 
+import { console } from "../../modules/contract-test-utils/contracts/log.sol";
+
 contract ConstructorTest is TestUtils {
 
     function test_constructor_ownerZeroAddress() external {
@@ -680,10 +682,9 @@ contract DepositAndMintTest is TestUtils {
         /*** Setup ***/
         /*************/
 
-        // Since this is a test with an initial state, need to ensure amounts aren't small enough to result in 0 after conversion.
-        initialAmount = constrictToRange(initialAmount, 1e18, 1e29);
-        depositAmount = constrictToRange(depositAmount, 1e18, 1e29);
-        vestingAmount = constrictToRange(vestingAmount, 1e18, 1e29);
+        initialAmount = constrictToRange(initialAmount, 1, 1e29);
+        depositAmount = constrictToRange(depositAmount, 1, 1e29);
+        vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
 
         uint256 minDeposit = (initialAmount + vestingAmount - 1) / initialAmount + 1;
         depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.

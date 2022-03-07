@@ -683,9 +683,9 @@ contract DepositAndMintTest is TestUtils {
         /*************/
 
         initialAmount = constrictToRange(initialAmount, 1, 1e29);
-        depositAmount = constrictToRange(depositAmount, 1, 1e29);
         vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
 
+        // Since this is a test where totalAssets > totalSupply, need to ensure deposit amount is larger than minimum to avoid 0 shares after conversion.
         uint256 minDeposit = (initialAmount + vestingAmount - 1) / initialAmount + 1;
         depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
 

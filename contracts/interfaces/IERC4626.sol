@@ -70,7 +70,7 @@ interface IERC4626 is IERC20 {
     /**
      *  @dev    Burns `shares_` from `owner_` and sends `assets_` to `receiver_`.
      *          MUST emit the {Withdraw} event.
-     *          MUST revert if all of the shares cannot be redeemed (due to insufficent shares, withdrawal limits, slippage, etc).
+     *          MUST revert if all of the shares cannot be redeemed (due to insufficient shares, withdrawal limits, slippage, etc).
      *  @param  shares_   The amount of shares to redeem.
      *  @param  receiver_ The receiver of the assets.
      *  @param  owner_    The owner of the shares.

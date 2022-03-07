@@ -53,10 +53,10 @@ contract RDTInvariants is TestUtils, InvariantTest {
         // Performs random redeem calls from a random instantiated staker
         addTargetContract(address(stakerManager));
 
-        // Peforms random warps forward in time
+        // Performs random warps forward in time
         addTargetContract(address(warper));
 
-        // Create one staker to prevent underflows on index calculations
+        // Create one staker to prevent underflow on index calculations
         stakerManager.createStaker();
     }
 

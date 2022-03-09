@@ -844,10 +844,7 @@ contract ExitTestWithMultipleUsers is TestUtils {
         staker.erc20_approve(address(rdToken), address(notShareOwner), callerAllowance);
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance);
-
-        emit log_named_uint("expectedSharesBurned", expectedSharesBurned);
-        emit log_named_uint("allsssssssssssowance", rdToken.allowance(address(staker), address(notShareOwner)));
-
+        
         // Withdraw assets to notShareOwner
         uint256 sharesBurned = notShareOwner.rdToken_withdraw(address(rdToken), withdrawAmount, address(notShareOwner), address(staker));
 
@@ -1405,8 +1402,6 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
         uint256 initialFreeAssets  = rdToken.totalAssets();
         uint256 initialBalance     = asset.balanceOf(address(rdToken));
         uint256 start              = block.timestamp;
-
-        emit log_named_uint("start", start);
 
         assertEq(rdToken.freeAssets(),          initialFreeAssets);
         assertEq(rdToken.totalAssets(),         initialTotalAssets);

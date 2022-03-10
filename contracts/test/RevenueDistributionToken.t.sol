@@ -27,7 +27,7 @@ contract ConstructorTest is TestUtils {
 
 contract DepositAndMintWithPermitTest is TestUtils {
 
-    MockERC20Permit asset;
+    MockERC20 asset;
     MockRDT         rdToken;
 
     uint256 stakerPrivateKey    = 1;
@@ -42,8 +42,12 @@ contract DepositAndMintWithPermitTest is TestUtils {
     address notStaker;
 
     function setUp() public virtual {
+<<<<<<< HEAD
 
         asset   = new MockERC20Permit("MockToken", "MT", 18);
+=======
+        asset   = new MockERC20("MockToken", "MT", 18);
+>>>>>>> f9291f8 (chore: update submodules)
         rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(this), address(asset), 1e30);
 
         staker    = vm.addr(stakerPrivateKey);
@@ -60,7 +64,11 @@ contract DepositAndMintWithPermitTest is TestUtils {
 
         vm.startPrank(staker);
 
+<<<<<<< HEAD
         vm.expectRevert(bytes("ERC20:P:MALLEABLE"));
+=======
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
+>>>>>>> f9291f8 (chore: update submodules)
         rdToken.depositWithPermit(depositAmount, staker, deadline, 17, r, s);
 
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
@@ -167,7 +175,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
 
         vm.startPrank(staker);
 
-        vm.expectRevert(bytes("ERC20:P:MALLEABLE"));
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, 17, r, s);
 
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);

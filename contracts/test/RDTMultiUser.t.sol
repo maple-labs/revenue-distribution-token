@@ -4,7 +4,7 @@ pragma solidity 0.8.7;
 // This file duplicates the tests on RevenueDistributionToken.t.sol, but they're all executed in the context of an ongoing campaign, with already deposited users.
 
 import { TestUtils }                  from "../../modules/contract-test-utils/contracts/test.sol";
-import { MockERC20, MockERC20Permit } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
+import { MockERC20, MockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { MockRevertingERC20 } from "./mocks/MockRevertingERC20.sol";
 import { MockRDT }            from "./mocks/MockRDT.sol";
@@ -16,7 +16,7 @@ import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol
 
 contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
-    MockERC20Permit asset;
+    MockERC20 asset;
     MockRDT         rdToken;
 
     uint256 stakerPrivateKey    = 1;
@@ -31,7 +31,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     address notStaker;
 
     function setUp() public virtual {
-        asset   = new MockERC20Permit("MockToken", "MT", 18);
+        asset   = new MockERC20("MockToken", "MT", 18);
         rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(this), address(asset), 1e30);
 
         staker    = vm.addr(stakerPrivateKey);
@@ -50,7 +50,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
         vm.startPrank(staker);
 
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, 17, r, s);
 
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
@@ -66,7 +66,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
         vm.startPrank(staker);
 
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
         ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
@@ -87,7 +87,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
         vm.warp(deadline + 1);
 
-        vm.expectRevert(bytes("ERC20Permit:EXPIRED"));
+        vm.expectRevert(bytes("ERC20:P:EXPIRED"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
         vm.warp(deadline);
@@ -107,7 +107,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
     }
 
@@ -169,7 +169,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
         vm.startPrank(staker);
 
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, 17, r, s);
 
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
@@ -187,7 +187,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
         vm.startPrank(staker);
 
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 
         ( v, r, s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
@@ -210,7 +210,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
         vm.warp(deadline + 1);
 
-        vm.expectRevert(bytes("ERC20Permit:EXPIRED"));
+        vm.expectRevert(bytes("ERC20:P:EXPIRED"));
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 
         vm.warp(deadline);
@@ -255,7 +255,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
         maxAssets = rdToken.previewMint(mintAmount);
         asset.mint(address(staker), maxAssets);
 
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
     }
 
@@ -339,11 +339,11 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
             uint256 amount = _getPseudoRandomValue(entropy / (i + 1), 0, 1e29, "deposit");
 
             if (rdToken.previewDeposit(amount) > 0) {
-                Staker stk = new Staker();
+                Staker staker_ = new Staker();
 
-                asset.mint(address(stk),amount);
-                stk.erc20_approve(address(asset), address(rdToken), amount);
-                stk.rdToken_deposit(address(rdToken), amount);
+                asset.mint(address(staker_),amount);
+                staker_.erc20_approve(address(asset), address(rdToken), amount);
+                staker_.rdToken_deposit(address(rdToken), amount);
             }
         }
 
@@ -586,11 +586,11 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
             uint256 amount = _getPseudoRandomValue(entropy / (i + 1), 0, 1e29, "deposit");
 
             if (rdToken.previewDeposit(amount) > 0) {
-                Staker stk = new Staker();
+                Staker staker_ = new Staker();
 
-                asset.mint(address(stk),amount);
-                stk.erc20_approve(address(asset), address(rdToken), amount);
-                stk.rdToken_deposit(address(rdToken), amount);
+                asset.mint(address(staker_),amount);
+                staker_.erc20_approve(address(asset), address(rdToken), amount);
+                staker_.rdToken_deposit(address(rdToken), amount);
             }
         }
 
@@ -1355,11 +1355,11 @@ contract ExitTestWithMultipleUsers is TestUtils {
             uint256 amount = _getPseudoRandomValue(entropy / (i + 1), 0, 1e29, "deposit");
 
             if (rdToken.previewDeposit(amount) > 0) {
-                Staker stk = new Staker();
+                Staker staker_ = new Staker();
 
-                asset.mint(address(stk),amount);
-                stk.erc20_approve(address(asset), address(rdToken), amount);
-                stk.rdToken_deposit(address(rdToken), amount);
+                asset.mint(address(staker_),amount);
+                staker_.erc20_approve(address(asset), address(rdToken), amount);
+                staker_.rdToken_deposit(address(rdToken), amount);
             }
         }
 
@@ -1818,11 +1818,11 @@ contract RedeemRevertOnTransferWithMultipleUsers is TestUtils {
             uint256 amount = _getPseudoRandomValue(entropy / (i + 1), 0, 1e29, "deposit");
 
             if (rdToken.previewDeposit(amount) > 0) {
-                Staker stk = new Staker();
+                Staker staker_ = new Staker();
 
-                asset.mint(address(stk),amount);
-                stk.erc20_approve(address(asset), address(rdToken), amount);
-                stk.rdToken_deposit(address(rdToken), amount);
+                asset.mint(address(staker_),amount);
+                staker_.erc20_approve(address(asset), address(rdToken), amount);
+                staker_.rdToken_deposit(address(rdToken), amount);
             }
         }
 

@@ -5,6 +5,7 @@ import { ERC20 }           from "../../modules/erc20/contracts/ERC20.sol";
 import { ERC20User }       from "../../modules/erc20/contracts/test/accounts/ERC20User.sol";
 import { ERC20BaseTest }   from "../../modules/erc20/contracts/test/ERC20.t.sol";
 import { ERC20PermitTest } from "../../modules/erc20/contracts/test/ERC20.t.sol";
+
 import { MockERC20 }       from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol";
@@ -20,7 +21,7 @@ contract RDT_ERC20Test is ERC20BaseTest {
 
 }
 
-contract RDT_ERC20PermitTest is ERC20PermitTest {
+// contract RDT_ERC20PermitTest is ERC20PermitTest {
 
     function setUp() override public {
         super.setUp();

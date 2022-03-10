@@ -41,7 +41,8 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_depositWithPermit_zeroAddress(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
+        
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount);
 
@@ -56,7 +57,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_depositWithPermit_notStakerSignature(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount);
@@ -75,7 +76,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_depositWithPermit_pastDeadline(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount);
@@ -95,7 +96,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_depositWithPermit_replay(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount * 2);
@@ -111,7 +112,8 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_depositWithPermit_preVesting(uint256 depositAmount, uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
+        
         depositAmount = constrictToRange(depositAmount, 1e6, 1e29);
 
         uint256 initialSupply      = rdToken.totalSupply();
@@ -156,7 +158,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_mintWithPermit_zeroAddress(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 mintAmount = 1e18;
         uint256 maxAssets = rdToken.previewMint(mintAmount);
@@ -174,7 +176,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_mintWithPermit_notStakerSignature(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 mintAmount = 1e18;
         uint256 maxAssets = rdToken.previewMint(mintAmount);
@@ -195,7 +197,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_mintWithPermit_pastDeadline(uint256 entropy) external {
-         _createOngoingCampaign(entropy);
+         _setUpMultipleDeposits(entropy);
 
         uint256 mintAmount = 1e18;
         uint256 maxAssets = rdToken.previewMint(mintAmount);
@@ -217,7 +219,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_mintWithPermit_insufficientPermit(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 mintAmount = 1e18;
         uint256 maxAssets = rdToken.previewMint(mintAmount);
@@ -237,7 +239,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_mintWithPermit_replay(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 mintAmount = 1e18;
         uint256 maxAssets = rdToken.previewMint(mintAmount);
@@ -258,7 +260,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_mintWithPermit_preVesting(uint256 mintAmount, uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         mintAmount = constrictToRange(mintAmount, 1, 1e29);
         uint256 maxAssets = rdToken.previewMint(mintAmount);
@@ -325,16 +327,16 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
         return (v, r, s);
     }
 
-    function _createOngoingCampaign(uint256 entropy) internal {
+    function _setUpMultipleDeposits(uint256 entropy) internal {
         // Put a initial supply of asset
-        uint256 totalAssets = _getRangedValue(entropy, 0, 1e29, "total assets");
+        uint256 totalAssets = _getPseudoRandomValue(entropy, 0, 1e29, "total assets");
         asset.mint(address(rdToken), totalAssets);
         rdToken.__setTotalAssets(totalAssets);
 
         // Create and deposit with n amount of stakers
-        uint256 count = _getRangedValue(entropy, 0, 25, "stakers");
+        uint256 count = _getPseudoRandomValue(entropy, 0, 25, "stakers");
         for (uint256 i = 0; i < count; i++) {
-            uint256 amount = _getRangedValue(entropy / (i + 1), 0, 1e29, "deposit");
+            uint256 amount = _getPseudoRandomValue(entropy / (i + 1), 0, 1e29, "deposit");
 
             if (rdToken.previewDeposit(amount) > 0) {
                 Staker stk = new Staker();
@@ -347,7 +349,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
     }
 
-    function _getRangedValue(uint256 entropy, uint256 lowerBound, uint256 upperBound, string memory salt) internal pure returns (uint256 val) {
+    function _getPseudoRandomValue(uint256 entropy, uint256 lowerBound, uint256 upperBound, string memory salt) internal pure returns (uint256 val) {
         val = uint256(keccak256(abi.encode(entropy, salt))) % (upperBound - lowerBound) + lowerBound;
     }
 
@@ -372,7 +374,7 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_deposit_zeroAssets(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 deposit = 1e6;
 
@@ -386,7 +388,7 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_deposit_badApprove(uint256 depositAmount, uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         depositAmount = constrictToRange(depositAmount, 1e6, 1e29);
 
@@ -402,7 +404,7 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_deposit_insufficientBalance(uint256 depositAmount, uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         depositAmount = constrictToRange(depositAmount, 1e6, 1e29);
 
@@ -417,7 +419,7 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_deposit_zeroShares(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         // Do a deposit so that totalSupply is non-zero
         asset.mint(address(this), 20e18);
@@ -440,7 +442,7 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_deposit_preVesting(uint256 depositAmount, uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         depositAmount = constrictToRange(depositAmount, 1e6, 1e29);
 
@@ -478,7 +480,7 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_mint_zeroAmount(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 assetAmount = rdToken.previewMint(1);
 
@@ -492,7 +494,7 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_mint_badApprove(uint256 mintAmount, uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         mintAmount = constrictToRange(mintAmount, 1, 1e29);
 
@@ -510,7 +512,7 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_mint_insufficientBalance(uint256 mintAmount, uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         mintAmount = constrictToRange(mintAmount, 1, 1e29);
 
@@ -527,7 +529,7 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_mint_preVesting(uint256 mintAmount, uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         mintAmount = constrictToRange(mintAmount, 1, 1e29);
 
@@ -572,16 +574,16 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
         rdToken.updateVestingSchedule(vestingPeriod_);
     }
 
-    function _createOngoingCampaign(uint256 entropy) internal {
+    function _setUpMultipleDeposits(uint256 entropy) internal {
         // Put a initial supply of asset
-        uint256 totalAssets = _getRangedValue(entropy, 0, 1e29, "total assets");
+        uint256 totalAssets = _getPseudoRandomValue(entropy, 0, 1e29, "total assets");
         asset.mint(address(rdToken), totalAssets);
         rdToken.__setTotalAssets(totalAssets);
 
         // Create and deposit with n amount of stakers
-        uint256 count = _getRangedValue(entropy, 0, 25, "stakers");
+        uint256 count = _getPseudoRandomValue(entropy, 0, 25, "stakers");
         for (uint256 i = 0; i < count; i++) {
-            uint256 amount = _getRangedValue(entropy / (i + 1), 0, 1e29, "deposit");
+            uint256 amount = _getPseudoRandomValue(entropy / (i + 1), 0, 1e29, "deposit");
 
             if (rdToken.previewDeposit(amount) > 0) {
                 Staker stk = new Staker();
@@ -594,7 +596,7 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
 
     }
 
-    function _getRangedValue(uint256 entropy, uint256 lowerBound, uint256 upperBound, string memory salt) internal pure returns (uint256 val) {
+    function _getPseudoRandomValue(uint256 entropy, uint256 lowerBound, uint256 upperBound, string memory salt) internal pure returns (uint256 val) {
         val = uint256(keccak256(abi.encode(entropy, salt))) % (upperBound - lowerBound) + lowerBound;
     }
 
@@ -624,7 +626,7 @@ contract ExitTestWithMultipleUsers is TestUtils {
     /************************/
 
     function test_multi_withdraw_zeroAmount(uint256 depositAmount, uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
         _depositAsset(constrictToRange(depositAmount, minAmount, 1e29));
 
         vm.expectRevert("RDT:B:ZERO_SHARES");
@@ -634,7 +636,7 @@ contract ExitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_withdraw_burnUnderflow(uint256 depositAmount, uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         depositAmount = constrictToRange(depositAmount, minAmount, 1e29);
         _depositAsset(depositAmount);
@@ -649,7 +651,7 @@ contract ExitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_withdraw(uint256 depositAmount, uint256 withdrawAmount, uint256 entropy) public {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         depositAmount  = constrictToRange(depositAmount,  minAmount, 1e29);
         withdrawAmount = constrictToRange(withdrawAmount, minAmount, depositAmount);
@@ -700,7 +702,7 @@ contract ExitTestWithMultipleUsers is TestUtils {
         uint256 entropy
     ) public {
         //todo getting stack too deep
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         depositAmount  = constrictToRange(depositAmount,  minAmount, 1e29);
         withdrawAmount = constrictToRange(withdrawAmount, minAmount, depositAmount);
@@ -756,7 +758,7 @@ contract ExitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_withdraw_callerNotOwner_badApproval(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         Staker shareOwner    = new Staker();
         Staker notShareOwner = new Staker();
@@ -785,7 +787,7 @@ contract ExitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_withdraw_callerNotOwner_infiniteApprovalForCaller(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         Staker shareOwner    = new Staker();
         Staker notShareOwner = new Staker();
@@ -807,7 +809,7 @@ contract ExitTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_withdraw_callerNotOwner(uint256 depositAmount, uint256 withdrawAmount, uint256 callerAllowance, uint256 entropy) public {
-         _createOngoingCampaign(entropy);
+         _setUpMultipleDeposits(entropy);
 
         depositAmount  = constrictToRange(depositAmount,  minAmount, 1e29);
         withdrawAmount = constrictToRange(withdrawAmount, minAmount, depositAmount);
@@ -844,7 +846,7 @@ contract ExitTestWithMultipleUsers is TestUtils {
         staker.erc20_approve(address(rdToken), address(notShareOwner), callerAllowance);
 
         assertEq(rdToken.allowance(address(staker), address(notShareOwner)), callerAllowance);
-        
+
         // Withdraw assets to notShareOwner
         uint256 sharesBurned = notShareOwner.rdToken_withdraw(address(rdToken), withdrawAmount, address(notShareOwner), address(staker));
 
@@ -1341,16 +1343,16 @@ contract ExitTestWithMultipleUsers is TestUtils {
         rdToken.updateVestingSchedule(vestingPeriod_);
     }
 
-    function _createOngoingCampaign(uint256 entropy) internal {
+    function _setUpMultipleDeposits(uint256 entropy) internal {
         // Put a initial supply of asset
-        uint256 totalAssets = _getRangedValue(entropy, 0, 1e29, "total assets");
+        uint256 totalAssets = _getPseudoRandomValue(entropy, 0, 1e29, "total assets");
         asset.mint(address(rdToken), totalAssets);
         rdToken.__setTotalAssets(totalAssets);
 
         // Create and deposit with n amount of stakers
-        uint256 count = _getRangedValue(entropy, 0, 25, "stakers");
+        uint256 count = _getPseudoRandomValue(entropy, 0, 25, "stakers");
         for (uint256 i = 0; i < count; i++) {
-            uint256 amount = _getRangedValue(entropy / (i + 1), 0, 1e29, "deposit");
+            uint256 amount = _getPseudoRandomValue(entropy / (i + 1), 0, 1e29, "deposit");
 
             if (rdToken.previewDeposit(amount) > 0) {
                 Staker stk = new Staker();
@@ -1363,7 +1365,7 @@ contract ExitTestWithMultipleUsers is TestUtils {
 
     }
 
-    function _getRangedValue(uint256 entropy, uint256 lowerBound, uint256 upperBound, string memory salt) internal pure returns (uint256 val) {
+    function _getPseudoRandomValue(uint256 entropy, uint256 lowerBound, uint256 upperBound, string memory salt) internal pure returns (uint256 val) {
         val = uint256(keccak256(abi.encode(entropy, salt))) % (upperBound - lowerBound) + lowerBound;
     }
 
@@ -1395,7 +1397,7 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
     /************************************/
 
     function test_multi_updateVestingSchedule_single(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 initialSupply      = rdToken.totalSupply();
         uint256 initialTotalAssets = rdToken.totalAssets();
@@ -1427,7 +1429,7 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_updateVestingSchedule_single_roundingDown(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 initialTotalAssets = rdToken.totalAssets();
 
@@ -1458,7 +1460,7 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
     /*************************************************/
 
     function test_multi_updateVestingSchedule_sameTime_shorterVesting(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 initialTotalAssets = rdToken.totalAssets();
 
@@ -1478,7 +1480,7 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_updateVestingSchedule_sameTime_longerVesting_higherRate(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 initialTotalAssets = rdToken.totalAssets();
 
@@ -1498,7 +1500,7 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_updateVestingSchedule_sameTime_longerVesting_lowerRate(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 initialTotalAssets = rdToken.totalAssets();
 
@@ -1522,7 +1524,7 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
     /*******************************************************/
 
     function test_multi_updateVestingSchedule_diffTime_shorterVesting(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 initialTotalAssets = rdToken.totalAssets();
         uint256 initialFreeAssets  = rdToken.totalAssets();
@@ -1551,7 +1553,7 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_updateVestingSchedule_diffTime_longerVesting_higherRate(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 initialTotalAssets = rdToken.totalAssets();
         uint256 initialFreeAssets  = rdToken.totalAssets();
@@ -1579,7 +1581,7 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
     }
 
     function test_multi_updateVestingSchedule_diffTime_longerVesting_lowerRate(uint256 entropy) external {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         uint256 initialTotalAssets = rdToken.totalAssets();
         uint256 initialFreeAssets  = rdToken.totalAssets();
@@ -1610,7 +1612,7 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
     /********************************/
 
     function test_multi_vesting_singleSchedule_fuzz(uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod, uint256 entropy) public {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         depositAmount = constrictToRange(depositAmount, 1e6,        1e30);                    // 1 billion at WAD precision
         vestingAmount = constrictToRange(vestingAmount, 1e6,        1e30);                    // 1 billion at WAD precision
@@ -1709,29 +1711,29 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
         rdToken.updateVestingSchedule(vestingPeriod_);
     }
 
-    function _createOngoingCampaign(uint256 entropy) internal {
+    function _setUpMultipleDeposits(uint256 entropy) internal {
         // Put a initial supply of asset
-        uint256 totalAssets = _getRangedValue(entropy, 0, 1e29, "total assets");
+        uint256 totalAssets = _getPseudoRandomValue(entropy, 0, 1e29, "TOTAL_ASSETS");
         asset.mint(address(rdToken), totalAssets);
         rdToken.__setTotalAssets(totalAssets);
 
         // Create and deposit with n amount of stakers
-        uint256 count = _getRangedValue(entropy, 0, 25, "stakers");
+        uint256 count = _getPseudoRandomValue(entropy, 0, 25, "STAKERS");
         for (uint256 i = 0; i < count; i++) {
-            uint256 amount = _getRangedValue(entropy / (i + 1), 0, 1e29, "deposit");
+            uint256 amount = _getPseudoRandomValue(entropy / (i + 1), 0, 1e29, "DEPOSIT");
 
             if (rdToken.previewDeposit(amount) > 0) {
-                Staker stk = new Staker();
+                Staker staker_ = new Staker();
 
-                asset.mint(address(stk),amount);
-                stk.erc20_approve(address(asset), address(rdToken), amount);
-                stk.rdToken_deposit(address(rdToken), amount);
+                asset.mint(address(staker_),amount);
+                staker_.erc20_approve(address(asset), address(rdToken), amount);
+                staker_.rdToken_deposit(address(rdToken), amount);
             }
         }
 
     }
 
-    function _getRangedValue(uint256 entropy, uint256 lowerBound, uint256 upperBound, string memory salt) internal pure returns (uint256 val) {
+    function _getPseudoRandomValue(uint256 entropy, uint256 lowerBound, uint256 upperBound, string memory salt) internal pure returns (uint256 val) {
         val = uint256(keccak256(abi.encode(entropy, salt))) % (upperBound - lowerBound) + lowerBound;
     }
 
@@ -1757,7 +1759,7 @@ contract RedeemRevertOnTransferWithMultipleUsers is TestUtils {
     }
 
     function test_multi_redeem_revertOnTransfer(uint256 depositAmount, uint256 redeemAmount, uint256 entropy) public {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         depositAmount = constrictToRange(depositAmount, 1e6, 1e29);
         redeemAmount  = constrictToRange(redeemAmount,  1e6, depositAmount);
@@ -1778,7 +1780,7 @@ contract RedeemRevertOnTransferWithMultipleUsers is TestUtils {
     }
 
     function test_multi_withdraw_revertOnTransfer(uint256 depositAmount, uint256 withdrawAmount, uint256 entropy) public {
-        _createOngoingCampaign(entropy);
+        _setUpMultipleDeposits(entropy);
 
         depositAmount  = constrictToRange(depositAmount,  1e6, 1e29);
         withdrawAmount = constrictToRange(withdrawAmount, 1e6, depositAmount);
@@ -1804,16 +1806,16 @@ contract RedeemRevertOnTransferWithMultipleUsers is TestUtils {
         staker.rdToken_deposit(address(rdToken), depositAmount);
     }
 
-    function _createOngoingCampaign(uint256 entropy) internal {
+    function _setUpMultipleDeposits(uint256 entropy) internal {
         // Put a initial supply of asset
-        uint256 totalAssets = _getRangedValue(entropy, 0, 1e29, "total assets");
+        uint256 totalAssets = _getPseudoRandomValue(entropy, 0, 1e29, "total assets");
         asset.mint(address(rdToken), totalAssets);
         rdToken.__setTotalAssets(totalAssets);
 
         // Create and deposit with n amount of stakers
-        uint256 count = _getRangedValue(entropy, 0, 25, "stakers");
+        uint256 count = _getPseudoRandomValue(entropy, 0, 25, "stakers");
         for (uint256 i = 0; i < count; i++) {
-            uint256 amount = _getRangedValue(entropy / (i + 1), 0, 1e29, "deposit");
+            uint256 amount = _getPseudoRandomValue(entropy / (i + 1), 0, 1e29, "deposit");
 
             if (rdToken.previewDeposit(amount) > 0) {
                 Staker stk = new Staker();
@@ -1826,7 +1828,7 @@ contract RedeemRevertOnTransferWithMultipleUsers is TestUtils {
 
     }
 
-    function _getRangedValue(uint256 entropy, uint256 lowerBound, uint256 upperBound, string memory salt) internal pure returns (uint256 val) {
+    function _getPseudoRandomValue(uint256 entropy, uint256 lowerBound, uint256 upperBound, string memory salt) internal pure returns (uint256 val) {
         val = uint256(keccak256(abi.encode(entropy, salt))) % (upperBound - lowerBound) + lowerBound;
     }
 }

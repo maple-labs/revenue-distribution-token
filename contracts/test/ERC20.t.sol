@@ -6,7 +6,7 @@ import { ERC20User }       from "../../modules/erc20/contracts/test/accounts/ERC
 import { ERC20BaseTest }   from "../../modules/erc20/contracts/test/ERC20.t.sol";
 import { ERC20PermitTest } from "../../modules/erc20/contracts/test/ERC20.t.sol";
 
-import { MockERC20 }       from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
+import { MockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol";
 
@@ -18,6 +18,7 @@ contract RDT_ERC20Test is ERC20BaseTest {
         address asset = address(new MockERC20("MockToken", "MT", 18));
         token = MockERC20(address(new MockERC20_RDT("Token", "TKN", address(this), asset, 1e30)));
     }
+
 }
 
 contract RDT_ERC20PermitTest is ERC20PermitTest {

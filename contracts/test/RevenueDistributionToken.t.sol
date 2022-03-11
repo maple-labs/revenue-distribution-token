@@ -5,7 +5,6 @@ import { TestUtils } from "../../modules/contract-test-utils/contracts/test.sol"
 import { MockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { MockRevertingERC20 } from "./mocks/MockRevertingERC20.sol";
-import { MockRDT }            from "./mocks/MockRDT.sol";
 
 import { Owner }  from "./accounts/Owner.sol";
 import { Staker } from "./accounts/Staker.sol";
@@ -18,9 +17,9 @@ contract ConstructorTest is TestUtils {
         MockERC20 asset = new MockERC20("MockToken", "MT", 18);
 
         vm.expectRevert("RDT:C:OWNER_ZERO_ADDRESS");
-        MockRDT rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(0), address(asset), 1e30);
+        RDT rdToken = new RDT("Revenue Distribution Token", "RDT", address(0), address(asset), 1e30);
 
-        rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(this), address(asset), 1e30);
+        rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
     }
 
 }
@@ -28,7 +27,7 @@ contract ConstructorTest is TestUtils {
 contract DepositAndMintWithPermitTest is TestUtils {
 
     MockERC20 asset;
-    MockRDT         rdToken;
+    RDT       rdToken;
 
     uint256 stakerPrivateKey    = 1;
     uint256 notStakerPrivateKey = 2;
@@ -47,8 +46,12 @@ contract DepositAndMintWithPermitTest is TestUtils {
         asset   = new MockERC20Permit("MockToken", "MT", 18);
 =======
         asset   = new MockERC20("MockToken", "MT", 18);
+<<<<<<< HEAD
 >>>>>>> f9291f8 (chore: update submodules)
         rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(this), address(asset), 1e30);
+=======
+        rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
+>>>>>>> 12314d5 (fix: fix permit tests, add formatting fixes)
 
         staker    = vm.addr(stakerPrivateKey);
         notStaker = vm.addr(notStakerPrivateKey);
@@ -324,7 +327,7 @@ contract APRViewTest is TestUtils {
 
     MockERC20 asset;
     Owner     owner;
-    MockRDT   rdToken;
+    RDT       rdToken;
     Staker    staker;
 
     uint256 START = 10_000_000;
@@ -332,7 +335,7 @@ contract APRViewTest is TestUtils {
     function setUp() public virtual {
         asset   = new MockERC20("MockToken", "MT", 18);
         owner   = new Owner();
-        rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(owner), address(asset), 1e30);
+        rdToken = new RDT("Revenue Distribution Token", "RDT", address(owner), address(asset), 1e30);
         staker  = new Staker();
         vm.warp(START);
     }
@@ -370,13 +373,13 @@ contract AuthTest is TestUtils {
     MockERC20 asset;
     Owner     notOwner;
     Owner     owner;
-    MockRDT   rdToken;
+    RDT       rdToken;
 
     function setUp() public virtual {
         notOwner = new Owner();
         owner    = new Owner();
         asset    = new MockERC20("MockToken", "MT", 18);
-        rdToken  = new MockRDT("Revenue Distribution Token", "MockRDT", address(owner), address(asset), 1e30);
+        rdToken  = new RDT("Revenue Distribution Token", "RDT", address(owner), address(asset), 1e30);
     }
 
     function test_setPendingOwner_acl() external {
@@ -430,7 +433,7 @@ contract AuthTest is TestUtils {
 contract DepositAndMintTest is TestUtils {
 
     MockERC20 asset;
-    MockRDT   rdToken;
+    RDT       rdToken;
     Staker    staker;
 
     uint256 constant sampleAssetsToConvert = 1e18;
@@ -438,7 +441,7 @@ contract DepositAndMintTest is TestUtils {
 
     function setUp() public virtual {
         asset   = new MockERC20("MockToken", "MT", 18);
-        rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(this), address(asset), 1e30);
+        rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
         staker  = new Staker();
 
         vm.warp(10_000_000);  // Warp to non-zero timestamp
@@ -765,7 +768,7 @@ contract DepositAndMintTest is TestUtils {
 
 contract ExitTest is TestUtils {
     MockERC20 asset;
-    MockRDT   rdToken;
+    RDT       rdToken;
     Staker    staker;
 
     uint256 constant sampleAssetsToConvert = 1e18;
@@ -775,7 +778,7 @@ contract ExitTest is TestUtils {
 
     function setUp() public virtual {
         asset   = new MockERC20("MockToken", "MT", 18);
-        rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(this), address(asset), 1e30);
+        rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
         staker  = new Staker();
 
         vm.warp(10_000_000);  // Warp to non-zero timestamp
@@ -850,8 +853,8 @@ contract ExitTest is TestUtils {
 
         staker.rdToken_withdraw(address(rdToken), withdrawAmount);
 
-        assertEq(rdToken.totalSupply(),                          depositAmount - withdrawAmount);
         assertEq(rdToken.balanceOf(address(staker)),             depositAmount - withdrawAmount);
+        assertEq(rdToken.totalSupply(),                          depositAmount - withdrawAmount);
         assertEq(rdToken.freeAssets(),                           depositAmount - withdrawAmount);
         assertEq(rdToken.totalAssets(),                          depositAmount - withdrawAmount);
         assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
@@ -1591,7 +1594,7 @@ contract ExitTest is TestUtils {
 contract RevenueStreamingTest is TestUtils {
 
     MockERC20 asset;
-    MockRDT   rdToken;
+    RDT       rdToken;
 
     uint256 constant sampleAssetsToConvert = 1e18;
     uint256 constant sampleSharesToConvert = 1e18;
@@ -1606,7 +1609,7 @@ contract RevenueStreamingTest is TestUtils {
         vm.warp(start);
 
         asset   = new MockERC20("MockToken", "MT", 18);
-        rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(this), address(asset), 1e30);
+        rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
     }
 
     /************************************/
@@ -1975,7 +1978,7 @@ contract RevenueStreamingTest is TestUtils {
 contract RedeemRevertOnTransfer is TestUtils {
 
     MockRevertingERC20 asset;
-    MockRDT            rdToken;
+    RDT                rdToken;
     Staker             staker;
 
     uint256 constant sampleAssetsToConvert = 1e18;
@@ -1985,7 +1988,7 @@ contract RedeemRevertOnTransfer is TestUtils {
 
     function setUp() public virtual {
         asset   = new MockRevertingERC20("MockToken", "MT", 18);
-        rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(this), address(asset), 1e30);
+        rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
         staker  = new Staker();
 
         vm.warp(10_000_000);  // Warp to non-zero timestamp

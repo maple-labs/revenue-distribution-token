@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.7;
 
-
 import { TestUtils } from "../../modules/contract-test-utils/contracts/test.sol";
 import { MockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
-import { MockRDT } from "./mocks/MockRDT.sol";
 import { Owner }   from "./accounts/Owner.sol";
 import { Staker }  from "./accounts/Staker.sol";
+
+import { MockRDT } from "./mocks/MockRDT.sol";
 
 contract ConvertViewFunctionTest is TestUtils {
 

@@ -3,7 +3,7 @@ pragma solidity 0.8.7;
 
 // This file duplicates the tests on RevenueDistributionToken.t.sol, but they're all executed in the context of an ongoing campaign, with already deposited users.
 
-import { TestUtils }                  from "../../modules/contract-test-utils/contracts/test.sol";
+import { TestUtils }            from "../../modules/contract-test-utils/contracts/test.sol";
 import { MockERC20, MockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { MockRevertingERC20 } from "./mocks/MockRevertingERC20.sol";
@@ -42,7 +42,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
     function test_multi_depositWithPermit_zeroAddress(uint256 entropy) external {
         _setUpMultipleDeposits(entropy);
-        
+
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount);
 
@@ -113,7 +113,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
     function test_multi_depositWithPermit_preVesting(uint256 depositAmount, uint256 entropy) external {
         _setUpMultipleDeposits(entropy);
-        
+
         depositAmount = constrictToRange(depositAmount, 1e6, 1e29);
 
         uint256 initialSupply      = rdToken.totalSupply();
@@ -609,7 +609,7 @@ contract ExitTestWithMultipleUsers is TestUtils {
 
     uint256 constant sampleAssetsToConvert = 1e18;
     uint256 constant sampleSharesToConvert = 1e18;
-    uint256 constant minAmount             = 1e6; // Minimum amount is require so that the conversion from asset to shared does not yield zero. 
+    uint256 constant minAmount             = 1e6; // Minimum amount is require so that the conversion from asset to shared does not yield zero.
 
     bytes constant ARITHMETIC_ERROR = abi.encodeWithSignature("Panic(uint256)", 0x11);
 

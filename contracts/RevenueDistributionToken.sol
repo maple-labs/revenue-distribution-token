@@ -20,7 +20,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated.
     uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends.
 
-    uint256 private locked = 1;                   // Used in reentrancy check.
+    uint256 private locked = 1;  // Used in reentrancy check.
 
     /*****************/
     /*** Modifiers ***/

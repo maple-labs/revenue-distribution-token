@@ -607,7 +607,7 @@ contract ExitTestWithMultipleUsers is TestUtils {
 
     uint256 constant sampleAssetsToConvert = 1e18;
     uint256 constant sampleSharesToConvert = 1e18;
-    uint256 constant minAmount             = 1e6; // Minimum amount is require so that the conversion from asset to shared does not yield zero. 
+    uint256 constant minAmount             = 1e6; // Minimum amount is require so that the conversion from asset to shared does not yield zero.
 
     bytes constant ARITHMETIC_ERROR = abi.encodeWithSignature("Panic(uint256)", 0x11);
 
@@ -1721,7 +1721,7 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
         rdToken.__setTotalAssets(totalAssets);
 
         // Create and deposit with n amount of stakers
-        uint256 count = _getRangedValue(entropy, 0, 25, "stakers");
+        uint256 count = _getRangedValue(entropy, 0, 100, "stakers");
         for (uint256 i = 0; i < count; i++) {
             uint256 amount = _getRangedValue(entropy / (i + 1), 0, 1e29, "deposit");
 

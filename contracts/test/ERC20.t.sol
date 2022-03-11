@@ -18,10 +18,9 @@ contract RDT_ERC20Test is ERC20BaseTest {
         address asset = address(new MockERC20("MockToken", "MT", 18));
         token = MockERC20(address(new MockERC20_RDT("Token", "TKN", address(this), asset, 1e30)));
     }
-
 }
 
-// contract RDT_ERC20PermitTest is ERC20PermitTest {
+contract RDT_ERC20PermitTest is ERC20PermitTest {
 
     function setUp() override public {
         super.setUp();

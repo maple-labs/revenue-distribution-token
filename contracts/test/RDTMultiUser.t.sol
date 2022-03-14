@@ -50,7 +50,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
         vm.startPrank(staker);
 
-        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:MALLEABLE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, 17, r, s);
 
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
@@ -169,7 +169,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
         vm.startPrank(staker);
 
-        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:MALLEABLE"));
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, 17, r, s);
 
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);

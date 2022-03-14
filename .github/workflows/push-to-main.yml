@@ -16,8 +16,10 @@ jobs:
         with:
           version: nightly
 
-      - name: Pull library deps
-        run: forge update
+      - name: Install submodules
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git submodule update --init --recursive
 
       - name: Run forge tests
         run: ./test.sh -p super_deep

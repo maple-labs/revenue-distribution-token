@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.7;
 
-import { TestUtils }                  from "../../modules/contract-test-utils/contracts/test.sol";
-import { MockERC20, MockERC20Permit } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
+import { TestUtils } from "../../modules/contract-test-utils/contracts/test.sol";
+import { MockERC20 } from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
 import { MockRevertingERC20 } from "./mocks/MockRevertingERC20.sol";
 
@@ -14,7 +14,7 @@ import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol
 contract ConstructorTest is TestUtils {
 
     function test_constructor_ownerZeroAddress() external {
-        MockERC20Permit asset   = new MockERC20Permit("MockToken", "MT", 18);
+        MockERC20 asset = new MockERC20("MockToken", "MT", 18);
 
         vm.expectRevert("RDT:C:OWNER_ZERO_ADDRESS");
         RDT rdToken = new RDT("Revenue Distribution Token", "RDT", address(0), address(asset), 1e30);
@@ -26,8 +26,8 @@ contract ConstructorTest is TestUtils {
 
 contract DepositAndMintWithPermitTest is TestUtils {
 
-    MockERC20Permit asset;
-    RDT             rdToken;
+    MockERC20 asset;
+    RDT       rdToken;
 
     uint256 stakerPrivateKey    = 1;
     uint256 notStakerPrivateKey = 2;
@@ -41,7 +41,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
     address notStaker;
 
     function setUp() public virtual {
-        asset   = new MockERC20Permit("MockToken", "MT", 18);
+        asset   = new MockERC20("MockToken", "MT", 18);
         rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
 
         staker    = vm.addr(stakerPrivateKey);
@@ -58,7 +58,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
 
         vm.startPrank(staker);
 
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:MALLEABLE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, 17, r, s);
 
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
@@ -72,7 +72,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
 
         vm.startPrank(staker);
 
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
         ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
@@ -91,7 +91,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
 
         vm.warp(deadline + 1);
 
-        vm.expectRevert(bytes("ERC20Permit:EXPIRED"));
+        vm.expectRevert(bytes("ERC20:P:EXPIRED"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
         vm.warp(deadline);
@@ -109,7 +109,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
 
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
     }
 
@@ -165,7 +165,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
 
         vm.startPrank(staker);
 
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:MALLEABLE"));
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, 17, r, s);
 
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
@@ -181,7 +181,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
 
         vm.startPrank(staker);
 
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 
         ( v, r, s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
@@ -202,7 +202,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
 
         vm.warp(deadline + 1);
 
-        vm.expectRevert(bytes("ERC20Permit:EXPIRED"));
+        vm.expectRevert(bytes("ERC20:P:EXPIRED"));
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 
         vm.warp(deadline);
@@ -240,7 +240,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
 
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 
-        vm.expectRevert(bytes("ERC20Permit:INVALID_SIGNATURE"));
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
     }
 

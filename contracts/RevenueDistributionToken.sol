@@ -69,6 +69,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     // TODO: Revisit returns
     function updateVestingSchedule(uint256 vestingPeriod_) external override returns (uint256 issuanceRate_, uint256 freeAssets_) {
         require(msg.sender == owner, "RDT:UVS:NOT_OWNER");
+        require(totalSupply != 0,    "RDT:UVS:ZERO_SUPPLY");
 
         // Update "y-intercept" to reflect current available asset.
         freeAssets = freeAssets_ = totalAssets();

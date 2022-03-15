@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.7;
 
-import { ERC20Permit } from "../modules/erc20/contracts/ERC20Permit.sol";
+import { ERC20 }       from "../modules/erc20/contracts/ERC20.sol";
 import { ERC20Helper } from "../modules/erc20-helper/src/ERC20Helper.sol";
 
 import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
 
-contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
+contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     uint256 public immutable override precision;  // Precision of rates, equals max deposit amounts before rounding errors occur
 
@@ -37,11 +37,11 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     }
 
     constructor(string memory name_, string memory symbol_, address owner_, address asset_, uint256 precision_)
-        ERC20Permit(name_, symbol_, ERC20Permit(asset_).decimals())
+        ERC20(name_, symbol_, ERC20(asset_).decimals())
     {
         require((owner = owner_) != address(0), "RDT:C:OWNER_ZERO_ADDRESS");
 
-        asset     = asset_;  // Don't need to check zero address as ERC20Permit(asset_).decimals() will fail in ERC20Permit constructor.
+        asset     = asset_;  // Don't need to check zero address as ERC20(asset_).decimals() will fail in ERC20 constructor.
         precision = precision_;
     }
 
@@ -74,7 +74,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
         freeAssets = freeAssets_ = totalAssets();
 
         // Calculate slope, update timestamp and period finish.
-        issuanceRate        = issuanceRate_ = (ERC20Permit(asset).balanceOf(address(this)) - freeAssets_) * precision / vestingPeriod_;
+        issuanceRate        = issuanceRate_ = (ERC20(asset).balanceOf(address(this)) - freeAssets_) * precision / vestingPeriod_;
         vestingPeriodFinish = (lastUpdated = block.timestamp) + vestingPeriod_;
 
         emit VestingScheduleUpdated(msg.sender, vestingPeriodFinish, issuanceRate);
@@ -98,7 +98,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     )
         external virtual override nonReentrant returns (uint256 shares_)
     {
-        ERC20Permit(asset).permit(msg.sender, address(this), assets_, deadline_, v_, r_, s_);
+        ERC20(asset).permit(msg.sender, address(this), assets_, deadline_, v_, r_, s_);
         _mint(shares_ = previewDeposit(assets_), assets_, receiver_, msg.sender);
     }
 
@@ -119,7 +119,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20Permit {
     {
         require((assets_ = previewMint(shares_)) <= maxAssets_, "RDT:MWP:INSUFFICIENT_PERMIT");
 
-        ERC20Permit(asset).permit(msg.sender, address(this), maxAssets_, deadline_, v_, r_, s_);
+        ERC20(asset).permit(msg.sender, address(this), maxAssets_, deadline_, v_, r_, s_);
         _mint(shares_, assets_, receiver_, msg.sender);
     }
 

@@ -17,7 +17,7 @@ import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol
 contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
 
     MockERC20 asset;
-    MockRDT         rdToken;
+    MockRDT   rdToken;
 
     uint256 stakerPrivateKey    = 1;
     uint256 notStakerPrivateKey = 2;
@@ -30,6 +30,8 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
     address staker;
     address notStaker;
 
+    uint256 start;
+
     function setUp() public virtual {
         asset   = new MockERC20("MockToken", "MT", 18);
         rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(this), address(asset), 1e30);
@@ -38,6 +40,7 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
         notStaker = vm.addr(notStakerPrivateKey);
 
         vm.warp(10_000_000);  // Warp to non-zero timestamp
+        start = block.timestamp;
     }
 
     function test_multi_depositWithPermit_zeroAddress(uint256 entropy) external {
@@ -120,7 +123,6 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
         uint256 initialTotalAssets = rdToken.totalAssets();
         uint256 initialFreeAssets  = rdToken.totalAssets();
         uint256 initialBalance     = asset.balanceOf(address(rdToken));
-        uint256 start              = block.timestamp;
 
         asset.mint(address(staker), depositAmount);
 
@@ -269,7 +271,6 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
         uint256 initialTotalAssets = rdToken.totalAssets();
         uint256 initialFreeAssets  = rdToken.totalAssets();
         uint256 initialBalance     = asset.balanceOf(address(rdToken));
-        uint256 start              = block.timestamp;
 
         asset.mint(address(staker), maxAssets);
 
@@ -364,6 +365,8 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
     uint256 constant sampleAssetsToConvert = 1e18;
     uint256 constant sampleSharesToConvert = 1e18;
 
+    uint256 start;
+
     function setUp() public virtual {
         asset   = new MockERC20("MockToken", "MT", 18);
         rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(this), address(asset), 1e30);
@@ -371,6 +374,7 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
 
         vm.warp(10_000_000);  // Warp to non-zero timestamp
 
+        start = block.timestamp;
     }
 
     function test_multi_deposit_zeroAssets(uint256 entropy) external {
@@ -541,7 +545,6 @@ contract DepositAndMintTestWithMultipleUsers is TestUtils {
         uint256 initialTotalAssets = rdToken.totalAssets();
         uint256 initialFreeAssets  = rdToken.totalAssets();
         uint256 initialBalance     = asset.balanceOf(address(rdToken));
-        uint256 start              = block.timestamp;
 
         assertEq(rdToken.balanceOf(address(staker)), 0);
         assertEq(rdToken.totalSupply(),              initialSupply);
@@ -620,7 +623,9 @@ contract ExitTestWithMultipleUsers is TestUtils {
     uint256 initialTotalAssets_;
     uint256 initialBalance_;
     uint256 totalAssets_;
-    uint256 amountVested_ ;
+    uint256 amountVested_;
+
+    uint256 start;
 
     function setUp() public virtual {
         asset   = new MockERC20("MockToken", "MT", 18);
@@ -628,6 +633,8 @@ contract ExitTestWithMultipleUsers is TestUtils {
         staker  = new Staker();
 
         vm.warp(10_000_000);  // Warp to non-zero timestamp
+
+        start = block.timestamp;
     }
 
     /************************/
@@ -673,7 +680,6 @@ contract ExitTestWithMultipleUsers is TestUtils {
         uint256 initialTotalAssets = rdToken.totalAssets();
         uint256 initialFreeAssets  = rdToken.totalAssets();
         uint256 initialBalance     = asset.balanceOf(address(rdToken));
-        uint256 start              = block.timestamp;
 
         uint256 mintedShares = staker.rdToken_deposit(address(rdToken), depositAmount);
 
@@ -723,7 +729,6 @@ contract ExitTestWithMultipleUsers is TestUtils {
         uint256 initialTotalAssets = rdToken.totalAssets();
         uint256 initialFreeAssets  = rdToken.totalAssets();
         uint256 initialBalance     = asset.balanceOf(address(rdToken));
-        uint256 start              = block.timestamp;
 
         uint256 mintedShares = _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
@@ -829,7 +834,6 @@ contract ExitTestWithMultipleUsers is TestUtils {
         uint256 initialTotalAssets = rdToken.totalAssets();
         uint256 initialFreeAssets  = rdToken.totalAssets();
         uint256 initialBalance     = asset.balanceOf(address(rdToken));
-        uint256 start              = block.timestamp;
 
         staker.erc20_approve(address(asset), address(rdToken), depositAmount);
         uint256 shares = staker.rdToken_deposit(address(rdToken), depositAmount);
@@ -886,8 +890,6 @@ contract ExitTestWithMultipleUsers is TestUtils {
         vestingAmount  = constrictToRange(vestingAmount,  1, 1e29);
         vestingPeriod  = constrictToRange(vestingPeriod,  1, 100 days);
         warpTime       = constrictToRange(warpTime,       1, vestingPeriod);
-
-        uint256 start = block.timestamp;
 
         _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
@@ -1013,7 +1015,6 @@ contract ExitTestWithMultipleUsers is TestUtils {
         uint256 initialTotalAssets = rdToken.totalAssets();
         uint256 initialFreeAssets  = rdToken.totalAssets();
         uint256 initialBalance     = asset.balanceOf(address(rdToken));
-        uint256 start              = block.timestamp;
 
         asset.mint(address(staker), depositAmount);
 
@@ -1066,8 +1067,6 @@ contract ExitTestWithMultipleUsers is TestUtils {
         initialFreeAssets_  = rdToken.totalAssets();
         initialBalance_     = asset.balanceOf(address(rdToken));
         
-        uint256 start              = block.timestamp;
-
         uint256 shares = _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
@@ -1163,7 +1162,6 @@ contract ExitTestWithMultipleUsers is TestUtils {
         uint256 initialTotalAssets = rdToken.totalAssets();
         uint256 initialFreeAssets  = rdToken.totalAssets();
         uint256 initialBalance     = asset.balanceOf(address(rdToken));
-        uint256 start              = block.timestamp;
 
         asset.mint(address(staker), depositAmount);
 
@@ -1230,7 +1228,6 @@ contract ExitTestWithMultipleUsers is TestUtils {
         initialTotalAssets_ = rdToken.totalAssets();
         initialFreeAssets_  = rdToken.totalAssets();
         initialBalance_     = asset.balanceOf(address(rdToken));
-        uint256 start = block.timestamp;
 
         uint256 shares = _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
@@ -1354,7 +1351,6 @@ contract RevenueStreamingTestWithMultipleUsers is TestUtils {
         uint256 initialTotalAssets = rdToken.totalAssets();
         uint256 initialFreeAssets  = rdToken.totalAssets();
         uint256 initialBalance     = asset.balanceOf(address(rdToken));
-        uint256 start              = block.timestamp;
 
         assertEq(rdToken.freeAssets(),          initialFreeAssets);
         assertEq(rdToken.totalAssets(),         initialTotalAssets);
@@ -1701,12 +1697,16 @@ contract RedeemRevertOnTransferWithMultipleUsers is TestUtils {
 
     bytes constant ARITHMETIC_ERROR = abi.encodeWithSignature("Panic(uint256)", 0x11);
 
+    uint256 start;
+
     function setUp() public virtual {
         asset   = new MockRevertingERC20("MockToken", "MT", 18);
         rdToken = new MockRDT("Revenue Distribution Token", "MockRDT", address(this), address(asset), 1e30);
         staker  = new Staker();
 
         vm.warp(10_000_000);  // Warp to non-zero timestamp
+
+        start = block.timestamp;
     }
 
     function test_multi_redeem_revertOnTransfer(uint256 depositAmount, uint256 redeemAmount, uint256 entropy) public {
@@ -1719,8 +1719,6 @@ contract RedeemRevertOnTransferWithMultipleUsers is TestUtils {
 
         staker.erc20_approve(address(asset), address(rdToken), depositAmount);
         uint256 shares = staker.rdToken_deposit(address(rdToken), depositAmount);
-
-        uint256 start = block.timestamp;
 
         vm.warp(start + 10 days);
 
@@ -1740,8 +1738,6 @@ contract RedeemRevertOnTransferWithMultipleUsers is TestUtils {
 
         staker.erc20_approve(address(asset), address(rdToken), depositAmount);
         staker.rdToken_deposit(address(rdToken), depositAmount);
-
-        uint256 start = block.timestamp;
 
         vm.warp(start + 10 days);
 
@@ -2048,6 +2044,8 @@ contract DepositAndMintTest is TestUtils {
     uint256 constant sampleAssetsToConvert = 1e18;
     uint256 constant sampleSharesToConvert = 1e18;
 
+    uint256 start;
+
     function setUp() public virtual {
         asset   = new MockERC20("MockToken", "MT", 18);
         rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
@@ -2055,7 +2053,8 @@ contract DepositAndMintTest is TestUtils {
 
         vm.warp(10_000_000);  // Warp to non-zero timestamp
 
-    }
+        start = block.timestamp;
+    }   
 
     function test_deposit_preVesting(uint256 depositAmount) external {
 
@@ -2137,8 +2136,6 @@ contract DepositAndMintTest is TestUtils {
         /*** Setup ***/
         /*************/
 
-        uint256 start = block.timestamp;
-
         // Do a deposit so that totalSupply is non-zero
         asset.mint(address(this), 20e18);
         asset.approve(address(rdToken), 20e18);
@@ -2180,7 +2177,7 @@ contract DepositAndMintTest is TestUtils {
         assertEq(stakerShares, 8e18);  // 10 / 1.25 exchangeRate
 
         assertEq(rdToken.balanceOf(address(staker)),             8e18);
-        assertEq(rdToken.totalSupply(),                          28e18);  // 8 + original 10
+        assertEq(rdToken.totalSupply(),                          28e18);  // 8 + original 20
         assertEq(rdToken.freeAssets(),                           35e18);
         assertEq(rdToken.totalAssets(),                          35e18);
         assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.25e18); // totalAssets gets updated but share conversion stays constant
@@ -2208,8 +2205,6 @@ contract DepositAndMintTest is TestUtils {
         asset.mint(address(this), initialAmount);
         asset.approve(address(rdToken), initialAmount);
         uint256 initialShares = rdToken.deposit(initialAmount, address(this));
-
-        uint256 start = block.timestamp;
 
         _transferAndUpdateVesting(vestingAmount, 10 seconds);
 
@@ -2280,12 +2275,16 @@ contract ExitTest is TestUtils {
 
     bytes constant ARITHMETIC_ERROR = abi.encodeWithSignature("Panic(uint256)", 0x11);
 
+    uint256 start;
+
     function setUp() public virtual {
         asset   = new MockERC20("MockToken", "MT", 18);
         rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
         staker  = new Staker();
 
         vm.warp(10_000_000);  // Warp to non-zero timestamp
+
+        start = block.timestamp;
     }
 
     /************************/
@@ -2301,7 +2300,7 @@ contract ExitTest is TestUtils {
         _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
-        vm.warp(block.timestamp + warpTime);
+        vm.warp(start + warpTime);
 
         uint256 maxWithdrawAmount = rdToken.previewRedeem(rdToken.balanceOf(address(staker)));  // TODO
 
@@ -2319,8 +2318,6 @@ contract ExitTest is TestUtils {
 
         staker.erc20_approve(address(asset), address(rdToken), depositAmount);
         staker.rdToken_deposit(address(rdToken), depositAmount);
-
-        uint256 start = block.timestamp;
 
         assertEq(rdToken.balanceOf(address(staker)),             depositAmount);
         assertEq(rdToken.totalSupply(),                          depositAmount);
@@ -2357,12 +2354,11 @@ contract ExitTest is TestUtils {
         uint256 vestingAmount  = 10e18;
         uint256 vestingPeriod  = 200 seconds;
         uint256 warpTime       = 100 seconds;
-        uint256 start          = block.timestamp;
 
         _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
-        vm.warp(block.timestamp + warpTime);
+        vm.warp(start + warpTime);
 
         assertEq(rdToken.balanceOf(address(staker)),             100e18);
         assertEq(rdToken.totalSupply(),                          100e18);
@@ -2405,13 +2401,10 @@ contract ExitTest is TestUtils {
         vestingPeriod  = constrictToRange(vestingPeriod,  1, 100 days);
         warpTime       = constrictToRange(warpTime,       1, vestingPeriod);
 
-
-        uint256 start = block.timestamp;
-
         _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
-        vm.warp(block.timestamp + warpTime);
+        vm.warp(start + warpTime);
 
         assertEq(rdToken.balanceOf(address(staker)), depositAmount);
         assertEq(rdToken.totalSupply(),              depositAmount);
@@ -2454,12 +2447,11 @@ contract ExitTest is TestUtils {
         uint256 vestingAmount  = 10e18;
         uint256 vestingPeriod  = 200 seconds;
         uint256 warpTime       = 100 seconds;
-        uint256 start          = block.timestamp;
 
         _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
-        vm.warp(block.timestamp + warpTime);
+        vm.warp(start + warpTime);
 
         assertEq(rdToken.balanceOf(address(staker)),             100e18);
         assertEq(rdToken.totalSupply(),                          100e18);
@@ -2516,12 +2508,10 @@ contract ExitTest is TestUtils {
         vestingPeriod  = constrictToRange(vestingPeriod,  1, 100 days);
         warpTime       = constrictToRange(warpTime,       1, vestingPeriod);
 
-        uint256 start = block.timestamp;
-
         _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
-        vm.warp(block.timestamp + warpTime);
+        vm.warp(start + warpTime);
 
         assertEq(rdToken.balanceOf(address(staker)), depositAmount);
         assertEq(rdToken.totalSupply(),              depositAmount);
@@ -2582,7 +2572,7 @@ contract ExitTest is TestUtils {
         _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
-        vm.warp(block.timestamp + warpTime);
+        vm.warp(start + warpTime);
 
         vm.expectRevert(ARITHMETIC_ERROR);
         staker.rdToken_redeem(address(rdToken), 100e18 + 1);
@@ -2598,8 +2588,6 @@ contract ExitTest is TestUtils {
 
         staker.erc20_approve(address(asset), address(rdToken), depositAmount);
         staker.rdToken_deposit(address(rdToken), depositAmount);
-
-        uint256 start = block.timestamp;
 
         assertEq(rdToken.balanceOf(address(staker)),             depositAmount);
         assertEq(rdToken.totalSupply(),                          depositAmount);
@@ -2636,12 +2624,11 @@ contract ExitTest is TestUtils {
         uint256 vestingAmount = 10e18;
         uint256 vestingPeriod = 200 seconds;
         uint256 warpTime      = 100 seconds;
-        uint256 start         = block.timestamp;
 
         _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
-        vm.warp(block.timestamp + warpTime);
+        vm.warp(start + warpTime);
 
         assertEq(rdToken.balanceOf(address(staker)),             100e18);
         assertEq(rdToken.totalSupply(),                          100e18);
@@ -2683,12 +2670,10 @@ contract ExitTest is TestUtils {
         vestingPeriod = constrictToRange(vestingPeriod, 1, 100 days);
         warpTime      = constrictToRange(warpTime,      1, vestingPeriod);
 
-        uint256 start = block.timestamp;
-
         _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
-        vm.warp(block.timestamp + warpTime);
+        vm.warp(start+ warpTime);
 
         assertEq(rdToken.balanceOf(address(staker)), depositAmount);
         assertEq(rdToken.totalSupply(),              depositAmount);
@@ -2728,12 +2713,11 @@ contract ExitTest is TestUtils {
         uint256 vestingAmount = 10e18;
         uint256 vestingPeriod = 200 seconds;
         uint256 warpTime      = 100 seconds;
-        uint256 start         = block.timestamp;
 
         _depositAsset(depositAmount);
         _transferAndUpdateVesting(vestingAmount, vestingPeriod);
 
-        vm.warp(block.timestamp + warpTime);
+        vm.warp(start + warpTime);
 
         assertEq(rdToken.balanceOf(address(staker)),             100e18);
         assertEq(rdToken.totalSupply(),                          100e18);

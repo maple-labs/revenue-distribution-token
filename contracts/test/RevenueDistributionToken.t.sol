@@ -353,33 +353,6 @@ contract DepositAndMintWithPermitTestWithMultipleUsers is TestUtils {
         val = uint256(keccak256(abi.encode(entropy, salt))) % (upperBound - lowerBound) + lowerBound;
     }
 
-    function test_updateVestingSchedule_acl() external {
-        // Use non-zero timestamp
-        vm.warp(10_000);
-
-        Staker staker = new Staker();
-        asset.mint(address(staker), 1);
-        staker.erc20_approve(address(asset), address(rdToken), 1);
-        staker.rdToken_deposit(address(rdToken), 1);
-
-        asset.mint(address(rdToken), 1000);
-
-        vm.expectRevert("RDT:UVS:NOT_OWNER");
-        notOwner.rdToken_updateVestingSchedule(address(rdToken), 100 seconds);
-
-        assertEq(rdToken.freeAssets(),          1);
-        assertEq(rdToken.issuanceRate(),        0);
-        assertEq(rdToken.lastUpdated(),         10_000);
-        assertEq(rdToken.vestingPeriodFinish(), 0);
-
-        owner.rdToken_updateVestingSchedule(address(rdToken), 100 seconds);
-
-        assertEq(rdToken.freeAssets(),          1);
-        assertEq(rdToken.issuanceRate(),        10e30);
-        assertEq(rdToken.lastUpdated(),         10_000);
-        assertEq(rdToken.vestingPeriodFinish(), 10_100);
-    }
-
 }
 
 contract DepositAndMintTestWithMultipleUsers is TestUtils {
@@ -2106,19 +2079,24 @@ contract AuthTest is TestUtils {
         // Use non-zero timestamp
         vm.warp(10_000);
 
+        Staker staker = new Staker();
+        asset.mint(address(staker), 1);
+        staker.erc20_approve(address(asset), address(rdToken), 1);
+        staker.rdToken_deposit(address(rdToken), 1);
+
         asset.mint(address(rdToken), 1000);
 
         vm.expectRevert("RDT:UVS:NOT_OWNER");
         notOwner.rdToken_updateVestingSchedule(address(rdToken), 100 seconds);
 
-        assertEq(rdToken.freeAssets(),          0);
+        assertEq(rdToken.freeAssets(),          1);
         assertEq(rdToken.issuanceRate(),        0);
-        assertEq(rdToken.lastUpdated(),         0);
+        assertEq(rdToken.lastUpdated(),         10_000);
         assertEq(rdToken.vestingPeriodFinish(), 0);
 
         owner.rdToken_updateVestingSchedule(address(rdToken), 100 seconds);
 
-        assertEq(rdToken.freeAssets(),          0);
+        assertEq(rdToken.freeAssets(),          1);
         assertEq(rdToken.issuanceRate(),        10e30);
         assertEq(rdToken.lastUpdated(),         10_000);
         assertEq(rdToken.vestingPeriodFinish(), 10_100);

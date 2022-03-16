@@ -80,7 +80,7 @@ contract RDTTestBase is TestUtils {
     }
 
     // Returns a valid `permit` signature signed by this contract's `owner` address
-    function _getValidPermitSignature(uint256 value_, address owner_, address spender_, uint256 ownerSk_, uint256 deadline_) internal returns (uint8 v_, bytes32 r_, bytes32 s_) {
+    function _getValidPermitSignature(address owner_, address spender_, uint256 value_, uint256 deadline_, uint256 ownerSk_) internal returns (uint8 v_, bytes32 r_, bytes32 s_) {
         bytes32 digest = _getDigest(owner_, spender_, value_, nonce, deadline_);
         ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(ownerSk_, digest);
         return (v, r, s);
@@ -106,7 +106,7 @@ contract DepositAndMintWithPermitTest is RDTTestBase {
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
 
         vm.startPrank(staker);
 
@@ -120,14 +120,14 @@ contract DepositAndMintWithPermitTest is RDTTestBase {
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, notStaker, address(rdToken), notStakerPrivateKey, deadline);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(notStaker, address(rdToken), depositAmount, deadline, notStakerPrivateKey);
 
         vm.startPrank(staker);
 
         vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
-        ( v, r, s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( v, r, s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
 
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
@@ -137,7 +137,7 @@ contract DepositAndMintWithPermitTest is RDTTestBase {
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
 
         vm.startPrank(staker);
 
@@ -155,7 +155,7 @@ contract DepositAndMintWithPermitTest is RDTTestBase {
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount * 2);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
 
         vm.startPrank(staker);
 
@@ -185,7 +185,7 @@ contract DepositAndMintWithPermitTest is RDTTestBase {
         assertEq(asset.nonces(staker),                      0);
         assertEq(asset.allowance(staker, address(rdToken)), 0);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(depositAmount, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
         vm.prank(staker);
         uint256 shares = rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
@@ -213,7 +213,7 @@ contract DepositAndMintWithPermitTest is RDTTestBase {
 
         asset.mint(address(staker), maxAssets);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
 
         vm.startPrank(staker);
 
@@ -229,14 +229,14 @@ contract DepositAndMintWithPermitTest is RDTTestBase {
 
         asset.mint(address(staker), maxAssets);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(maxAssets, notStaker, address(rdToken), notStakerPrivateKey, deadline);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(notStaker, address(rdToken), maxAssets, deadline, notStakerPrivateKey);
 
         vm.startPrank(staker);
 
         vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 
-        ( v, r, s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( v, r, s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
 
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 
@@ -248,7 +248,7 @@ contract DepositAndMintWithPermitTest is RDTTestBase {
 
         asset.mint(address(staker), maxAssets);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
 
         vm.startPrank(staker);
 
@@ -268,14 +268,14 @@ contract DepositAndMintWithPermitTest is RDTTestBase {
 
         asset.mint(address(staker), maxAssets);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(maxAssets - 1, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets - 1, deadline, stakerPrivateKey);
 
         vm.startPrank(staker);
 
         vm.expectRevert(bytes("RDT:MWP:INSUFFICIENT_PERMIT"));
         rdToken.mintWithPermit(mintAmount, staker, maxAssets - 1, deadline, v, r, s);
 
-        ( v, r, s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( v, r, s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
 
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
     }
@@ -286,7 +286,7 @@ contract DepositAndMintWithPermitTest is RDTTestBase {
 
         asset.mint(address(staker), maxAssets * 2);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
 
         vm.startPrank(staker);
 
@@ -317,7 +317,7 @@ contract DepositAndMintWithPermitTest is RDTTestBase {
         assertEq(asset.nonces(staker),                      0);
         assertEq(asset.allowance(staker, address(rdToken)), 0);
 
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(maxAssets, staker, address(rdToken), stakerPrivateKey, deadline);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
         vm.prank(staker);
         uint256 assets = rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
 

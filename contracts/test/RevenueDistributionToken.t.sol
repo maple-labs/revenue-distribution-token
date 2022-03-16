@@ -2536,7 +2536,6 @@ contract DepositTest is RDTSuccessTestBase {
             _assertDeposit(staker, depositAmount, true);
         }
     }
-
 }
 
 contract MintTest is RDTSuccessTestBase {

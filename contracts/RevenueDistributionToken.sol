@@ -6,6 +6,15 @@ import { ERC20Helper } from "../modules/erc20-helper/src/ERC20Helper.sol";
 
 import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
 
+/*
+    ██████╗ ██████╗ ████████╗
+    ██╔══██╗██╔══██╗╚══██╔══╝
+    ██████╔╝██║  ██║   ██║
+    ██╔══██╗██║  ██║   ██║
+    ██║  ██║██████╔╝   ██║
+    ╚═╝  ╚═╝╚═════╝    ╚═╝
+*/
+
 contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     uint256 public immutable override precision;  // Precision of rates, equals max deposit amounts before rounding errors occur

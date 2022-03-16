@@ -599,10 +599,79 @@ contract RDTSuccessTestBase is RDTTestBase {
 
 contract DepositWithPermitTest is RDTSuccessTestBase {
 
-    function test_depositWithPermit_singleUser(uint256 testCase_) public {
+    function test_depositWithPermit_singleUser_2(uint256 testCase_) public {
         testCase_ = constrictToRange(testCase_, 0, 1);
 
-        emit log_named_uint("testCase_", testCase_);
+        uint256 depositAmount = 10e18;
+
+        uint256 expectedShares;
+        uint256 vestingAmount;
+
+        testCase_ = 0;
+
+        // Pre-Vesting Scenario
+        if (testCase_ == 0) {
+            expectedShares = 10e18;
+            rdToken_issuanceRate_change = 0;
+            rdToken_lastUpdated_change  = _toInt256(START);  // First deposit updates `lastUpdated
+        }
+
+        // Mid-Vesting Scenario
+        else if (testCase_ == 1) {
+            Staker setupStaker = new Staker();
+
+            expectedShares = 8e18;  // 10e18 / 1.25
+            vestingAmount  = 5e18;
+
+            // Do a deposit so that totalSupply is non-zero
+            _depositAsset(address(asset), address(setupStaker), 1e18);
+
+            _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 10 seconds);
+
+            vm.warp(START + 5 seconds);  // Vest 5 seconds, vesting 5e18 tokens
+
+            rdToken_issuanceRate_change = 0;
+            rdToken_lastUpdated_change  = 5 seconds;
+        }
+
+        // Post-Vesting Scenario
+        else if (testCase_ == 2) {
+            Staker setupStaker = new Staker();
+
+            expectedShares = 8e18;  // 10e18 / 1.25
+            vestingAmount  = 5e18;
+
+            // Do a deposit so that totalSupply is non-zero
+            _depositAsset(address(asset), address(setupStaker), 1e18);
+
+            // Also vest 5e18 tokens, but over full schedule
+            _transferAndUpdateVesting(address(asset), address(rdToken), 5e18, 10 seconds);
+
+            vm.warp(START + 11 seconds);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
+
+            rdToken_issuanceRate_change     = - _toInt256(rdToken.issuanceRate());  // Gets set to zero
+            rdToken_lastUpdated_change      = 11 seconds;
+        }
+
+        rdToken_balanceOf_staker_change = _toInt256(expectedShares);   // 10e18 / 1.25
+        rdToken_totalSupply_change      = _toInt256(expectedShares);
+        rdToken_freeAssets_change       = _toInt256(vestingAmount + depositAmount);
+        rdToken_totalAssets_change      = _toInt256(depositAmount);
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+
+        asset_balanceOf_staker_change         = - _toInt256(depositAmount);
+        asset_balanceOf_rdToken_change        =   _toInt256(depositAmount);
+        asset_nonces_change                   = 1;
+        asset_allowance_staker_rdToken_change = 0;
+
+        address staker = vm.addr(1);
+
+        _assertDepositWithPermit(staker, 1, 10e18, false);
+    }
+
+    function test_depositWithPermit_singleUser(uint256 testCase_) public {
+        testCase_ = constrictToRange(testCase_, 0, 1);
 
         // Pre-Vesting Scenario
         if (testCase_ == 0) {
@@ -621,14 +690,43 @@ contract DepositWithPermitTest is RDTSuccessTestBase {
             asset_allowance_staker_rdToken_change = 0;
         }
 
-        // Post-Vesting Scenario
+        // Mid-Vesting Scenario
         else if (testCase_ == 1) {
             // Do a deposit so that totalSupply is non-zero
             asset.mint(address(this), 20e18);
             asset.approve(address(rdToken), 20e18);
             rdToken.deposit(20e18, address(this));
 
-            _transferAndUpdateVesting(address(asset), address(rdToken), 5e18, 10 seconds);  // Vest full 5e18 tokens
+            _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 10 seconds);
+
+            vm.warp(START + 5 seconds);  // Vest 5 seconds, vesting 5e18 tokens
+
+            assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.25e18); // 1 * (20 + 5) / 20
+
+            rdToken_balanceOf_staker_change = 8e18;   // 10e18 / 1.25
+            rdToken_totalSupply_change      = 8e18;
+            rdToken_freeAssets_change       = 15e18;  // Captures vested amount
+            rdToken_totalAssets_change      = 10e18;
+            rdToken_convertToAssets_change  = 0;
+            rdToken_convertToShares_change  = 0;
+            rdToken_issuanceRate_change     = 0;
+            rdToken_lastUpdated_change      = 5;
+
+            asset_balanceOf_staker_change         = -10e18;
+            asset_balanceOf_rdToken_change        = 10e18;
+            asset_nonces_change                   = 1;
+            asset_allowance_staker_rdToken_change = 0;
+        }
+
+        // Post-Vesting Scenario
+        else if (testCase_ == 2) {
+            // Do a deposit so that totalSupply is non-zero
+            asset.mint(address(this), 20e18);
+            asset.approve(address(rdToken), 20e18);
+            rdToken.deposit(20e18, address(this));
+
+            // Also vest 5e18 tokens, but over full schedule
+            _transferAndUpdateVesting(address(asset), address(rdToken), 5e18, 10 seconds);
 
             vm.warp(START + 11 seconds);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
 
@@ -649,170 +747,157 @@ contract DepositWithPermitTest is RDTSuccessTestBase {
             asset_allowance_staker_rdToken_change = 0;
         }
 
-        // // Mid-Vesting Scenario
-        // else if (testCase_ = 2) {
-
-        // }
-
         address staker = vm.addr(1);
 
         _assertDepositWithPermit(staker, 1, 10e18, false);
     }
 
-    function test_depositWithPermit_singleUser_preVesting() external {
-        rdToken_balanceOf_staker_change = 1000;
-        rdToken_totalSupply_change      = 1000;
-        rdToken_freeAssets_change       = 1000;
-        rdToken_totalAssets_change      = 1000;
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = 0;
-        rdToken_lastUpdated_change      = 10_000_000;  // First deposit updates `lastUpdated`
+    function testFuzz_depositWithPermit_singleUser(
+        uint256 testCase_,
+        uint256 depositAmount_,
+        uint256 initialAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_,
+        uint256 warpTime_
+    )
+        public
+    {
+        testCase_      = constrictToRange(testCase_,      0,         1);
+        depositAmount_ = constrictToRange(depositAmount_, 1,         1e29);
+        initialAmount_ = constrictToRange(initialAmount_, 1,         1e29);
+        vestingAmount_ = constrictToRange(vestingAmount_, 1,         1e29);
+        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 seconds, 365 days);
+        warpTime_      = constrictToRange(warpTime_,      1,         vestingPeriod_);
 
-        asset_balanceOf_staker_change         = -1000;
-        asset_balanceOf_rdToken_change        = 1000;
-        asset_nonces_change                   = 1;
-        asset_allowance_staker_rdToken_change = 0;
+        // Pre-Vesting Scenario
+        if (testCase_ == 0) {
+            rdToken_balanceOf_staker_change = _toInt256(depositAmount_);
+            rdToken_totalSupply_change      = _toInt256(depositAmount_);
+            rdToken_freeAssets_change       = _toInt256(depositAmount_);
+            rdToken_totalAssets_change      = _toInt256(depositAmount_);
+            rdToken_convertToAssets_change  = 0;
+            rdToken_convertToShares_change  = 0;
+            rdToken_issuanceRate_change     = 0;
+            rdToken_lastUpdated_change      = 10_000_000;  // First deposit updates `lastUpdated`
 
-        address staker = vm.addr(1);
+            asset_balanceOf_staker_change         = - _toInt256(depositAmount_);
+            asset_balanceOf_rdToken_change        =   _toInt256(depositAmount_);
+            asset_nonces_change                   = 1;
+            asset_allowance_staker_rdToken_change = 0;
+        }
 
-        _assertDepositWithPermit(staker, 1, 1000, false);
-    }
+        // Mid-Vesting Scenario
+        else if (testCase_ == 1) {
+            Staker setupStaker = new Staker();
 
-    function testFuzz_depositWithPermit_singleUser_preVesting(uint256 depositAmount_) external {
-        depositAmount_ = constrictToRange(depositAmount_, 1, 1e29);
+            // Do a deposit so that totalSupply is non-zero
+            _depositAsset(address(asset), address(setupStaker), initialAmount_);
 
-        rdToken_balanceOf_staker_change = _toInt256(depositAmount_);
-        rdToken_totalSupply_change      = _toInt256(depositAmount_);
-        rdToken_freeAssets_change       = _toInt256(depositAmount_);
-        rdToken_totalAssets_change      = _toInt256(depositAmount_);
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = 0;
-        rdToken_lastUpdated_change      = 10_000_000;  // First deposit updates `lastUpdated`
+            _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
 
-        asset_balanceOf_staker_change         = - _toInt256(depositAmount_);
-        asset_balanceOf_rdToken_change        =   _toInt256(depositAmount_);
-        asset_nonces_change                   = 1;
-        asset_allowance_staker_rdToken_change = 0;
+            vm.warp(START + warpTime_);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
 
-        address staker = vm.addr(1);
+            // Since this is a test where totalAssets > totalSupply, need to ensure deposit amount is at least minimum to avoid 0 shares after conversion.
+            uint256 minDeposit = _getMinDeposit(address(rdToken));
+            depositAmount_     = constrictToRange(depositAmount_, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
 
-        _assertDepositWithPermit(staker, 1, depositAmount_, false);
-    }
+            uint256 expectedShares = depositAmount_ * rdToken.totalSupply() / rdToken.totalAssets();
 
-    function test_depositWithPermit_singleUser_postVesting() external {
-        // Do a deposit so that totalSupply is non-zero
-        asset.mint(address(this), 20e18);
-        asset.approve(address(rdToken), 20e18);
-        rdToken.deposit(20e18, address(this));
+            rdToken_balanceOf_staker_change = _toInt256(expectedShares);
+            rdToken_totalSupply_change      = _toInt256(expectedShares);
+            rdToken_freeAssets_change       = _toInt256(vestingAmount_ + depositAmount_);  // Captures vested amount
+            rdToken_totalAssets_change      = _toInt256(depositAmount_);
+            rdToken_convertToAssets_change  = 0;
+            rdToken_convertToShares_change  = 0;
+            rdToken_issuanceRate_change     = 0;
+            rdToken_lastUpdated_change      = 0;
 
-        _transferAndUpdateVesting(address(asset), address(rdToken), 5e18, 10 seconds);  // Vest full 5e18 tokens
+            asset_balanceOf_staker_change         = - _toInt256(depositAmount_);
+            asset_balanceOf_rdToken_change        =   _toInt256(depositAmount_);
+            asset_nonces_change                   = 1;
+            asset_allowance_staker_rdToken_change = 0;
+        }
 
-        vm.warp(START + 11 seconds);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
+        // Post-Vesting Scenario
+        else if (testCase_ == 2) {
+            Staker setupStaker = new Staker();
 
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.25e18); // 1 * (20 + 5) / 20
+            // Do a deposit so that totalSupply is non-zero
+            _depositAsset(address(asset), address(setupStaker), initialAmount_);
 
-        rdToken_balanceOf_staker_change = 8e18;   // 10e18 / 1.25
-        rdToken_totalSupply_change      = 8e18;
-        rdToken_freeAssets_change       = 15e18;  // Captures vested amount
-        rdToken_totalAssets_change      = 10e18;
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = - _toInt256(rdToken.issuanceRate());  // Gets set to zero
-        rdToken_lastUpdated_change      = 11 seconds;
+            _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
 
-        asset_balanceOf_staker_change         = -10e18;
-        asset_balanceOf_rdToken_change        = 10e18;
-        asset_nonces_change                   = 1;
-        asset_allowance_staker_rdToken_change = 0;
+            vm.warp(START + vestingPeriod_ + 1);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
 
-        address staker = vm.addr(1);
+            // Since this is a test where totalAssets > totalSupply, need to ensure deposit amount is at least minimum to avoid 0 shares after conversion.
+            uint256 minDeposit = _getMinDeposit(address(rdToken));
+            depositAmount_     = constrictToRange(depositAmount_, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
 
-        _assertDepositWithPermit(staker, 1, 10e18, false);
-    }
+            uint256 expectedShares = depositAmount_ * rdToken.totalSupply() / rdToken.totalAssets();
 
-    function testFuzz_depositWithPermit_singleUser_postVesting(uint256 initialAmount_, uint256 depositAmount_, uint256 vestingAmount_) external {
-        initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
-        vestingAmount_ = constrictToRange(vestingAmount_, 1, 1e29);
+            rdToken_balanceOf_staker_change = _toInt256(expectedShares);
+            rdToken_totalSupply_change      = _toInt256(expectedShares);
+            rdToken_freeAssets_change       = _toInt256(vestingAmount_ + depositAmount_);  // Captures vested amount
+            rdToken_totalAssets_change      = _toInt256(depositAmount_);
+            rdToken_convertToAssets_change  = 0;
+            rdToken_convertToShares_change  = 0;
+            rdToken_issuanceRate_change     = - _toInt256(rdToken.issuanceRate());  // Gets set to zero
+            rdToken_lastUpdated_change      = _toInt256(vestingPeriod_ + 1);
 
-        // Do a deposit so that totalSupply is non-zero
-        asset.mint(address(this), initialAmount_);
-        asset.approve(address(rdToken), initialAmount_);
-        rdToken.deposit(initialAmount_, address(this));
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, 10 seconds);
-
-        vm.warp(START + 11 seconds);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
-
-        // Since this is a test where totalAssets > totalSupply, need to ensure deposit amount is at least minimum to avoid 0 shares after conversion.
-        uint256 minDeposit = _getMinDeposit(address(rdToken));
-        depositAmount_     = constrictToRange(depositAmount_, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
-
-        uint256 expectedShares = depositAmount_ * rdToken.totalSupply() / rdToken.totalAssets();
-
-        rdToken_balanceOf_staker_change = _toInt256(expectedShares);
-        rdToken_totalSupply_change      = _toInt256(expectedShares);
-        rdToken_freeAssets_change       = _toInt256(vestingAmount_ + depositAmount_);  // Captures vested amount
-        rdToken_totalAssets_change      = _toInt256(depositAmount_);
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = - _toInt256(rdToken.issuanceRate());  // Gets set to zero
-        rdToken_lastUpdated_change      = 11 seconds;
-
-        asset_balanceOf_staker_change         = - _toInt256(depositAmount_);
-        asset_balanceOf_rdToken_change        =   _toInt256(depositAmount_);
-        asset_nonces_change                   = 1;
-        asset_allowance_staker_rdToken_change = 0;
+            asset_balanceOf_staker_change         = - _toInt256(depositAmount_);
+            asset_balanceOf_rdToken_change        =   _toInt256(depositAmount_);
+            asset_nonces_change                   = 1;
+            asset_allowance_staker_rdToken_change = 0;
+        }
 
         address staker = vm.addr(1);
 
         _assertDepositWithPermit(staker, 1, depositAmount_, true);
     }
 
-    function testFuzz_depositWithPermit_multiUser_postVesting(uint256 initialAmount_, uint256 vestingAmount_, bytes32 seed_) external {
-        initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
-        vestingAmount_ = constrictToRange(vestingAmount_, 1, 1e29);
+    // function testFuzz_depositWithPermit_multiUser_postVesting(uint256 initialAmount_, uint256 vestingAmount_, bytes32 seed_) external {
+    //     initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
+    //     vestingAmount_ = constrictToRange(vestingAmount_, 1, 1e29);
 
-        Staker setupStaker = new Staker();
+    //     Staker setupStaker = new Staker();
 
-        // Do a deposit so that totalSupply is non-zero
-        _depositAsset(address(asset), address(setupStaker), 1e18);
+    //     // Do a deposit so that totalSupply is non-zero
+    //     _depositAsset(address(asset), address(setupStaker), 1e18);
 
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, 10 seconds);
+    //     _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, 10 seconds);
 
-        vm.warp(START + 11 seconds);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
+    //     vm.warp(START + 11 seconds);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
 
-        // Do another deposit to set all params to be uniform
-        _depositAsset(address(asset), address(setupStaker), 1e18);
+    //     // Do another deposit to set all params to be uniform
+    //     _depositAsset(address(asset), address(setupStaker), 1e18);
 
-        for (uint256 i = 1; i < 11; ++i) {
-            uint256 depositAmount = uint256(keccak256(abi.encodePacked(seed_, i)));
-            // Since this is a test where totalAssets > totalSupply, need to ensure deposit amount is at least minimum to avoid 0 shares after conversion.
-            uint256 minDeposit = _getMinDeposit(address(rdToken));
-            depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
+    //     for (uint256 i = 1; i < 11; ++i) {
+    //         uint256 depositAmount = uint256(keccak256(abi.encodePacked(seed_, i)));
+    //         // Since this is a test where totalAssets > totalSupply, need to ensure deposit amount is at least minimum to avoid 0 shares after conversion.
+    //         uint256 minDeposit = _getMinDeposit(address(rdToken));
+    //         depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
 
-            uint256 expectedShares = depositAmount * rdToken.totalSupply() / rdToken.totalAssets();
+    //         uint256 expectedShares = depositAmount * rdToken.totalSupply() / rdToken.totalAssets();
 
-            rdToken_balanceOf_staker_change = _toInt256(expectedShares);
-            rdToken_totalSupply_change      = _toInt256(expectedShares);
-            rdToken_freeAssets_change       = _toInt256(depositAmount);  // Captures vested amount
-            rdToken_totalAssets_change      = _toInt256(depositAmount);
-            rdToken_convertToAssets_change  = 0;
-            rdToken_convertToShares_change  = 0;
-            rdToken_issuanceRate_change     = 0;
-            rdToken_lastUpdated_change      = 0;
+    //         rdToken_balanceOf_staker_change = _toInt256(expectedShares);
+    //         rdToken_totalSupply_change      = _toInt256(expectedShares);
+    //         rdToken_freeAssets_change       = _toInt256(depositAmount);  // Captures vested amount
+    //         rdToken_totalAssets_change      = _toInt256(depositAmount);
+    //         rdToken_convertToAssets_change  = 0;
+    //         rdToken_convertToShares_change  = 0;
+    //         rdToken_issuanceRate_change     = 0;
+    //         rdToken_lastUpdated_change      = 0;
 
-            asset_balanceOf_staker_change         = - _toInt256(depositAmount);
-            asset_balanceOf_rdToken_change        =   _toInt256(depositAmount);
-            asset_nonces_change                   = 1;
-            asset_allowance_staker_rdToken_change = 0;
+    //         asset_balanceOf_staker_change         = - _toInt256(depositAmount);
+    //         asset_balanceOf_rdToken_change        =   _toInt256(depositAmount);
+    //         asset_nonces_change                   = 1;
+    //         asset_allowance_staker_rdToken_change = 0;
 
-            address staker = vm.addr(i);
+    //         address staker = vm.addr(i);
 
-            _assertDepositWithPermit(staker, i, depositAmount, true);
-        }
-    }
+    //         _assertDepositWithPermit(staker, i, depositAmount, true);
+    //     }
+    // }
 }
 
 contract MintWithPermitTest is RDTSuccessTestBase {

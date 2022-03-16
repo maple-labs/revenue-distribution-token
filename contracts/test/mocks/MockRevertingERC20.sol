@@ -3,10 +3,10 @@ pragma solidity ^0.8.7;
 
 contract MockRevertingERC20 {
 
+    uint8 public immutable decimals;
+
     string public name;
     string public symbol;
-
-    uint8 public immutable decimals;
 
     uint256 public totalSupply;
 
@@ -24,12 +24,12 @@ contract MockRevertingERC20 {
     /*** External Functions ***/
     /**************************/
 
-    function mint(address to_, uint256 value_) external {
-        _mint(to_, value_);
+    function mint(address recipient_, uint256 amount_) external {
+        _mint(recipient_, amount_);
     }
 
-    function burn(address from_, uint256 value_) external {
-        _burn(from_, value_);
+    function burn(address from_, uint256 amount_) external {
+        _burn(from_, amount_);
     }
 
     function approve(address spender_, uint256 amount_) external returns (bool success_) {

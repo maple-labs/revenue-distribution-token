@@ -72,10 +72,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         require(totalSupply != 0,    "RDT:UVS:ZERO_SUPPLY");
 
         // Update "y-intercept" to reflect current available asset.
-        freeAssets = freeAssets_ = totalAssets();
+        freeAssets_ = freeAssets = totalAssets();
 
-        // Calculate slope, update timestamp and period finish.
-        issuanceRate        = issuanceRate_ = (ERC20(asset).balanceOf(address(this)) - freeAssets_) * precision / vestingPeriod_;
+        // Calculate slope.
+        issuanceRate_ = issuanceRate = ((ERC20(asset).balanceOf(address(this)) - freeAssets_) * precision) / vestingPeriod_;
+
+        // Update timestamp and period finish.
         vestingPeriodFinish = (lastUpdated = block.timestamp) + vestingPeriod_;
 
         emit VestingScheduleUpdated(msg.sender, vestingPeriodFinish, issuanceRate);
@@ -141,12 +143,14 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         require(assets_ != 0, "RDT:M:ZERO_ASSETS");
 
         _mint(receiver_, shares_);
+
         freeAssets = totalAssets() + assets_;
+
         _updateIssuanceParams();
 
-        require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:M:TRANSFER_FROM");
-
         emit Deposit(caller_, receiver_, assets_, shares_);
+
+        require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:M:TRANSFER_FROM");
     }
 
     function _burn(uint256 shares_, uint256 assets_, address receiver_, address owner_, address caller_) internal {
@@ -158,16 +162,18 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         }
 
         _burn(owner_, shares_);
+
         freeAssets = totalAssets() - assets_;
+
         _updateIssuanceParams();
 
-        require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:B:TRANSFER");
-
         emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
+
+        require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:B:TRANSFER");
     }
 
     function _updateIssuanceParams() internal {
-        issuanceRate = (lastUpdated = block.timestamp) > vestingPeriodFinish ? 0 : issuanceRate;  // TODO: >=?
+        issuanceRate = (lastUpdated = block.timestamp) > vestingPeriodFinish ? 0 : issuanceRate;
     }
 
     /**********************/
@@ -183,13 +189,13 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function convertToAssets(uint256 shares_) public view override returns (uint256 assets_) {
-        uint256 supply = totalSupply;  // Cache to memory.
+        uint256 supply = totalSupply;  // Cache to stack.
 
         assets_ = supply == 0 ? shares_ : (shares_ * totalAssets()) / supply;
     }
 
     function convertToShares(uint256 assets_) public view override returns (uint256 shares_) {
-        uint256 supply = totalSupply;  // Cache to memory.
+        uint256 supply = totalSupply;  // Cache to stack.
 
         shares_ = supply == 0 ? assets_ : (assets_ * supply) / totalAssets();
     }
@@ -219,7 +225,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function previewMint(uint256 shares_) public view virtual override returns (uint256 assets_) {
-        uint256 supply = totalSupply;  // Cache to memory.
+        uint256 supply = totalSupply;  // Cache to stack.
 
         // As per https://eips.ethereum.org/EIPS/eip-4626#security-considerations,
         // it should round UP if it’s calculating the amount of assets a user must provide, to be issued a given amount of shares.
@@ -233,7 +239,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function previewWithdraw(uint256 assets_) public view virtual override returns (uint256 shares_) {
-        uint256 supply = totalSupply;  // Cache to memory.
+        uint256 supply = totalSupply;  // Cache to stack.
 
         // As per https://eips.ethereum.org/EIPS/eip-4626#security-considerations,
         // it should round UP if it’s calculating the amount of shares a user must return, to be sent a given amount of assets.
@@ -256,7 +262,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /**************************/
 
     function _reduceCallerAllowance(address caller_, address owner_, uint256 shares_) internal {
-        uint256 callerAllowance = allowance[owner_][caller_];  // Cache to memory.
+        uint256 callerAllowance = allowance[owner_][caller_];  // Cache to stack.
 
         // TODO: investigate whether leave this `require()` in for clarity from error message, or let the safe math check in `callerAllowance - shares_` handle the underflow.
         require(callerAllowance >= shares_, "RDT:CALLER_ALLOWANCE");
@@ -267,7 +273,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function _divRoundUp(uint256 numerator_, uint256 divisor_) internal pure returns (uint256 result_) {
-       result_ = (numerator_ / divisor_) + (numerator_ % divisor_ > 0 ? 1 : 0);
+       return (numerator_ / divisor_) + (numerator_ % divisor_ > 0 ? 1 : 0);
     }
 
 }

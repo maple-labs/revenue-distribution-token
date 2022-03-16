@@ -21,87 +21,87 @@ import { MutableRDT } from "./utils/MutableRDT.sol";
 
 contract RDTInvariants is TestUtils, InvariantTest {
 
-    InvariantERC20User     erc20User;
-    InvariantOwner         owner;
-    InvariantStakerManager stakerManager;
-    MockERC20              underlying;
-    MutableRDT             rdToken;
-    Warper                 warper;
+    InvariantERC20User     internal _erc20User;
+    InvariantOwner         internal _owner;
+    InvariantStakerManager internal _stakerManager;
+    MockERC20              internal _underlying;
+    MutableRDT             internal _rdToken;
+    Warper                 internal _warper;
 
     function setUp() public virtual {
-        underlying    = new MockERC20("MockToken", "MT", 18);
-        rdToken       = new MutableRDT("Revenue Distribution Token", "RDT", address(this), address(underlying), 1e30);
-        erc20User     = new InvariantERC20User(address(rdToken), address(underlying));
-        stakerManager = new InvariantStakerManager(address(rdToken), address(underlying));
-        owner         = new InvariantOwner(address(rdToken), address(underlying));
-        warper        = new Warper();
+        _underlying    = new MockERC20("MockToken", "MT", 18);
+        _rdToken       = new MutableRDT("Revenue Distribution Token", "RDT", address(this), address(_underlying), 1e30);
+        _erc20User     = new InvariantERC20User(address(_rdToken), address(_underlying));
+        _stakerManager = new InvariantStakerManager(address(_rdToken), address(_underlying));
+        _owner         = new InvariantOwner(address(_rdToken), address(_underlying));
+        _warper        = new Warper();
 
         // Required to prevent `acceptOwner` from being a target function
         // TODO: Investigate hevm.store error: `hevm: internal error: unexpected failure code`
-        rdToken.setOwner(address(owner));
+        _rdToken.setOwner(address(_owner));
 
         // Performs random transfers of underlying into contract
-        addTargetContract(address(erc20User));
+        addTargetContract(address(_erc20User));
 
         // Performs random transfers of underlying into contract
         // Performs random updateVestingSchedule calls
-        addTargetContract(address(owner));
+        addTargetContract(address(_owner));
 
         // Performs random instantiations of new staker users
         // Performs random deposit calls from a random instantiated staker
         // Performs random withdraw calls from a random instantiated staker
         // Performs random redeem calls from a random instantiated staker
-        addTargetContract(address(stakerManager));
+        addTargetContract(address(_stakerManager));
 
         // Performs random warps forward in time
-        addTargetContract(address(warper));
+        addTargetContract(address(_warper));
 
         // Create one staker to prevent underflow on index calculations
-        stakerManager.createStaker();
+        _stakerManager.createStaker();
     }
 
-    function invariant1_totalAssets_lte_underlyingBal() public {
-        assertTrue(rdToken.totalAssets() <= underlying.balanceOf(address(rdToken)));
+    function invariant1_totalAssets_lte_underlyingBalance() public {
+        assertTrue(_rdToken.totalAssets() <= _underlying.balanceOf(address(_rdToken)));
     }
 
     function invariant2_sumBalanceOfAssets_eq_totalAssets() public {
         // Only relevant if deposits exist
-        if(rdToken.totalSupply() > 0) {
+        if (_rdToken.totalSupply() > 0) {
             uint256 sumBalanceOfAssets;
-            uint256 stakerCount = stakerManager.getStakerCount();
+            uint256 stakerCount = _stakerManager.getStakerCount();
 
-            for(uint256 i; i < stakerCount; ++i) {
-                sumBalanceOfAssets += rdToken.balanceOfAssets(address(stakerManager.stakers(i)));
+            for (uint256 i; i < stakerCount; ++i) {
+                sumBalanceOfAssets += _rdToken.balanceOfAssets(address(_stakerManager.stakers(i)));
             }
 
-            assertTrue(sumBalanceOfAssets <= rdToken.totalAssets());
-            assertWithinDiff(sumBalanceOfAssets, rdToken.totalAssets(), stakerCount);  // Rounding error of one per user
+            assertTrue(sumBalanceOfAssets <= _rdToken.totalAssets());
+            assertWithinDiff(sumBalanceOfAssets, _rdToken.totalAssets(), stakerCount);  // Rounding error of one per user
         }
     }
 
-    function invariant3_totalSupply_lte_totalAssets() external {
-        assertTrue(rdToken.totalSupply() <= rdToken.totalAssets());
+    function invariant3_totalSupply_lte_totalAssets() public {
+        assertTrue(_rdToken.totalSupply() <= _rdToken.totalAssets());
     }
 
-    function invariant4_totalSupply_times_exchangeRate_eq_totalAssets() external {
-        if(rdToken.totalSupply() > 0) {
-            assertWithinDiff(rdToken.convertToAssets(rdToken.totalSupply()), rdToken.totalAssets(), 1);  // One division
+    function invariant4_totalSupply_times_exchangeRate_eq_totalAssets() public {
+        if (_rdToken.totalSupply() > 0) {
+            assertWithinDiff(_rdToken.convertToAssets(_rdToken.totalSupply()), _rdToken.totalAssets(), 1);  // One division
         }
     }
 
     // TODO: figure out if there's a replacement for this one involving convertTo* functions. I think Invariant 3: totalSupply <= totalAssets covers this.
-    // function invariant5_exchangeRate_gte_precision() external {
-    //     assertTrue(rdToken.exchangeRate() >= rdToken.precision());
+    // function invariant5_exchangeRate_gte_precision() public {
+    //     assertTrue(_rdToken.exchangeRate() >= _rdToken.precision());
     // }
 
-    function invariant6_freeAssets_lte_totalAssets() external {
-        assertTrue(rdToken.freeAssets() <= rdToken.totalAssets());
+    function invariant6_freeAssets_lte_totalAssets() public {
+        assertTrue(_rdToken.freeAssets() <= _rdToken.totalAssets());
     }
 
     function invariant7_balanceOfAssets_gte_balanceOf() public {
-        for(uint256 i; i < stakerManager.getStakerCount(); ++i) {
-            address staker = address(stakerManager.stakers(i));
-            assertTrue(rdToken.balanceOfAssets(staker) >= rdToken.balanceOf(staker));
+        for (uint256 i; i < _stakerManager.getStakerCount(); ++i) {
+            address staker = address(_stakerManager.stakers(i));
+            assertTrue(_rdToken.balanceOfAssets(staker) >= _rdToken.balanceOf(staker));
         }
     }
 

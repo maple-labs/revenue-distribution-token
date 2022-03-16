@@ -137,7 +137,7 @@ interface IRevenueDistributionToken is IERC20, IERC4626 {
     /**
      *  @dev Returns the annualized yearly return of the current vesting schedule.
      */
-    function APR() external view returns (uint256 APR_);
+    function APR() external view returns (uint256 apr_);
 
     /**
      *  @dev    Returns the amount of underlying assets owned by the specified account.

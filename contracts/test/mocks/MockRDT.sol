@@ -11,6 +11,7 @@ contract MockRDT is RDT {
     function __setTotalAssets(uint256 amount_) external {
         freeAssets          = amount_;
         vestingPeriodFinish = block.timestamp - 1;
+
         _updateIssuanceParams();
     }
 

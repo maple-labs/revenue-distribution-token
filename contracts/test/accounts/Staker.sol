@@ -2,7 +2,6 @@
 pragma solidity ^0.8.7;
 
 import { TestUtils } from "../../../modules/contract-test-utils/contracts/test.sol";
-
 import { ERC20User } from "../../../modules/erc20/contracts/test/accounts/ERC20User.sol";
 import { MockERC20 } from "../../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
@@ -38,49 +37,50 @@ contract Staker is ERC20User {
 
 contract InvariantStaker is TestUtils {
 
-    IRDT      rdToken;
-    MockERC20 underlying;
+    IRDT      internal _rdToken;
+    MockERC20 internal _underlying;
 
     constructor(address rdToken_, address underlying_) {
-        rdToken    = IRDT(rdToken_);
-        underlying = MockERC20(underlying_);
+        _rdToken    = IRDT(rdToken_);
+        _underlying = MockERC20(underlying_);
     }
 
     function deposit(uint256 assets_) external {
         // NOTE: The precision of the exchangeRate is equal to the amount of funds that can be deposited before rounding errors start to arise
         assets_ = constrictToRange(assets_, 1, 1e29);  // 100 billion at WAD precision (1 less than 1e30 to avoid precision issues)
 
-        uint256 beforeBal   = rdToken.balanceOf(address(this));
-        uint256 shareAmount = rdToken.previewDeposit(assets_);
+        uint256 startingBalance = _rdToken.balanceOf(address(this));
+        uint256 shareAmount     = _rdToken.previewDeposit(assets_);
 
-        underlying.mint(address(this),       assets_);
-        underlying.approve(address(rdToken), assets_);
-        rdToken.deposit(assets_, address(this));
+        _underlying.mint(address(this),        assets_);
+        _underlying.approve(address(_rdToken), assets_);
 
-        assertEq(rdToken.balanceOf(address(this)), beforeBal + shareAmount);  // Ensure successful deposit
+        _rdToken.deposit(assets_, address(this));
+
+        assertEq(_rdToken.balanceOf(address(this)), startingBalance + shareAmount);  // Ensure successful deposit
     }
 
     function redeem(uint256 shares_) external {
-        uint256 beforeBal = rdToken.balanceOf(address(this));
+        uint256 startingBalance = _rdToken.balanceOf(address(this));
 
-        if (beforeBal > 0) {
-            uint256 redeemAmount = constrictToRange(shares_, 1, rdToken.balanceOf(address(this)));
+        if (startingBalance > 0) {
+            uint256 redeemAmount = constrictToRange(shares_, 1, _rdToken.balanceOf(address(this)));
 
-            rdToken.redeem(redeemAmount, address(this), address(this));
+            _rdToken.redeem(redeemAmount, address(this), address(this));
 
-            assertEq(rdToken.balanceOf(address(this)), beforeBal - redeemAmount);
+            assertEq(_rdToken.balanceOf(address(this)), startingBalance - redeemAmount);
         }
     }
 
     function withdraw(uint256 assets_) external {
-        uint256 beforeBal = underlying.balanceOf(address(this));
+        uint256 startingBalance = _underlying.balanceOf(address(this));
 
-        if (beforeBal > 0) {
-            uint256 withdrawAmount = constrictToRange(assets_, 1, rdToken.balanceOfAssets(address(this)));
+        if (startingBalance > 0) {
+            uint256 withdrawAmount = constrictToRange(assets_, 1, _rdToken.balanceOfAssets(address(this)));
 
-            rdToken.withdraw(withdrawAmount, address(this), address(this));
+            _rdToken.withdraw(withdrawAmount, address(this), address(this));
 
-            assertEq(underlying.balanceOf(address(this)), beforeBal + withdrawAmount);  // Ensure successful withdraw
+            assertEq(_underlying.balanceOf(address(this)), startingBalance + withdrawAmount);  // Ensure successful withdraw
         }
     }
 
@@ -88,18 +88,18 @@ contract InvariantStaker is TestUtils {
 
 contract InvariantStakerManager is TestUtils {
 
-    address rdToken;
-    address underlying;
+    address internal _rdToken;
+    address internal _underlying;
 
     InvariantStaker[] public stakers;
 
     constructor(address rdToken_, address underlying_) {
-        rdToken      = rdToken_;
-        underlying   = underlying_;
+        _rdToken    = rdToken_;
+        _underlying = underlying_;
     }
 
     function createStaker() external {
-        InvariantStaker staker = new InvariantStaker(rdToken, underlying);
+        InvariantStaker staker = new InvariantStaker(_rdToken, _underlying);
         stakers.push(staker);
     }
 

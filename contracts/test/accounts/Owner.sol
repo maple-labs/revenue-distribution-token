@@ -18,46 +18,47 @@ contract Owner {
         IRDT(rdt_).setPendingOwner(pendingOwner_);
     }
 
-    function rdToken_updateVestingSchedule(address rdt_, uint256 vestingPeriod_) external {
-        IRDT(rdt_).updateVestingSchedule(vestingPeriod_);
+    function rdToken_updateVestingSchedule(address rdt_, uint256 vestingPeriod_) external returns (uint256 issuanceRate_, uint256 freeAssets_) {
+        return IRDT(rdt_).updateVestingSchedule(vestingPeriod_);
     }
 
-    function erc20_transfer(address token_, address receiver_, uint256 amount_) external {
-        IERC20(token_).transfer(receiver_, amount_);
+    function erc20_transfer(address token_, address receiver_, uint256 amount_) external returns (bool success_) {
+        return IERC20(token_).transfer(receiver_, amount_);
     }
 
 }
 
 contract InvariantOwner is TestUtils {
 
-    IRDT      rdToken;
-    MockERC20 underlying;
+    IRDT      internal _rdToken;
+    MockERC20 internal _underlying;
 
     uint256 numberOfCalls;
 
     uint256 public amountDeposited;
 
     constructor(address rdToken_, address underlying_) {
-        rdToken    = IRDT(rdToken_);
-        underlying = MockERC20(underlying_);
+        _rdToken    = IRDT(rdToken_);
+        _underlying = MockERC20(underlying_);
     }
 
     function rdToken_updateVestingSchedule(uint256 vestingPeriod_) external {
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1, 10_000 days);
 
-        rdToken.updateVestingSchedule(vestingPeriod_);
+        _rdToken.updateVestingSchedule(vestingPeriod_);
 
-        assertEq(rdToken.vestingPeriodFinish(), block.timestamp + vestingPeriod_);
+        assertEq(_rdToken.vestingPeriodFinish(), block.timestamp + vestingPeriod_);
     }
 
     function erc20_transfer(uint256 amount_) external {
-        uint256 beforeBal = underlying.balanceOf(address(rdToken));
+        uint256 startingBalance = _underlying.balanceOf(address(_rdToken));
 
         amount_ = constrictToRange(amount_, 1, 1e29);  // 100 billion at WAD precision (1 less than 1e30 to avoid precision issues)
-        underlying.mint(address(this), amount_);
-        underlying.transfer(address(rdToken), amount_);
 
-        assertEq(underlying.balanceOf(address(rdToken)), beforeBal + amount_);  // Ensure successful transfer
+        _underlying.mint(address(this), amount_);
+        _underlying.transfer(address(_rdToken), amount_);
+
+        assertEq(_underlying.balanceOf(address(_rdToken)), startingBalance + amount_);  // Ensure successful transfer
     }
 
 }

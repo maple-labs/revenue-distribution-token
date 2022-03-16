@@ -49,10 +49,10 @@ contract InvariantStaker is TestUtils {
         // NOTE: The precision of the exchangeRate is equal to the amount of funds that can be deposited before rounding errors start to arise
         assets_ = constrictToRange(assets_, 1, 1e29);  // 100 billion at WAD precision (1 less than 1e30 to avoid precision issues)
 
-        uint256 startingBalance   = _rdToken.balanceOf(address(this));
-        uint256 shareAmount = _rdToken.previewDeposit(assets_);
+        uint256 startingBalance = _rdToken.balanceOf(address(this));
+        uint256 shareAmount     = _rdToken.previewDeposit(assets_);
 
-        _underlying.mint(address(this),       assets_);
+        _underlying.mint(address(this),        assets_);
         _underlying.approve(address(_rdToken), assets_);
 
         _rdToken.deposit(assets_, address(this));

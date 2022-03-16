@@ -13,7 +13,7 @@ import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol
 
 contract ConstructorTest is TestUtils {
 
-    function test_constructor_ownerZeroAddress() external {
+    function test_constructor_ownerZeroAddress() public {
         MockERC20 asset = new MockERC20("MockToken", "MT", 18);
 
         vm.expectRevert("RDT:C:OWNER_ZERO_ADDRESS");
@@ -50,7 +50,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
         vm.warp(10_000_000);  // Warp to non-zero timestamp
     }
 
-    function test_depositWithPermit_zeroAddress() external {
+    function test_depositWithPermit_zeroAddress() public {
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount);
 
@@ -64,7 +64,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
     }
 
-    function test_depositWithPermit_notStakerSignature() external {
+    function test_depositWithPermit_notStakerSignature() public {
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount);
 
@@ -81,7 +81,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
 
     }
 
-    function test_depositWithPermit_pastDeadline() external {
+    function test_depositWithPermit_pastDeadline() public {
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount);
 
@@ -99,7 +99,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
     }
 
-    function test_depositWithPermit_replay() external {
+    function test_depositWithPermit_replay() public {
         uint256 depositAmount = 1e18;
         asset.mint(address(staker), depositAmount * 2);
 
@@ -113,7 +113,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
     }
 
-    function test_depositWithPermit_preVesting(uint256 depositAmount) external {
+    function test_depositWithPermit_preVesting(uint256 depositAmount) public {
         depositAmount = constrictToRange(depositAmount, 1, 1e29);
 
         asset.mint(address(staker), depositAmount);
@@ -155,7 +155,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)), depositAmount);
     }
 
-    function test_mintWithPermit_zeroAddress() external {
+    function test_mintWithPermit_zeroAddress() public {
         uint256 mintAmount = 1e18;
         uint256 maxAssets = rdToken.previewMint(mintAmount);
 
@@ -171,7 +171,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
     }
 
-    function test_mintWithPermit_notStakerSignature() external {
+    function test_mintWithPermit_notStakerSignature() public {
         uint256 mintAmount = 1e18;
         uint256 maxAssets = rdToken.previewMint(mintAmount);
 
@@ -190,7 +190,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
 
     }
 
-    function test_mintWithPermit_pastDeadline() external {
+    function test_mintWithPermit_pastDeadline() public {
         uint256 mintAmount = 1e18;
         uint256 maxAssets = rdToken.previewMint(mintAmount);
 
@@ -210,7 +210,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
     }
 
-    function test_mintWithPermit_insufficientPermit() external {
+    function test_mintWithPermit_insufficientPermit() public {
         uint256 mintAmount = 1e18;
         uint256 maxAssets = rdToken.previewMint(mintAmount);
 
@@ -228,7 +228,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
     }
 
-    function test_mintWithPermit_replay() external {
+    function test_mintWithPermit_replay() public {
         uint256 mintAmount = 1e18;
         uint256 maxAssets = rdToken.previewMint(mintAmount);
 
@@ -244,7 +244,7 @@ contract DepositAndMintWithPermitTest is TestUtils {
         rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
     }
 
-    function test_mintWithPermit_preVesting(uint256 mintAmount) external {
+    function test_mintWithPermit_preVesting(uint256 mintAmount) public {
         mintAmount = constrictToRange(mintAmount, 1, 1e29);
         uint256 maxAssets = rdToken.previewMint(mintAmount);
 
@@ -327,7 +327,7 @@ contract APRViewTest is TestUtils {
         vm.warp(START);
     }
 
-    function test_APR(uint256 mintAmount_, uint256 vestingAmount_, uint256 vestingPeriod_) external {
+    function test_APR(uint256 mintAmount_, uint256 vestingAmount_, uint256 vestingPeriod_) public {
         mintAmount_    = constrictToRange(mintAmount_,    0.0001e18, 1e29);
         vestingAmount_ = constrictToRange(mintAmount_,    0.0001e18, 1e29);
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days,    10_000 days);
@@ -369,7 +369,7 @@ contract AuthTest is TestUtils {
         rdToken  = new RDT("Revenue Distribution Token", "RDT", address(owner), address(asset), 1e30);
     }
 
-    function test_setPendingOwner_acl() external {
+    function test_setPendingOwner_acl() public {
         vm.expectRevert("RDT:SPO:NOT_OWNER");
         notOwner.rdToken_setPendingOwner(address(rdToken), address(1));
 
@@ -378,7 +378,7 @@ contract AuthTest is TestUtils {
         assertEq(rdToken.pendingOwner(), address(1));
     }
 
-    function test_acceptOwnership_acl() external {
+    function test_acceptOwnership_acl() public {
         owner.rdToken_setPendingOwner(address(rdToken), address(notOwner));
 
         vm.expectRevert("RDT:AO:NOT_PO");
@@ -393,7 +393,7 @@ contract AuthTest is TestUtils {
         assertEq(rdToken.owner(),        address(notOwner));
     }
 
-    function test_updateVestingSchedule_acl() external {
+    function test_updateVestingSchedule_acl() public {
         // Use non-zero timestamp
         vm.warp(10_000);
 
@@ -440,7 +440,7 @@ contract DepositAndMintTest is TestUtils {
 
     }
 
-    function test_deposit_zeroAssets() external {
+    function test_deposit_zeroAssets() public {
 
         asset.mint(address(staker), 1);
         staker.erc20_approve(address(asset), address(rdToken), 1);
@@ -451,7 +451,7 @@ contract DepositAndMintTest is TestUtils {
         staker.rdToken_deposit(address(rdToken), 1);
     }
 
-    function test_deposit_badApprove(uint256 depositAmount) external {
+    function test_deposit_badApprove(uint256 depositAmount) public {
 
         depositAmount = constrictToRange(depositAmount, 1, 1e29);
 
@@ -466,7 +466,7 @@ contract DepositAndMintTest is TestUtils {
         staker.rdToken_deposit(address(rdToken), depositAmount);
     }
 
-    function test_deposit_insufficientBalance(uint256 depositAmount) external {
+    function test_deposit_insufficientBalance(uint256 depositAmount) public {
 
         depositAmount = constrictToRange(depositAmount, 1, 1e29);
 
@@ -480,7 +480,7 @@ contract DepositAndMintTest is TestUtils {
         staker.rdToken_deposit(address(rdToken), depositAmount);
     }
 
-    function test_deposit_zeroShares() external {
+    function test_deposit_zeroShares() public {
         // Do a deposit so that totalSupply is non-zero
         asset.mint(address(this), 20e18);
         asset.approve(address(rdToken), 20e18);
@@ -501,7 +501,7 @@ contract DepositAndMintTest is TestUtils {
         staker.rdToken_deposit(address(rdToken), minDeposit);
     }
 
-    function test_deposit_preVesting(uint256 depositAmount) external {
+    function test_deposit_preVesting(uint256 depositAmount) public {
 
         depositAmount = constrictToRange(depositAmount, 1, 1e29);
 
@@ -538,7 +538,7 @@ contract DepositAndMintTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)), depositAmount);
     }
 
-    function test_mint_zeroAmount() external {
+    function test_mint_zeroAmount() public {
 
         asset.mint(address(staker), 1);
         staker.erc20_approve(address(asset), address(rdToken), 1);
@@ -549,7 +549,7 @@ contract DepositAndMintTest is TestUtils {
         staker.rdToken_mint(address(rdToken), 1);
     }
 
-    function test_mint_badApprove(uint256 mintAmount) external {
+    function test_mint_badApprove(uint256 mintAmount) public {
 
         mintAmount = constrictToRange(mintAmount, 1, 1e29);
 
@@ -566,7 +566,7 @@ contract DepositAndMintTest is TestUtils {
         staker.rdToken_mint(address(rdToken), mintAmount);
     }
 
-    function test_mint_insufficientBalance(uint256 mintAmount) external {
+    function test_mint_insufficientBalance(uint256 mintAmount) public {
 
         mintAmount = constrictToRange(mintAmount, 1, 1e29);
 
@@ -582,7 +582,7 @@ contract DepositAndMintTest is TestUtils {
         staker.rdToken_mint(address(rdToken), mintAmount);
     }
 
-    function test_mint_preVesting(uint256 mintAmount) external {
+    function test_mint_preVesting(uint256 mintAmount) public {
 
         mintAmount = constrictToRange(mintAmount, 1, 1e29);
 
@@ -620,7 +620,7 @@ contract DepositAndMintTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)), assets);
     }
 
-    function test_deposit_totalAssetsGtTotalSupply_explicitValues() external {
+    function test_deposit_totalAssetsGtTotalSupply_explicitValues() public {
         /*************/
         /*** Setup ***/
         /*************/
@@ -680,7 +680,7 @@ contract DepositAndMintTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)), 35e18);
     }
 
-    function test_deposit_totalAssetsGtTotalSupply(uint256 initialAmount, uint256 depositAmount, uint256 vestingAmount) external {
+    function test_deposit_totalAssetsGtTotalSupply(uint256 initialAmount, uint256 depositAmount, uint256 vestingAmount) public {
         /*************/
         /*** Setup ***/
         /*************/
@@ -780,7 +780,7 @@ contract ExitTest is TestUtils {
     /*** `withdraw` tests ***/
     /************************/
 
-    function test_withdraw_zeroAmount(uint256 depositAmount) external {
+    function test_withdraw_zeroAmount(uint256 depositAmount) public {
         _depositAsset(constrictToRange(depositAmount, 1, 1e29));
 
         vm.expectRevert("RDT:B:ZERO_SHARES");
@@ -789,7 +789,7 @@ contract ExitTest is TestUtils {
         staker.rdToken_withdraw(address(rdToken), 1);
     }
 
-    function test_withdraw_burnUnderflow(uint256 depositAmount) external {
+    function test_withdraw_burnUnderflow(uint256 depositAmount) public {
         depositAmount = constrictToRange(depositAmount, 1, 1e29);
         _depositAsset(depositAmount);
 
@@ -799,7 +799,7 @@ contract ExitTest is TestUtils {
         staker.rdToken_withdraw(address(rdToken), depositAmount);
     }
 
-    function test_withdraw_burnUnderflow_totalAssetsGtTotalSupply_explicitValues() external {
+    function test_withdraw_burnUnderflow_totalAssetsGtTotalSupply_explicitValues() public {
         uint256 depositAmount = 100e18;
         uint256 vestingAmount = 10e18;
         uint256 vestingPeriod = 10 days;
@@ -954,7 +954,7 @@ contract ExitTest is TestUtils {
 
     }
 
-    function test_withdraw_callerNotOwner_badApproval() external {
+    function test_withdraw_callerNotOwner_badApproval() public {
         Staker shareOwner    = new Staker();
         Staker notShareOwner = new Staker();
 
@@ -977,7 +977,7 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
     }
 
-    function test_withdraw_callerNotOwner_infiniteApprovalForCaller() external {
+    function test_withdraw_callerNotOwner_infiniteApprovalForCaller() public {
         Staker shareOwner    = new Staker();
         Staker notShareOwner = new Staker();
 
@@ -1169,7 +1169,7 @@ contract ExitTest is TestUtils {
     }
 
     // TODO: Implement once max* functions are added as per 4626 standard
-    // function test_withdraw_burnUnderflow_totalAssetsGtTotalSupply(uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod, uint256 warpTime) external {
+    // function test_withdraw_burnUnderflow_totalAssetsGtTotalSupply(uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod, uint256 warpTime) public {
     //     depositAmount = constrictToRange(depositAmount, 1, 1e29);
     //     vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
     //     vestingPeriod = constrictToRange(vestingPeriod, 1, 100 days);
@@ -1194,7 +1194,7 @@ contract ExitTest is TestUtils {
     /*** `redeem` tests ***/
     /************************/
 
-    function test_redeem_zeroShares(uint256 depositAmount) external {
+    function test_redeem_zeroShares(uint256 depositAmount) public {
         _depositAsset(constrictToRange(depositAmount, 1, 1e29));
 
         vm.expectRevert("RDT:B:ZERO_SHARES");
@@ -1203,7 +1203,7 @@ contract ExitTest is TestUtils {
         staker.rdToken_redeem(address(rdToken), 1);
     }
 
-    function test_redeem_burnUnderflow(uint256 depositAmount) external {
+    function test_redeem_burnUnderflow(uint256 depositAmount) public {
         depositAmount = constrictToRange(depositAmount, 1, 1e29);
         _depositAsset(depositAmount);
 
@@ -1213,7 +1213,7 @@ contract ExitTest is TestUtils {
         staker.rdToken_redeem(address(rdToken), depositAmount);
     }
 
-    function test_redeem_burnUnderflow_totalAssetsGtTotalSupply_explicitValues() external {
+    function test_redeem_burnUnderflow_totalAssetsGtTotalSupply_explicitValues() public {
         uint256 depositAmount = 100e18;
         uint256 vestingAmount = 10e18;
         uint256 vestingPeriod = 10 days;
@@ -1362,7 +1362,7 @@ contract ExitTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)), depositAmount + vestingAmount - expectedAssetsFromRedeem);  // Note that vestingAmount is used
     }
 
-    function test_redeem_callerNotOwner_badApproval() external {
+    function test_redeem_callerNotOwner_badApproval() public {
         Staker shareOwner    = new Staker();
         Staker notShareOwner = new Staker();
 
@@ -1385,7 +1385,7 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
     }
 
-    function test_redeem_callerNotOwner_infiniteApprovalForCaller() external {
+    function test_redeem_callerNotOwner_infiniteApprovalForCaller() public {
         Staker shareOwner    = new Staker();
         Staker notShareOwner = new Staker();
 
@@ -1405,7 +1405,7 @@ contract ExitTest is TestUtils {
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
     }
 
-    function test_redeem_callerNotOwner(uint256 depositAmount, uint256 redeemAmount, uint256 callerAllowance) external {
+    function test_redeem_callerNotOwner(uint256 depositAmount, uint256 redeemAmount, uint256 callerAllowance) public {
         depositAmount   = constrictToRange(depositAmount, 1, 1e29);
         redeemAmount    = constrictToRange(redeemAmount,  1, depositAmount);
         callerAllowance = constrictToRange(callerAllowance,  redeemAmount, type(uint256).max - 1); // Allowance reduction doesn't happen with infinite approval.
@@ -1457,7 +1457,7 @@ contract ExitTest is TestUtils {
         assertEq(asset.balanceOf(address(rdToken)),       depositAmount - redeemAmount);
     }
 
-    function test_redeem_callerNotOwner_totalAssetsGtTotalSupply_explicitValues() external {
+    function test_redeem_callerNotOwner_totalAssetsGtTotalSupply_explicitValues() public {
         uint256 depositAmount = 100e18;
         uint256 redeemAmount  = 20e18;
         uint256 vestingAmount = 10e18;
@@ -1513,7 +1513,7 @@ contract ExitTest is TestUtils {
         uint256 vestingPeriod,
         uint256 warpTime,
         uint256 callerAllowance
-    ) external {
+    ) public {
         depositAmount   = constrictToRange(depositAmount, 1, 1e29);
         redeemAmount    = constrictToRange(redeemAmount,  1, depositAmount);
         vestingAmount   = constrictToRange(vestingAmount, 1, 1e29);
@@ -1613,7 +1613,7 @@ contract RevenueStreamingTest is TestUtils {
         firstStaker.rdToken_deposit(address(rdToken), startingAssets);
     }
 
-    function test_updateVestingSchedule_zeroSupply() external {
+    function test_updateVestingSchedule_zeroSupply() public {
         firstStaker.rdToken_withdraw(address(rdToken), 1);
 
         vm.expectRevert("RDT:UVS:ZERO_SUPPLY");
@@ -1629,7 +1629,7 @@ contract RevenueStreamingTest is TestUtils {
     /*** Single updateVestingSchedule ***/
     /************************************/
 
-    function test_updateVestingSchedule_single() external {
+    function test_updateVestingSchedule_single() public {
         assertEq(rdToken.freeAssets(),          startingAssets);
         assertEq(rdToken.totalAssets(),         startingAssets);
         assertEq(rdToken.issuanceRate(),        0);
@@ -1655,7 +1655,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalAssets(), startingAssets + 1000);  // All tokens vested
     }
 
-    function test_updateVestingSchedule_single_roundingDown() external {
+    function test_updateVestingSchedule_single_roundingDown() public {
         _transferAndUpdateVesting(1000, 30 seconds);  // 33.3333... tokens per second
 
         assertEq(rdToken.totalAssets(),  startingAssets);
@@ -1682,7 +1682,7 @@ contract RevenueStreamingTest is TestUtils {
     /*** Multiple updateVestingSchedule, same time ***/
     /*************************************************/
 
-    function test_updateVestingSchedule_sameTime_shorterVesting() external {
+    function test_updateVestingSchedule_sameTime_shorterVesting() public {
         _transferAndUpdateVesting(1000, 100 seconds);
         assertEq(rdToken.issuanceRate(),        10e30);                // 1000 / 100 seconds = 10 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);  // Always updates to latest vesting schedule
@@ -1698,7 +1698,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalAssets(), startingAssets + 2000);
     }
 
-    function test_updateVestingSchedule_sameTime_longerVesting_higherRate() external {
+    function test_updateVestingSchedule_sameTime_longerVesting_higherRate() public {
         _transferAndUpdateVesting(1000, 100 seconds);
         assertEq(rdToken.issuanceRate(),        10e30);                // 1000 / 100 seconds = 10 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);  // Always updates to latest vesting schedule
@@ -1714,7 +1714,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.totalAssets(), startingAssets + 4000);
     }
 
-    function test_updateVestingSchedule_sameTime_longerVesting_lowerRate() external {
+    function test_updateVestingSchedule_sameTime_longerVesting_lowerRate() public {
         _transferAndUpdateVesting(1000, 100 seconds);
         assertEq(rdToken.issuanceRate(),        10e30);                // 1000 / 100 seconds = 10 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), start + 100 seconds);  // Always updates to latest vesting schedule
@@ -1734,7 +1734,7 @@ contract RevenueStreamingTest is TestUtils {
     /*** Multiple updateVestingSchedule, different times ***/
     /*******************************************************/
 
-    function test_updateVestingSchedule_diffTime_shorterVesting() external {
+    function test_updateVestingSchedule_diffTime_shorterVesting() public {
         _transferAndUpdateVesting(1000, 100 seconds);  // 10 tokens per second
 
         vm.warp(start + 60 seconds);
@@ -1758,7 +1758,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.freeAssets(),   startingAssets + 600);
     }
 
-    function test_updateVestingSchedule_diffTime_longerVesting_higherRate() external {
+    function test_updateVestingSchedule_diffTime_longerVesting_higherRate() public {
         _transferAndUpdateVesting(1000, 100 seconds);  // 10 tokens per second
 
         vm.warp(start + 60 seconds);
@@ -1781,7 +1781,7 @@ contract RevenueStreamingTest is TestUtils {
         assertEq(rdToken.freeAssets(),   startingAssets + 600);
     }
 
-    function test_updateVestingSchedule_diffTime_longerVesting_lowerRate() external {
+    function test_updateVestingSchedule_diffTime_longerVesting_lowerRate() public {
         _transferAndUpdateVesting(1000, 100 seconds);  // 10 tokens per second
 
         vm.warp(start + 60 seconds);

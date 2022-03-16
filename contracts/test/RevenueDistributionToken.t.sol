@@ -1965,6 +1965,46 @@ contract RedeemAndWithdrawTest is RDTSuccessTestBase {
         _assertWithdraw(staker, 20e18);
     }
 
+    function test_withdraw_totalAssetsGtTotalSupply(
+        uint256 depositAmount_,
+        uint256 withdrawAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_,
+        uint256 warpTime_
+    )
+        external
+    {
+        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
+        withdrawAmount_ = constrictToRange(withdrawAmount_, 1, depositAmount_);
+        vestingAmount_  = constrictToRange(vestingAmount_,  1, 1e29);
+        vestingPeriod_  = constrictToRange(vestingPeriod_,  1, 100 days);
+        warpTime_       = constrictToRange(warpTime_,       1, vestingPeriod_);
+
+        address staker = address(new Staker());
+
+        _depositAsset(address(asset), staker, depositAmount_);
+        _transferAndUpdateVesting(address(asset), staker, vestingAmount_, vestingPeriod_);
+
+        vm.warp(block.timestamp + warpTime_);
+
+        uint256 expectedSharesBurned = rdToken.previewWithdraw(withdrawAmount_);
+
+        rdToken_balanceOf_staker_change = - _toInt256(expectedSharesBurned);  // 20 / 1.05
+        rdToken_totalSupply_change      = - _toInt256(expectedSharesBurned);  // 20 / 1.05
+        rdToken_freeAssets_change       =   _toInt256(vestingAmount_ * warpTime_ / vestingPeriod_) - _toInt256(withdrawAmount_);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
+        rdToken_totalAssets_change      = - _toInt256(withdrawAmount_);
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = 0;
+        rdToken_lastUpdated_change      = _toInt256(warpTime_);
+
+        asset_balanceOf_staker_change         =   _toInt256(withdrawAmount_);
+        asset_balanceOf_rdToken_change        = - _toInt256(withdrawAmount_);
+        asset_allowance_staker_rdToken_change = 0;
+
+        _assertWithdraw(staker, withdrawAmount_);
+    }
+
     function test_withdraw_singleUser_noVesting() external {
         address staker = address(new Staker());
 
@@ -2424,47 +2464,47 @@ contract RedeemRevertOnTransfer is RDTTestBase {
         vm.warp(10_000_000);  // Warp to non-zero timestamp
     }
 
-    function test_redeem_revertOnTransfer(uint256 depositAmount, uint256 redeemAmount) public {
-        depositAmount = constrictToRange(depositAmount, 1, 1e29);
-        redeemAmount  = constrictToRange(redeemAmount,  1, depositAmount);
+    function test_redeem_revertOnTransfer(uint256 depositAmount_, uint256 redeemAmount_) public {
+        depositAmount_ = constrictToRange(depositAmount_, 1, 1e29);
+        redeemAmount_  = constrictToRange(redeemAmount_,  1, depositAmount_);
 
-        revertingAsset.mint(address(staker), depositAmount);
+        revertingAsset.mint(address(staker), depositAmount_);
 
-        staker.erc20_approve(address(revertingAsset), address(rdToken), depositAmount);
-        staker.rdToken_deposit(address(rdToken), depositAmount);
-
-        uint256 START = block.timestamp;
-
-        vm.warp(START + 10 days);
-
-        vm.expectRevert(bytes("RDT:B:TRANSFER"));
-        staker.rdToken_redeem(address(rdToken), depositAmount, address(0), address(staker));
-
-        staker.rdToken_redeem(address(rdToken), depositAmount, address(1), address(staker));
-    }
-
-    function test_withdraw_revertOnTransfer(uint256 depositAmount, uint256 withdrawAmount) public {
-        depositAmount  = constrictToRange(depositAmount,  1, 1e29);
-        withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
-
-        revertingAsset.mint(address(staker), depositAmount);
-
-        staker.erc20_approve(address(revertingAsset), address(rdToken), depositAmount);
-        staker.rdToken_deposit(address(rdToken), depositAmount);
+        staker.erc20_approve(address(revertingAsset), address(rdToken), depositAmount_);
+        staker.rdToken_deposit(address(rdToken), depositAmount_);
 
         uint256 START = block.timestamp;
 
         vm.warp(START + 10 days);
 
         vm.expectRevert(bytes("RDT:B:TRANSFER"));
-        staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(0), address(staker));
+        staker.rdToken_redeem(address(rdToken), depositAmount_, address(0), address(staker));
 
-        staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(1), address(staker));
+        staker.rdToken_redeem(address(rdToken), depositAmount_, address(1), address(staker));
     }
 
-    function _depositAsset(uint256 depositAmount) internal {
-        asset.mint(address(staker), depositAmount);
-        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
-        staker.rdToken_deposit(address(rdToken), depositAmount);
+    function test_withdraw_revertOnTransfer(uint256 depositAmount_, uint256 withdrawAmount_) public {
+        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
+        withdrawAmount_ = constrictToRange(withdrawAmount_, 1, depositAmount_);
+
+        revertingAsset.mint(address(staker), depositAmount_);
+
+        staker.erc20_approve(address(revertingAsset), address(rdToken), depositAmount_);
+        staker.rdToken_deposit(address(rdToken), depositAmount_);
+
+        uint256 START = block.timestamp;
+
+        vm.warp(START + 10 days);
+
+        vm.expectRevert(bytes("RDT:B:TRANSFER"));
+        staker.rdToken_withdraw(address(rdToken), withdrawAmount_, address(0), address(staker));
+
+        staker.rdToken_withdraw(address(rdToken), withdrawAmount_, address(1), address(staker));
+    }
+
+    function _depositAsset(uint256 depositAmount_) internal {
+        asset.mint(address(staker), depositAmount_);
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount_);
+        staker.rdToken_deposit(address(rdToken), depositAmount_);
     }
 }

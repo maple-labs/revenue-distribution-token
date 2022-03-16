@@ -344,16 +344,12 @@ contract DepositAndMintWithPermitTest is RDTTestBase {
 
 }
 
-contract APRViewTest is TestUtils {
+contract APRViewTest is RDTTestBase {
 
-    MockERC20 asset;
-    Owner     owner;
-    RDT       rdToken;
-    Staker    staker;
+    Owner  owner;
+    Staker staker;
 
-    uint256 START = 10_000_000;
-
-    function setUp() public virtual {
+    function setUp() public override {
         asset   = new MockERC20("MockToken", "MT", 18);
         owner   = new Owner();
         rdToken = new RDT("Revenue Distribution Token", "RDT", address(owner), address(asset), 1e30);

@@ -302,6 +302,7 @@ contract RDTSuccessTestBase is RDTTestBase {
     /***************************/
 
     // NOTE: Pre state variables are kept in storage to avoid stack too deep
+    int256 rdToken_allowance_caller_staker;
     int256 rdToken_balanceOf_staker;
     int256 rdToken_totalSupply;
     int256 rdToken_freeAssets;
@@ -310,6 +311,7 @@ contract RDTSuccessTestBase is RDTTestBase {
     int256 rdToken_convertToShares;
     int256 rdToken_issuanceRate;
     int256 rdToken_lastUpdated;
+    int256 asset_balanceOf_caller;
     int256 asset_balanceOf_staker;
     int256 asset_balanceOf_rdToken;
     int256 asset_nonces;
@@ -320,6 +322,8 @@ contract RDTSuccessTestBase is RDTTestBase {
     /****************************************/
 
     // NOTE: State change assertion variables are kept in storage to avoid stack too deep
+    int256 rdToken_allowance_caller_staker_change;
+    int256 rdToken_balanceOf_caller_change;
     int256 rdToken_balanceOf_staker_change;
     int256 rdToken_totalSupply_change;
     int256 rdToken_freeAssets_change;
@@ -328,6 +332,7 @@ contract RDTSuccessTestBase is RDTTestBase {
     int256 rdToken_convertToShares_change;
     int256 rdToken_issuanceRate_change;
     int256 rdToken_lastUpdated_change;
+    int256 asset_balanceOf_caller_change;
     int256 asset_balanceOf_staker_change;
     int256 asset_balanceOf_rdToken_change;
     int256 asset_nonces_change;
@@ -539,6 +544,46 @@ contract RDTSuccessTestBase is RDTTestBase {
         assertEq(rdToken.lastUpdated(), _toUint256(rdToken_lastUpdated + rdToken_lastUpdated_change));
 
         _assertWithinOne(asset.balanceOf(staker_),          _toUint256(asset_balanceOf_staker  + asset_balanceOf_staker_change));
+        _assertWithinOne(asset.balanceOf(address(rdToken)), _toUint256(asset_balanceOf_rdToken + asset_balanceOf_rdToken_change));
+
+        assertEq(asset.allowance(staker_, address(rdToken)), _toUint256(asset_allowance_staker_rdToken + asset_allowance_staker_rdToken_change));
+    }
+
+    function _assertWithdrawCallerNotOwner(address caller_, address staker_, uint256 withdrawAmount_, bool fuzzed_) internal {
+        rdToken_allowance_caller_staker = _toInt256(rdToken.allowance(staker_, caller_));
+        rdToken_balanceOf_staker        = _toInt256(rdToken.balanceOf(staker_));
+        rdToken_totalSupply             = _toInt256(rdToken.totalSupply());
+        rdToken_freeAssets              = _toInt256(rdToken.freeAssets());
+        rdToken_totalAssets             = _toInt256(rdToken.totalAssets());
+        rdToken_convertToAssets         = _toInt256(rdToken.convertToAssets(sampleSharesToConvert));
+        rdToken_convertToShares         = _toInt256(rdToken.convertToShares(sampleAssetsToConvert));
+        rdToken_issuanceRate            = _toInt256(rdToken.issuanceRate());
+        rdToken_lastUpdated             = _toInt256(rdToken.lastUpdated());
+
+        asset_balanceOf_staker  = _toInt256(asset.balanceOf(staker_));
+        asset_balanceOf_caller  = _toInt256(asset.balanceOf(staker_));
+        asset_balanceOf_rdToken = _toInt256(asset.balanceOf(address(rdToken)));
+
+        uint256 sharesBurned = Staker(caller_).rdToken_withdraw(address(rdToken), withdrawAmount_, caller_, staker_);
+
+        assertEq(sharesBurned, _toUint256(-rdToken_balanceOf_staker_change));  // Number of shares burned
+
+        _assertWithinOne(rdToken.balanceOf(staker_), _toUint256(rdToken_balanceOf_staker + rdToken_balanceOf_staker_change));
+        _assertWithinOne(rdToken.totalSupply(),      _toUint256(rdToken_totalSupply      + rdToken_totalSupply_change));
+        _assertWithinOne(rdToken.freeAssets(),       _toUint256(rdToken_freeAssets       + rdToken_freeAssets_change));
+        _assertWithinOne(rdToken.totalAssets(),      _toUint256(rdToken_totalAssets      + rdToken_totalAssets_change));
+
+        // In fuzzed tests, depending on inputs these values can be different so they are left out of assertions.
+        if (!fuzzed_) {
+            _assertWithinOne(rdToken.convertToAssets(sampleSharesToConvert), _toUint256(rdToken_convertToAssets  + rdToken_convertToAssets_change));
+            _assertWithinOne(rdToken.convertToShares(sampleAssetsToConvert), _toUint256(rdToken_convertToShares  + rdToken_convertToShares_change));
+            _assertWithinOne(rdToken.issuanceRate(),                         _toUint256(rdToken_issuanceRate     + rdToken_issuanceRate_change));
+        }
+
+        assertEq(rdToken.lastUpdated(), _toUint256(rdToken_lastUpdated + rdToken_lastUpdated_change));
+
+        _assertWithinOne(asset.balanceOf(staker_),          _toUint256(asset_balanceOf_staker  + asset_balanceOf_staker_change));
+        _assertWithinOne(asset.balanceOf(caller_),          _toUint256(asset_balanceOf_caller  + asset_balanceOf_caller_change));
         _assertWithinOne(asset.balanceOf(address(rdToken)), _toUint256(asset_balanceOf_rdToken + asset_balanceOf_rdToken_change));
 
         assertEq(asset.allowance(staker_, address(rdToken)), _toUint256(asset_allowance_staker_rdToken + asset_allowance_staker_rdToken_change));
@@ -2866,4 +2911,212 @@ contract RedeemRevertOnTransfer is RDTTestBase {
         staker.erc20_approve(address(asset), address(rdToken), depositAmount_);
         staker.rdToken_deposit(address(rdToken), depositAmount_);
     }
+}
+
+contract WithdrawCallerNotOwnerTest is RDTSuccessTestBase {
+
+    function test_withdraw_callerNotOwner_singleUser_preVesting() external {
+        address staker = address(new Staker());
+        address caller = address(new Staker());
+
+        _depositAsset(address(asset), staker, 1000);
+
+        Staker(staker).erc20_approve(address(rdToken), caller, 1000);
+
+        rdToken_allowance_caller_staker_change = -1000;
+        rdToken_balanceOf_staker_change        = -1000;
+        rdToken_totalSupply_change             = -1000;
+        rdToken_freeAssets_change              = -1000;
+        rdToken_totalAssets_change             = -1000;
+        rdToken_convertToAssets_change         = 0;
+        rdToken_convertToShares_change         = 0;
+        rdToken_issuanceRate_change            = 0;
+        rdToken_lastUpdated_change             = 0;
+
+        asset_balanceOf_caller_change  = 1000;
+        asset_balanceOf_staker_change  = 0;
+        asset_balanceOf_rdToken_change = -1000;
+
+        _assertWithdrawCallerNotOwner(caller, staker, 1000, false);
+    }
+
+    function test_withdraw_callerNotOwner_singleUser_midVesting() external {
+        address staker = address(new Staker());
+        address caller = address(new Staker());
+
+        _depositAsset(address(asset), staker, 100e18);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 200 seconds);
+
+        vm.warp(block.timestamp + 100 seconds);  // Vest 5e18 tokens
+
+        Staker(staker).erc20_approve(address(rdToken), address(caller), 20e18);
+
+        rdToken_allowance_caller_staker_change = -20e18;
+        rdToken_balanceOf_staker_change        = -19.047619047619047620e18;  // 20 / 1.05
+        rdToken_totalSupply_change             = -19.047619047619047620e18;  // 20 / 1.05
+        rdToken_freeAssets_change              = -15e18;  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
+        rdToken_totalAssets_change             = -20e18;
+        rdToken_convertToAssets_change         = 0;
+        rdToken_convertToShares_change         = 0;
+        rdToken_issuanceRate_change            = 0;
+        rdToken_lastUpdated_change             = 100 seconds;
+
+        asset_balanceOf_caller_change  = 20e18;
+        asset_balanceOf_staker_change  = 0;
+        asset_balanceOf_rdToken_change = -20e18;
+
+        _assertWithdrawCallerNotOwner(caller, staker, 20e18, false);
+    }
+
+    function test_withdraw_callerNotOwner_singleUser_postVesting() external {
+        address staker = address(new Staker());
+        address caller = address(new Staker());
+
+        _depositAsset(address(asset), staker, 100e18);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 200 seconds);
+
+        vm.warp(block.timestamp + 201 seconds);  // Vest 5e18 tokens
+
+        Staker(staker).erc20_approve(address(rdToken), caller, 20e18);
+
+        rdToken_allowance_caller_staker_change = -20e18;
+        rdToken_balanceOf_staker_change        = -18_181818181818181819;  // 20 / 1.1
+        rdToken_totalSupply_change             = -18_181818181818181819;  // 20 / 1.1
+        rdToken_freeAssets_change              = -20e18;  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
+        rdToken_totalAssets_change             = -20e18;
+        rdToken_convertToAssets_change         = 0;
+        rdToken_convertToShares_change         = 0;
+        rdToken_issuanceRate_change            = 0;
+        rdToken_lastUpdated_change             = 201 seconds;
+
+        asset_balanceOf_caller_change  = 20e18;
+        asset_balanceOf_staker_change = 0;
+        asset_balanceOf_rdToken_change = -20e18;
+
+        _assertWithdrawCallerNotOwner(caller, staker, 20e18, false);
+    }
+
+    function testFuzz_withdraw_callerNotOwner_singleUser_preVesting(
+        uint256 depositAmount_,
+        uint256 withdrawAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_,
+        uint256 warpTime_
+    ) external {
+        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
+        withdrawAmount_ = constrictToRange(withdrawAmount_, 1, depositAmount_);
+        vestingAmount_  = constrictToRange(vestingAmount_,  1, 1e29);
+        vestingPeriod_  = constrictToRange(vestingPeriod_,  1, 100 days);
+        warpTime_       = constrictToRange(warpTime_,       1, vestingPeriod_);
+
+        address staker = address(new Staker());
+        address caller = address(new Staker());
+
+        _depositAsset(address(asset), staker, depositAmount_);
+
+        Staker(staker).erc20_approve(address(rdToken), caller, withdrawAmount_);
+
+        rdToken_allowance_caller_staker_change = - _toInt256(withdrawAmount_);
+        rdToken_balanceOf_staker_change        = - _toInt256(withdrawAmount_);
+        rdToken_totalSupply_change             = - _toInt256(withdrawAmount_);
+        rdToken_freeAssets_change              = - _toInt256(withdrawAmount_);
+        rdToken_totalAssets_change             = - _toInt256(withdrawAmount_);
+        rdToken_convertToAssets_change         = 0;
+        rdToken_convertToShares_change         = 0;
+        rdToken_issuanceRate_change            = 0;
+        rdToken_lastUpdated_change             = 0;
+
+        asset_balanceOf_caller_change  = _toInt256(withdrawAmount_);
+        asset_balanceOf_staker_change  = 0;
+        asset_balanceOf_rdToken_change = - _toInt256(withdrawAmount_);
+
+        rdToken_freeAssets_change  = - _toInt256(withdrawAmount_);
+        rdToken_lastUpdated_change = 0;
+
+        _assertWithdrawCallerNotOwner(caller, staker, 20e18, true);
+    }
+
+    function testFuzz_withdraw_callerNotOwner_singleUser_midVesting(
+        uint256 depositAmount_,
+        uint256 withdrawAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_,
+        uint256 warpTime_
+    ) external {
+        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
+        withdrawAmount_ = constrictToRange(withdrawAmount_, 1, depositAmount_);
+        vestingAmount_  = constrictToRange(vestingAmount_,  1, 1e29);
+        vestingPeriod_  = constrictToRange(vestingPeriod_,  1, 100 days);
+        warpTime_       = constrictToRange(warpTime_,       1, vestingPeriod_);
+
+        address staker = address(new Staker());
+        address caller = address(new Staker());
+
+        _depositAsset(address(asset), staker, depositAmount_);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+
+        vm.warp(block.timestamp + warpTime_);
+
+        uint256 expectedSharesBurned = rdToken.previewWithdraw(withdrawAmount_);
+
+        rdToken_balanceOf_staker_change = - _toInt256(expectedSharesBurned);
+        rdToken_totalSupply_change      = - _toInt256(expectedSharesBurned);
+        rdToken_totalAssets_change      = - _toInt256(withdrawAmount_);
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = 0;
+
+        asset_balanceOf_staker_change         =   _toInt256(withdrawAmount_);
+        asset_balanceOf_rdToken_change        = - _toInt256(withdrawAmount_);
+        asset_allowance_staker_rdToken_change = 0;
+
+        rdToken_freeAssets_change  = _toInt256(vestingAmount_ * warpTime_ / vestingPeriod_) - _toInt256(withdrawAmount_);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
+        rdToken_lastUpdated_change = _toInt256(warpTime_);
+
+        _assertWithdrawCallerNotOwner(caller, staker, withdrawAmount_, true);
+    }
+
+    function test_withdraw_callerNotOwner_singleUser_postVesting(
+        uint256 depositAmount_,
+        uint256 withdrawAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_
+    )
+        external
+    {
+        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
+        withdrawAmount_ = constrictToRange(withdrawAmount_, 1, depositAmount_);
+        vestingAmount_  = constrictToRange(vestingAmount_,  1, 1e29);
+        vestingPeriod_  = constrictToRange(vestingPeriod_,  1, 100 days);
+
+        address staker = address(new Staker());
+        address caller = address(new Staker());
+
+        _depositAsset(address(asset), staker, 100e18);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 200 seconds);
+
+        vm.warp(block.timestamp + vestingPeriod_ + 1 seconds);
+
+        uint256 expectedSharesBurned = rdToken.previewWithdraw(withdrawAmount_);
+
+        Staker(staker).erc20_approve(address(rdToken), caller, 20e18);
+
+        rdToken_allowance_caller_staker_change = -20e18;
+        rdToken_balanceOf_staker_change        = -18_181818181818181819;  // 20 / 1.1
+        rdToken_totalSupply_change             = -18_181818181818181819;  // 20 / 1.1
+        rdToken_freeAssets_change              = -20e18;  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
+        rdToken_totalAssets_change             = -20e18;
+        rdToken_convertToAssets_change         = 0;
+        rdToken_convertToShares_change         = 0;
+        rdToken_issuanceRate_change            = 0;
+        rdToken_lastUpdated_change             = 201 seconds;
+
+        asset_balanceOf_caller_change  = 20e18;
+        asset_balanceOf_staker_change = 0;
+        asset_balanceOf_rdToken_change = -20e18;
+
+        _assertWithdrawCallerNotOwner(caller, staker, 20e18, false);
+    }
+
 }

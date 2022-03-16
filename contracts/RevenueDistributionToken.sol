@@ -19,17 +19,17 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     uint256 public immutable override precision;  // Precision of rates, equals max deposit amounts before rounding errors occur
 
-    address public override asset;
+    address public override asset;  // Underlying ERC-20 asset used by ERC-4626 functionality.
 
-    address public override owner;
-    address public override pendingOwner;
+    address public override owner;         // Current owner of the contract, able to update the vesting schedule.
+    address public override pendingOwner;  // Pending owner of the contract, able to accept ownership.
 
     uint256 public override freeAssets;           // Amount of assets unlocked regardless of time passed.
     uint256 public override issuanceRate;         // asset/second rate dependent on aggregate vesting schedule (needs increased precision).
     uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated.
     uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends.
 
-    uint256 private locked = 1;                   // Used in reentrancy check.
+    uint256 private locked = 1;  // Used in reentrancy check.
 
     /*****************/
     /*** Modifiers ***/

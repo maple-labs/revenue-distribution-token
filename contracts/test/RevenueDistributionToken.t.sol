@@ -145,7 +145,11 @@ contract RDTSuccessTestBase is RDTTestBase {
 
         uint256 shares = Staker(staker_).rdToken_deposit(address(rdToken), depositAmount_);
 
+<<<<<<< HEAD
         assertEq(shares, rdToken.balanceOf(staker_) - _toUint256(rdToken_balanceOf_staker));
+=======
+        assertEq(shares, rdToken.balanceOf(staker_));
+>>>>>>> 214e14e (feat: add deposit and mint tests with new pattern)
 
         _assertWithinOne(rdToken.balanceOf(staker_),  _toUint256(rdToken_balanceOf_staker + rdToken_balanceOf_staker_change));
         _assertWithinOne(rdToken.totalSupply(),       _toUint256(rdToken_totalSupply      + rdToken_totalSupply_change));
@@ -153,7 +157,11 @@ contract RDTSuccessTestBase is RDTTestBase {
         _assertWithinOne(rdToken.totalAssets(),       _toUint256(rdToken_totalAssets      + rdToken_totalAssets_change));
         _assertWithinOne(rdToken.issuanceRate(),      _toUint256(rdToken_issuanceRate     + rdToken_issuanceRate_change));
 
+<<<<<<< HEAD
         if (!fuzzed_) {
+=======
+         if (!fuzzed_) {
+>>>>>>> 214e14e (feat: add deposit and mint tests with new pattern)
             // TODO: Determine a way to mathematically determine inaccuracy based on inputs, so can be used in fuzz tests
             _assertWithinOne(rdToken.convertToAssets(sampleSharesToConvert), _toUint256(rdToken_convertToAssets  + rdToken_convertToAssets_change));
             _assertWithinOne(rdToken.convertToShares(sampleAssetsToConvert), _toUint256(rdToken_convertToShares  + rdToken_convertToShares_change));
@@ -161,8 +169,13 @@ contract RDTSuccessTestBase is RDTTestBase {
 
         assertEq(rdToken.lastUpdated(), _toUint256(rdToken_lastUpdated + rdToken_lastUpdated_change));
 
+<<<<<<< HEAD
         _assertWithinOne(asset.balanceOf(staker_),                   _toUint256(asset_balanceOf_staker         + asset_balanceOf_staker_change));
         _assertWithinOne(asset.balanceOf(address(rdToken)),          _toUint256(asset_balanceOf_rdToken        + asset_balanceOf_rdToken_change));
+=======
+        _assertWithinOne(asset.balanceOf(staker_),                   _toUint256(asset_balanceOf_staker  + asset_balanceOf_staker_change));
+        _assertWithinOne(asset.balanceOf(address(rdToken)),           _toUint256(asset_balanceOf_rdToken + asset_balanceOf_rdToken_change));
+>>>>>>> 214e14e (feat: add deposit and mint tests with new pattern)
         _assertWithinOne(asset.allowance(staker_, address(rdToken)), _toUint256(asset_allowance_staker_rdToken + asset_allowance_staker_rdToken_change));
     }
 
@@ -186,9 +199,15 @@ contract RDTSuccessTestBase is RDTTestBase {
         asset_balanceOf_rdToken        = _toInt256(asset.balanceOf(address(rdToken)));
         asset_allowance_staker_rdToken = _toInt256(asset.allowance(staker_, address(rdToken)));
 
+<<<<<<< HEAD
         uint256 depositedAmount = Staker(staker_).rdToken_mint(address(rdToken), mintAmount_);
 
         assertEq(depositedAmount, _toUint256(asset_balanceOf_staker) - asset.balanceOf(staker_));
+=======
+        Staker(staker_).rdToken_mint(address(rdToken), mintAmount_);
+
+        assertEq(0, asset.balanceOf(staker_));
+>>>>>>> 214e14e (feat: add deposit and mint tests with new pattern)
 
         _assertWithinOne(rdToken.balanceOf(staker_),  _toUint256(rdToken_balanceOf_staker + rdToken_balanceOf_staker_change));
         _assertWithinOne(rdToken.totalSupply(),       _toUint256(rdToken_totalSupply      + rdToken_totalSupply_change));
@@ -203,8 +222,13 @@ contract RDTSuccessTestBase is RDTTestBase {
 
         assertEq(rdToken.lastUpdated(), _toUint256(rdToken_lastUpdated + rdToken_lastUpdated_change));
 
+<<<<<<< HEAD
         _assertWithinOne(asset.balanceOf(staker_),                   _toUint256(asset_balanceOf_staker         + asset_balanceOf_staker_change));
         _assertWithinOne(asset.balanceOf(address(rdToken)),           _toUint256(asset_balanceOf_rdToken       + asset_balanceOf_rdToken_change));
+=======
+        _assertWithinOne(asset.balanceOf(staker_),                   _toUint256(asset_balanceOf_staker  + asset_balanceOf_staker_change));
+        _assertWithinOne(asset.balanceOf(address(rdToken)),           _toUint256(asset_balanceOf_rdToken + asset_balanceOf_rdToken_change));
+>>>>>>> 214e14e (feat: add deposit and mint tests with new pattern)
         _assertWithinOne(asset.allowance(staker_, address(rdToken)), _toUint256(asset_allowance_staker_rdToken + asset_allowance_staker_rdToken_change));
     }
 

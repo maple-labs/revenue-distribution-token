@@ -24,30 +24,82 @@ contract ConstructorTest is TestUtils {
 
 }
 
-contract DepositAndMintWithPermitTest is TestUtils {
+contract RDTTestBase is TestUtils {
+
+    /***********************/
+    /*** Setup Variables ***/
+    /***********************/
 
     MockERC20 asset;
     RDT       rdToken;
 
-    uint256 stakerPrivateKey    = 1;
-    uint256 notStakerPrivateKey = 2;
-    uint256 nonce               = 0;
-    uint256 deadline            = 5_000_000_000;  // Timestamp far in the future
+    uint256 nonce    = 0;
+    uint256 deadline = 5_000_000_000;  // Timestamp far in the future
 
     uint256 constant sampleAssetsToConvert = 1e18;
     uint256 constant sampleSharesToConvert = 1e18;
 
-    address staker;
-    address notStaker;
+    bytes constant ARITHMETIC_ERROR = abi.encodeWithSignature("Panic(uint256)", 0x11);
+
+    uint256 constant START = 10_000_000;
 
     function setUp() public virtual {
         asset   = new MockERC20("MockToken", "MT", 18);
         rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
 
+        vm.warp(START);  // Warp to non-zero timestamp
+    }
+
+    // Deposit asset into RDT
+    function _depositAsset(address asset_, address staker_, uint256 depositAmount_) internal {
+        MockERC20(asset_).mint(staker_, depositAmount_);
+        Staker(staker_).erc20_approve(asset_, address(rdToken), depositAmount_);
+        Staker(staker_).rdToken_deposit(address(rdToken), depositAmount_);
+    }
+
+    // Transfer funds into RDT and update the vesting schedule
+    function _transferAndUpdateVesting(address asset_, address rdToken_, uint256 vestingAmount_, uint256 vestingPeriod_) internal {
+        MockERC20(asset_).mint(address(this), vestingAmount_);
+        MockERC20(asset_).transfer(rdToken_, vestingAmount_);
+        RDT(rdToken_).updateVestingSchedule(vestingPeriod_);
+    }
+
+    // Returns an ERC-2612 `permit` digest for the `owner` to sign
+    function _getDigest(address owner_, address spender_, uint256 value_, uint256 nonce_, uint256 deadline_) internal view returns (bytes32) {
+        return keccak256(
+            abi.encodePacked(
+                '\x19\x01',
+                asset.DOMAIN_SEPARATOR(),
+                keccak256(abi.encode(asset.PERMIT_TYPEHASH(), owner_, spender_, value_, nonce_, deadline_))
+            )
+        );
+    }
+
+    function _getMinDeposit(address rdToken_) internal view returns (uint256 minDeposit_) {
+        minDeposit_ = (RDT(rdToken_).totalAssets() - 1) / RDT(rdToken_).totalSupply() + 1;
+    }
+
+    // Returns a valid `permit` signature signed by this contract's `owner` address
+    function _getValidPermitSignature(uint256 value_, address owner_, address spender_, uint256 ownerSk_, uint256 deadline_) internal returns (uint8 v_, bytes32 r_, bytes32 s_) {
+        bytes32 digest = _getDigest(owner_, spender_, value_, nonce, deadline_);
+        ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(ownerSk_, digest);
+        return (v, r, s);
+    }
+}
+
+contract DepositAndMintWithPermitTest is RDTTestBase {
+
+    address staker;
+    address notStaker;
+
+    uint256 stakerPrivateKey    = 1;
+    uint256 notStakerPrivateKey = 2;
+
+    function setUp() public override {
+        super.setUp();
+
         staker    = vm.addr(stakerPrivateKey);
         notStaker = vm.addr(notStakerPrivateKey);
-
-        vm.warp(10_000_000);  // Warp to non-zero timestamp
     }
 
     function test_depositWithPermit_zeroAddress() public {
@@ -289,24 +341,6 @@ contract DepositAndMintWithPermitTest is TestUtils {
     }
 
     // No need to further test *withPermit functionality, as in-depth deposit and mint testing will be done with the deposit() and mint() functions.
-
-    // Returns an ERC-2612 `permit` digest for the `owner` to sign
-    function _getDigest(address owner_, address spender_, uint256 value_, uint256 nonce_, uint256 deadline_) internal view returns (bytes32) {
-        return keccak256(
-            abi.encodePacked(
-                '\x19\x01',
-                asset.DOMAIN_SEPARATOR(),
-                keccak256(abi.encode(asset.PERMIT_TYPEHASH(), owner_, spender_, value_, nonce_, deadline_))
-            )
-        );
-    }
-
-    // Returns a valid `permit` signature signed by this contract's `owner` address
-    function _getValidPermitSignature(uint256 value_, address owner_, address spender_, uint256 ownerSk_, uint256 deadline_) internal returns (uint8 v_, bytes32 r_, bytes32 s_) {
-        bytes32 digest = _getDigest(owner_, spender_, value_, nonce, deadline_);
-        ( uint8 v, bytes32 r, bytes32 s ) = vm.sign(ownerSk_, digest);
-        return (v, r, s);
-    }
 
 }
 

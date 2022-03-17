@@ -15,6 +15,9 @@ depth=$([ -z "$depth" ] && echo "200" || echo "$depth")
 
 export DAPP_SOLC_VERSION=0.8.7
 
+export DAPP_SRC="contracts"
+export DAPP_LIB="modules"
+
 if [ -z "$test" ]; then match="[src/test/*.t.sol]"; else match=$test; fi
 
 # Necessary until forge adds invariant testing support

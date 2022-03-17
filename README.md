@@ -28,9 +28,12 @@ cd revenue-distribution-token
 forge update
 ```
 #### Running Tests
-- To run all tests: `make test` (runs `./test.sh`)
-- To run a specific test function: `./test.sh -t <test_name>` (e.g., `./test.sh -t test_deposit`)
-- To run tests with a specified number of fuzz runs: `./test.sh -r <runs>` (e.g., `./test.sh -t test_deposit -r 10000`)
+- To run all unit/fuzz tests: `make test` (runs `./test.sh`)
+- To run all invariant tests: `make invariant` (runs `./invariant.sh`)
+- To run all tests (unit/fuzz and invariant tests): `make test-all`
+- To run specific unit tests: `./test.sh -t <test_name>` (e.g., `./test.sh -t test_deposit`)
+- To run specific invariant tests: `./invariant-test.sh -t <test_name>` (e.g., `./invariant-test.sh -t invariant_totalSupply`)
+- To run specific fuzz tests with a specified number of fuzz runs: `./test.sh -r <runs>` (e.g., `./test.sh -t testFuzz_redeem -r 10000`)
 
 This project was built using [Foundry](https://github.com/gakonst/Foundry).
 

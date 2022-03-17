@@ -477,7 +477,7 @@ contract RDTSuccessTestBase is RDTTestBase {
 
 }
 
-contract DepositAndMintWithPermitFailureTests is RDTTestBase {
+contract DepositWithPermitFailureTests is RDTTestBase {
 
     address staker;
     address notStaker;
@@ -553,6 +553,23 @@ contract DepositAndMintWithPermitFailureTests is RDTTestBase {
 
         vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
         rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
+    }
+
+}
+
+contract MintWithPermitFailureTests is RDTTestBase {
+
+    address staker;
+    address notStaker;
+
+    uint256 stakerPrivateKey    = 1;
+    uint256 notStakerPrivateKey = 2;
+
+    function setUp() public override {
+        super.setUp();
+
+        staker    = vm.addr(stakerPrivateKey);
+        notStaker = vm.addr(notStakerPrivateKey);
     }
 
     function test_mintWithPermit_zeroAddress() public {
@@ -753,7 +770,7 @@ contract AuthTests is RDTTestBase {
 
 }
 
-contract DepositAndMintFailureTests is RDTTestBase {
+contract DepositFailureTests is RDTTestBase {
 
     Staker staker;
 
@@ -808,7 +825,7 @@ contract DepositAndMintFailureTests is RDTTestBase {
         asset.approve(address(rdToken), 20e18);
         rdToken.deposit(20e18, address(this));
 
-        _transferAndUpdateVesting(5e18, 10 seconds);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 5e18, 10 seconds);
 
         vm.warp(block.timestamp + 2 seconds);
 
@@ -821,6 +838,17 @@ contract DepositAndMintFailureTests is RDTTestBase {
         staker.rdToken_deposit(address(rdToken), minDeposit - 1);
 
         staker.rdToken_deposit(address(rdToken), minDeposit);
+    }
+
+}
+
+contract MintFailureTests is RDTTestBase {
+
+    Staker staker;
+
+    function setUp() public override {
+        super.setUp();
+        staker = new Staker();
     }
 
     function test_mint_zeroAmount() public {
@@ -867,15 +895,9 @@ contract DepositAndMintFailureTests is RDTTestBase {
         staker.rdToken_mint(address(rdToken), mintAmount);
     }
 
-    function _transferAndUpdateVesting(uint256 vestingAmount_, uint256 vestingPeriod_) internal {
-        asset.mint(address(this), vestingAmount_);
-        asset.transfer(address(rdToken), vestingAmount_);
-        rdToken.updateVestingSchedule(vestingPeriod_);
-    }
-
 }
 
-contract RedeemAndWithdrawFailureTests is RDTTestBase {
+contract WithdrawFailureTests is RDTTestBase {
 
     Staker staker;
 
@@ -884,12 +906,8 @@ contract RedeemAndWithdrawFailureTests is RDTTestBase {
         staker = new Staker();
     }
 
-    /************************/
-    /*** `withdraw` tests ***/
-    /************************/
-
     function test_withdraw_zeroAmount(uint256 depositAmount) public {
-        _depositAsset(constrictToRange(depositAmount, 1, 1e29));
+        _depositAsset(address(asset), address(staker), depositAmount = constrictToRange(depositAmount, 1, 1e29));
 
         vm.expectRevert("RDT:B:ZERO_SHARES");
         staker.rdToken_withdraw(address(rdToken), 0);
@@ -898,8 +916,7 @@ contract RedeemAndWithdrawFailureTests is RDTTestBase {
     }
 
     function test_withdraw_burnUnderflow(uint256 depositAmount) public {
-        depositAmount = constrictToRange(depositAmount, 1, 1e29);
-        _depositAsset(depositAmount);
+        _depositAsset(address(asset), address(staker), depositAmount = constrictToRange(depositAmount, 1, 1e29));
 
         vm.expectRevert(ARITHMETIC_ERROR);
         staker.rdToken_withdraw(address(rdToken), depositAmount + 1);
@@ -913,8 +930,8 @@ contract RedeemAndWithdrawFailureTests is RDTTestBase {
         uint256 vestingPeriod = 10 days;
         uint256 warpTime      = 5 days;
 
-        _depositAsset(depositAmount);
-        _transferAndUpdateVesting(vestingAmount, vestingPeriod);
+        _depositAsset(address(asset), address(staker), depositAmount);
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
 
         vm.warp(block.timestamp + warpTime);
 
@@ -976,8 +993,8 @@ contract RedeemAndWithdrawFailureTests is RDTTestBase {
     //     vestingPeriod = constrictToRange(vestingPeriod, 1, 100 days);
     //     warpTime      = constrictToRange(vestingAmount, 1, vestingPeriod);
 
-    //     _depositAsset(depositAmount);
-    //     _transferAndUpdateVesting(vestingAmount, vestingPeriod);
+    //     _depositAsset(address(asset), address(staker), depositAmount);
+    //     _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
 
     //     vm.warp(block.timestamp + warpTime);
 
@@ -990,12 +1007,19 @@ contract RedeemAndWithdrawFailureTests is RDTTestBase {
     //     staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount);
     // }
 
-    /**********************/
-    /*** `redeem` tests ***/
-    /**********************/
+}
+
+contract RedeemFailureTests is RDTTestBase {
+
+    Staker staker;
+
+    function setUp() public override {
+        super.setUp();
+        staker = new Staker();
+    }
 
     function test_redeem_zeroShares(uint256 depositAmount) public {
-        _depositAsset(constrictToRange(depositAmount, 1, 1e29));
+        _depositAsset(address(asset), address(staker), depositAmount = constrictToRange(depositAmount, 1, 1e29));
 
         vm.expectRevert("RDT:B:ZERO_SHARES");
         staker.rdToken_redeem(address(rdToken), 0);
@@ -1004,8 +1028,7 @@ contract RedeemAndWithdrawFailureTests is RDTTestBase {
     }
 
     function test_redeem_burnUnderflow(uint256 depositAmount) public {
-        depositAmount = constrictToRange(depositAmount, 1, 1e29);
-        _depositAsset(depositAmount);
+        _depositAsset(address(asset), address(staker), depositAmount = constrictToRange(depositAmount, 1, 1e29));
 
         vm.expectRevert(ARITHMETIC_ERROR);
         staker.rdToken_redeem(address(rdToken), depositAmount + 1);
@@ -1019,8 +1042,8 @@ contract RedeemAndWithdrawFailureTests is RDTTestBase {
         uint256 vestingPeriod = 10 days;
         uint256 warpTime      = 5 days;
 
-        _depositAsset(depositAmount);
-        _transferAndUpdateVesting(vestingAmount, vestingPeriod);
+        _depositAsset(address(asset), address(staker), depositAmount);
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
 
         vm.warp(block.timestamp + warpTime);
 
@@ -1073,18 +1096,6 @@ contract RedeemAndWithdrawFailureTests is RDTTestBase {
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
     }
 
-    function _depositAsset(uint256 depositAmount) internal {
-        asset.mint(address(staker), depositAmount);
-        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
-        staker.rdToken_deposit(address(rdToken), depositAmount);
-    }
-
-    function _transferAndUpdateVesting(uint256 vestingAmount_, uint256 vestingPeriod_) internal {
-        asset.mint(address(this), vestingAmount_);
-        asset.transfer(address(rdToken), vestingAmount_);
-        rdToken.updateVestingSchedule(vestingPeriod_);
-    }
-
 }
 
 contract RevenueStreamingTests is RDTTestBase {
@@ -1129,7 +1140,7 @@ contract RevenueStreamingTests is RDTTestBase {
 
         assertEq(asset.balanceOf(address(rdToken)), startingAssets);
 
-        _transferAndUpdateVesting(1000, 100 seconds);  // 10 tokens per second
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);  // 10 tokens per second
 
         assertEq(asset.balanceOf(address(rdToken)), startingAssets + 1000);
 
@@ -1147,7 +1158,7 @@ contract RevenueStreamingTests is RDTTestBase {
     }
 
     function test_updateVestingSchedule_single_roundingDown() public {
-        _transferAndUpdateVesting(1000, 30 seconds);  // 33.3333... tokens per second
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 30 seconds);  // 33.3333... tokens per second
 
         assertEq(rdToken.totalAssets(),  startingAssets);
         assertEq(rdToken.issuanceRate(), 33333333333333333333333333333333);  // 3.33e30
@@ -1174,11 +1185,11 @@ contract RevenueStreamingTests is RDTTestBase {
     /*************************************************/
 
     function test_updateVestingSchedule_sameTime_shorterVesting() public {
-        _transferAndUpdateVesting(1000, 100 seconds);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);
         assertEq(rdToken.issuanceRate(),        10e30);                // 1000 / 100 seconds = 10 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);  // Always updates to latest vesting schedule
 
-        _transferAndUpdateVesting(1000, 20 seconds);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 20 seconds);
         assertEq(rdToken.issuanceRate(),        100e30);              // (1000 + 1000) / 20 seconds = 100 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), START + 20 seconds);  // Always updates to latest vesting schedule
 
@@ -1190,11 +1201,11 @@ contract RevenueStreamingTests is RDTTestBase {
     }
 
     function test_updateVestingSchedule_sameTime_longerVesting_higherRate() public {
-        _transferAndUpdateVesting(1000, 100 seconds);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);
         assertEq(rdToken.issuanceRate(),        10e30);                // 1000 / 100 seconds = 10 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);  // Always updates to latest vesting schedule
 
-        _transferAndUpdateVesting(3000, 200 seconds);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 3000, 200 seconds);
         assertEq(rdToken.issuanceRate(),        20e30);                // (3000 + 1000) / 200 seconds = 20 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), START + 200 seconds);  // Always updates to latest vesting schedule
 
@@ -1206,11 +1217,11 @@ contract RevenueStreamingTests is RDTTestBase {
     }
 
     function test_updateVestingSchedule_sameTime_longerVesting_lowerRate() public {
-        _transferAndUpdateVesting(1000, 100 seconds);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);
         assertEq(rdToken.issuanceRate(),        10e30);                // 1000 / 100 seconds = 10 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);  // Always updates to latest vesting schedule
 
-        _transferAndUpdateVesting(1000, 500 seconds);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 500 seconds);
         assertEq(rdToken.issuanceRate(),        4e30);                 // (1000 + 1000) / 500 seconds = 4 tokens per second
         assertEq(rdToken.vestingPeriodFinish(), START + 500 seconds);  // Always updates to latest vesting schedule
 
@@ -1226,7 +1237,7 @@ contract RevenueStreamingTests is RDTTestBase {
     /*******************************************************/
 
     function test_updateVestingSchedule_diffTime_shorterVesting() public {
-        _transferAndUpdateVesting(1000, 100 seconds);  // 10 tokens per second
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);  // 10 tokens per second
 
         vm.warp(START + 60 seconds);
 
@@ -1235,7 +1246,7 @@ contract RevenueStreamingTests is RDTTestBase {
         assertEq(rdToken.freeAssets(),          startingAssets);
         assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);
 
-        _transferAndUpdateVesting(1000, 20 seconds);  // 50 tokens per second
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 20 seconds);  // 50 tokens per second
 
         assertEq(rdToken.issuanceRate(),        70e30);  // (400 + 1000) / 20 seconds = 70 tokens per second
         assertEq(rdToken.totalAssets(),         startingAssets + 600);
@@ -1250,7 +1261,7 @@ contract RevenueStreamingTests is RDTTestBase {
     }
 
     function test_updateVestingSchedule_diffTime_longerVesting_higherRate() public {
-        _transferAndUpdateVesting(1000, 100 seconds);  // 10 tokens per second
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);  // 10 tokens per second
 
         vm.warp(START + 60 seconds);
 
@@ -1259,7 +1270,7 @@ contract RevenueStreamingTests is RDTTestBase {
         assertEq(rdToken.freeAssets(),          startingAssets);
         assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);
 
-        _transferAndUpdateVesting(3000, 200 seconds);  // 15 tokens per second
+        _transferAndUpdateVesting(address(asset), address(rdToken), 3000, 200 seconds);  // 15 tokens per second
 
         assertEq(rdToken.issuanceRate(), 17e30);  // (400 + 3000) / 200 seconds = 17 tokens per second
         assertEq(rdToken.totalAssets(),  startingAssets + 600);
@@ -1273,7 +1284,7 @@ contract RevenueStreamingTests is RDTTestBase {
     }
 
     function test_updateVestingSchedule_diffTime_longerVesting_lowerRate() public {
-        _transferAndUpdateVesting(1000, 100 seconds);  // 10 tokens per second
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);  // 10 tokens per second
 
         vm.warp(START + 60 seconds);
 
@@ -1281,7 +1292,7 @@ contract RevenueStreamingTests is RDTTestBase {
         assertEq(rdToken.totalAssets(),  startingAssets + 600);
         assertEq(rdToken.freeAssets(),   startingAssets);
 
-        _transferAndUpdateVesting(1000, 200 seconds);  // 5 tokens per second
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 200 seconds);  // 5 tokens per second
 
         assertEq(rdToken.issuanceRate(), 7e30);  // (400 + 1000) / 200 seconds = 7 tokens per second
         assertEq(rdToken.totalAssets(),  startingAssets + 600);
@@ -1292,12 +1303,6 @@ contract RevenueStreamingTests is RDTTestBase {
         assertEq(rdToken.issuanceRate(), 7e30);
         assertEq(rdToken.totalAssets(),  startingAssets + 2000);
         assertEq(rdToken.freeAssets(),   startingAssets + 600);
-    }
-
-    function _transferAndUpdateVesting(uint256 vestingAmount_, uint256 vestingPeriod_) internal {
-        asset.mint(address(this), vestingAmount_);
-        asset.transfer(address(rdToken), vestingAmount_);
-        rdToken.updateVestingSchedule(vestingPeriod_);
     }
 
 }
@@ -1334,7 +1339,7 @@ contract EndToEndRevenueStreamingTests is RDTTestBase {
 
         vm.warp(START);  // Warp back after demonstrating totalAssets is not time-dependent before vesting starts
 
-        _transferAndUpdateVesting(vestingAmount, vestingPeriod);
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
 
         assertEq(rdToken.freeAssets(),                           1_000_000e18);
         assertEq(rdToken.totalAssets(),                          1_000_000e18);
@@ -1420,7 +1425,7 @@ contract EndToEndRevenueStreamingTests is RDTTestBase {
 
         vm.warp(START);  // Warp back after demonstrating totalAssets is not time-dependent before vesting starts
 
-        _transferAndUpdateVesting(vestingAmount, vestingPeriod);
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
 
         uint256 expectedRate = vestingAmount * 1e30 / vestingPeriod;
 
@@ -1481,12 +1486,6 @@ contract EndToEndRevenueStreamingTests is RDTTestBase {
         assertWithinDiff(rdToken.balanceOf(address(staker)), 0,                             1);
     }
 
-    function _transferAndUpdateVesting(uint256 vestingAmount_, uint256 vestingPeriod_) internal {
-        asset.mint(address(this), vestingAmount_);
-        asset.transfer(address(rdToken), vestingAmount_);
-        rdToken.updateVestingSchedule(vestingPeriod_);
-    }
-
 }
 
 contract RedeemRevertOnTransfers is RDTTestBase {
@@ -1536,11 +1535,6 @@ contract RedeemRevertOnTransfers is RDTTestBase {
         staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(1), address(staker));
     }
 
-    function _depositAsset(uint256 depositAmount) internal {
-        revertingAsset.mint(address(staker), depositAmount);
-        staker.erc20_approve(address(revertingAsset), address(rdToken), depositAmount);
-        staker.rdToken_deposit(address(rdToken), depositAmount);
-    }
 }
 
 contract DepositTests is RDTSuccessTestBase {

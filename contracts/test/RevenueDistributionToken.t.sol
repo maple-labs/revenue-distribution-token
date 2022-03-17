@@ -476,7 +476,7 @@ contract AuthTests is RDTTestBase {
     Owner notOwner;
     Owner owner;
 
-    function setUp() public override {
+    function setUp() public override virtual {
         notOwner = new Owner();
         owner    = new Owner();
         asset    = new MockERC20("MockToken", "MT", 18);
@@ -554,7 +554,7 @@ contract DepositFailureTests is RDTTestBase {
 
     Staker staker;
 
-    function setUp() public override {
+    function setUp() public override virtual {
         super.setUp();
         staker = new Staker();
     }
@@ -914,7 +914,7 @@ contract DepositWithPermitFailureTests is RDTTestBase {
     uint256 stakerPrivateKey    = 1;
     uint256 notStakerPrivateKey = 2;
 
-    function setUp() public override {
+    function setUp() public override virtual {
         super.setUp();
 
         staker    = vm.addr(stakerPrivateKey);
@@ -1463,7 +1463,7 @@ contract MintFailureTests is RDTTestBase {
 
     Staker staker;
 
-    function setUp() public override {
+    function setUp() public override virtual {
         super.setUp();
         staker = new Staker();
     }
@@ -1794,7 +1794,7 @@ contract MintWithPermitFailureTests is RDTTestBase {
     uint256 stakerPrivateKey    = 1;
     uint256 notStakerPrivateKey = 2;
 
-    function setUp() public override {
+    function setUp() public override virtual {
         super.setUp();
 
         staker    = vm.addr(stakerPrivateKey);
@@ -2453,7 +2453,7 @@ contract RedeemFailureTests is RDTTestBase {
 
     Staker staker;
 
-    function setUp() public override {
+    function setUp() public override virtual {
         super.setUp();
         staker = new Staker();
     }
@@ -2543,7 +2543,7 @@ contract RedeemRevertOnTransfers is RDTTestBase {
     MockRevertingERC20 revertingAsset;
     Staker             staker;
 
-    function setUp() public override {
+    function setUp() public override virtual {
         revertingAsset = new MockRevertingERC20("MockToken", "MT", 18);
         rdToken        = new RDT("Revenue Distribution Token", "RDT", address(this), address(revertingAsset), 1e30);
         staker         = new Staker();
@@ -2812,7 +2812,7 @@ contract RevenueStreamingTests is RDTTestBase {
 
     uint256 startingAssets;
 
-    function setUp() public override {
+    function setUp() public override virtual {
         super.setUp();
         firstStaker = new Staker();
 
@@ -3302,7 +3302,7 @@ contract WithdrawFailureTests is RDTTestBase {
 
     Staker staker;
 
-    function setUp() public override {
+    function setUp() public override virtual {
         super.setUp();
         staker = new Staker();
     }
@@ -3415,7 +3415,7 @@ contract WithdrawRevertOnTransfers is RDTTestBase {
     MockRevertingERC20 revertingAsset;
     Staker             staker;
 
-    function setUp() public override {
+    function setUp() public override virtual {
         revertingAsset = new MockRevertingERC20("MockToken", "MT", 18);
         rdToken        = new RDT("Revenue Distribution Token", "RDT", address(this), address(revertingAsset), 1e30);
         staker         = new Staker();

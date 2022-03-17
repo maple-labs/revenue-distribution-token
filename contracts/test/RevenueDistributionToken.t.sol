@@ -472,47 +472,6 @@ contract RDTSuccessTestBase is RDTTestBase {
 /*** Tests ***/
 /*************/
 
-contract APRViewTests is RDTTestBase {
-
-    Owner  owner;
-    Staker staker;
-
-    function setUp() public override {
-        asset   = new MockERC20("MockToken", "MT", 18);
-        owner   = new Owner();
-        rdToken = new RDT("Revenue Distribution Token", "RDT", address(owner), address(asset), 1e30);
-        staker  = new Staker();
-        vm.warp(START);
-    }
-
-    function test_APR(uint256 mintAmount_, uint256 vestingAmount_, uint256 vestingPeriod_) public {
-        mintAmount_    = constrictToRange(mintAmount_,    0.0001e18, 1e29);
-        vestingAmount_ = constrictToRange(mintAmount_,    0.0001e18, 1e29);
-        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days,    10_000 days);
-
-        asset.mint(address(staker), mintAmount_);
-
-        staker.erc20_approve(address(asset), address(rdToken), mintAmount_);
-        staker.rdToken_mint(address(rdToken), mintAmount_);
-
-        asset.mint(address(owner), vestingAmount_);
-
-        owner.erc20_transfer(address(asset), address(rdToken), vestingAmount_);
-        owner.rdToken_updateVestingSchedule(address(rdToken), vestingPeriod_);
-
-        uint256 apr = rdToken.APR();
-
-        vm.warp(START + vestingPeriod_);
-
-        staker.rdToken_redeem(address(rdToken), mintAmount_);  // Redeem entire balance
-
-        uint256 aprProjectedEarnings = mintAmount_ * apr * vestingPeriod_ / 365 days / 1e6;
-
-        assertWithinPrecision(asset.balanceOf(address(staker)), mintAmount_ + aprProjectedEarnings, 4);
-    }
-
-}
-
 contract AuthTests is RDTTestBase {
 
     Owner notOwner;
@@ -666,7 +625,7 @@ contract DepositFailureTests is RDTTestBase {
 
 contract DepositTests is RDTSuccessTestBase {
 
-    function test_deposit_singleUser_preVesting() external {
+    function test_deposit_singleUser_preVesting() public {
         uint256 depositAmount = 1000;
 
         rdToken_balanceOf_staker_change = 1000;
@@ -687,7 +646,7 @@ contract DepositTests is RDTSuccessTestBase {
         _assertDeposit(staker, depositAmount, false);
     }
 
-    function testFuzz_deposit_singleUser_preVesting(uint256 depositAmount_) external {
+    function testFuzz_deposit_singleUser_preVesting(uint256 depositAmount_) public {
         depositAmount_ = constrictToRange(depositAmount_, 1, 1e29);
 
         rdToken_balanceOf_staker_change = _toInt256(depositAmount_);
@@ -708,7 +667,7 @@ contract DepositTests is RDTSuccessTestBase {
         _assertDeposit(staker, depositAmount_, false);
     }
 
-    function test_deposit_singleUser_midVesting() external {
+    function test_deposit_singleUser_midVesting() public {
         Staker setupStaker = new Staker();
 
         // Do a deposit so that totalSupply is non-zero.
@@ -740,7 +699,7 @@ contract DepositTests is RDTSuccessTestBase {
         _assertDeposit(staker, depositAmount, false);
     }
 
-    function testFuzz_deposit_singleUser_midVesting(uint256 initialAmount_, uint256 depositAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, uint256 warpTime_) external {
+    function testFuzz_deposit_singleUser_midVesting(uint256 initialAmount_, uint256 depositAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, uint256 warpTime_) public {
         Staker setupStaker = new Staker();
 
         initialAmount_ = constrictToRange(initialAmount_, 1,         1e6);  // Kept smaller since its just needed to increase totalSupply
@@ -780,7 +739,7 @@ contract DepositTests is RDTSuccessTestBase {
         _assertDeposit(staker, depositAmount_, true);
     }
 
-    function test_deposit_singleUser_postVesting() external {
+    function test_deposit_singleUser_postVesting() public {
         Staker setupStaker = new Staker();
 
         // Do a deposit so that totalSupply is non-zero
@@ -810,7 +769,7 @@ contract DepositTests is RDTSuccessTestBase {
         _assertDeposit(staker, 10e18, false);
     }
 
-    function testFuzz_deposit_singleUser_postVesting(uint256 initialAmount_, uint256 depositAmount_, uint256 vestingAmount_, uint256 vestingPeriod_) external {
+    function testFuzz_deposit_singleUser_postVesting(uint256 initialAmount_, uint256 depositAmount_, uint256 vestingAmount_, uint256 vestingPeriod_) public {
         Staker setupStaker = new Staker();
 
         initialAmount_ = constrictToRange(initialAmount_, 1,         1e29);
@@ -855,7 +814,7 @@ contract DepositTests is RDTSuccessTestBase {
         bytes32 depositSeed_,
         bytes32 warpSeed_
     )
-        external
+        public
     {
         initialAmount_ = constrictToRange(initialAmount_, 1,      1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1,      1e29);
@@ -901,7 +860,7 @@ contract DepositTests is RDTSuccessTestBase {
         }
     }
 
-    function testFuzz_deposit_multiUser_postVesting(uint256 initialAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, bytes32 seed_) external {
+    function testFuzz_deposit_multiUser_postVesting(uint256 initialAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, bytes32 seed_) public {
         initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1, 1e29);
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1, 365 days);
@@ -1030,7 +989,7 @@ contract DepositWithPermitFailureTests is RDTTestBase {
 
 contract DepositWithPermitTests is RDTSuccessTestBase {
 
-    function test_depositWithPermit_singleUser_preVesting() external {
+    function test_depositWithPermit_singleUser_preVesting() public {
         uint256 depositAmount = 1000;
 
         rdToken_balanceOf_staker_change = 1000;
@@ -1052,7 +1011,7 @@ contract DepositWithPermitTests is RDTSuccessTestBase {
         _assertDepositWithPermit(staker, 1, depositAmount, false);
     }
 
-    function testFuzz_depositWithPermit_singleUser_preVesting(uint256 depositAmount_) external {
+    function testFuzz_depositWithPermit_singleUser_preVesting(uint256 depositAmount_) public {
         depositAmount_ = constrictToRange(depositAmount_, 1, 1e29);
 
         rdToken_balanceOf_staker_change = _toInt256(depositAmount_);
@@ -1074,7 +1033,7 @@ contract DepositWithPermitTests is RDTSuccessTestBase {
         _assertDepositWithPermit(staker, 1, depositAmount_, false);
     }
 
-    function test_depositWithPermit_singleUser_midVesting() external {
+    function test_depositWithPermit_singleUser_midVesting() public {
         Staker setupStaker = new Staker();
 
         // Do a deposit so that totalSupply is non-zero
@@ -1107,7 +1066,7 @@ contract DepositWithPermitTests is RDTSuccessTestBase {
         _assertDepositWithPermit(staker, 1, depositAmount, false);
     }
 
-    function testFuzz_depositWithPermit_singleUser_midVesting(uint256 initialAmount_, uint256 depositAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, uint256 warpTime_) external {
+    function testFuzz_depositWithPermit_singleUser_midVesting(uint256 initialAmount_, uint256 depositAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, uint256 warpTime_) public {
         Staker setupStaker = new Staker();
 
         initialAmount_ = constrictToRange(initialAmount_, 1,         1e6);  // Kept smaller since its just needed to increase totalSupply
@@ -1148,7 +1107,7 @@ contract DepositWithPermitTests is RDTSuccessTestBase {
         _assertDepositWithPermit(staker, 1, depositAmount_, true);
     }
 
-    function test_depositWithPermit_singleUser_postVesting() external {
+    function test_depositWithPermit_singleUser_postVesting() public {
         Staker setupStaker = new Staker();
 
         // Do a deposit so that totalSupply is non-zero
@@ -1179,7 +1138,7 @@ contract DepositWithPermitTests is RDTSuccessTestBase {
         _assertDepositWithPermit(staker, 1, 10e18, false);
     }
 
-    function testFuzz_depositWithPermit_singleUser_postVesting(uint256 initialAmount_, uint256 depositAmount_, uint256 vestingAmount_, uint256 vestingPeriod_) external {
+    function testFuzz_depositWithPermit_singleUser_postVesting(uint256 initialAmount_, uint256 depositAmount_, uint256 vestingAmount_, uint256 vestingPeriod_) public {
         Staker setupStaker = new Staker();
 
         initialAmount_ = constrictToRange(initialAmount_, 1,         1e29);
@@ -1225,7 +1184,7 @@ contract DepositWithPermitTests is RDTSuccessTestBase {
         bytes32 depositSeed_,
         bytes32 warpSeed_
     )
-        external
+        public
     {
         initialAmount_ = constrictToRange(initialAmount_, 1,      1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1,      1e29);
@@ -1272,7 +1231,7 @@ contract DepositWithPermitTests is RDTSuccessTestBase {
         }
     }
 
-    function testFuzz_depositWithPermit_multiUser_postVesting(uint256 initialAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, bytes32 seed_) external {
+    function testFuzz_depositWithPermit_multiUser_postVesting(uint256 initialAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, bytes32 seed_) public {
         initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1, 1e29);
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1, 365 days);
@@ -1558,7 +1517,7 @@ contract MintFailureTests is RDTTestBase {
 
 contract MintTests is RDTSuccessTestBase {
 
-    function test_mint_singleUser_preVesting() external {
+    function test_mint_singleUser_preVesting() public {
         uint256 mintAmount = 1000;
 
         rdToken_balanceOf_staker_change = 1000;
@@ -1579,7 +1538,7 @@ contract MintTests is RDTSuccessTestBase {
         _assertMint(staker, mintAmount, false);
     }
 
-    function testFuzz_mint_singleUser_preVesting(uint256 mintAmount_) external {
+    function testFuzz_mint_singleUser_preVesting(uint256 mintAmount_) public {
         mintAmount_ = constrictToRange(mintAmount_, 1, 1e29);
 
         rdToken_balanceOf_staker_change = _toInt256(mintAmount_);
@@ -1600,7 +1559,7 @@ contract MintTests is RDTSuccessTestBase {
         _assertMint(staker, mintAmount_, false);
     }
 
-    function test_mint_singleUser_midVesting() external {
+    function test_mint_singleUser_midVesting() public {
         Staker setupStaker = new Staker();
 
         // Do a deposit so that totalSupply is non-zero
@@ -1632,7 +1591,7 @@ contract MintTests is RDTSuccessTestBase {
         _assertMint(staker, mintAmount, false);
     }
 
-    function testFuzz_mint_singleUser_midVesting(uint256 initialAmount_, uint256 mintAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, uint256 warpTime_) external {
+    function testFuzz_mint_singleUser_midVesting(uint256 initialAmount_, uint256 mintAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, uint256 warpTime_) public {
         Staker setupStaker = new Staker();
 
         initialAmount_ = constrictToRange(initialAmount_, 1,         1e6);  // Kept smaller since its just needed to increase totalSupply
@@ -1669,7 +1628,7 @@ contract MintTests is RDTSuccessTestBase {
         _assertMint(staker, mintAmount_, true);
     }
 
-    function test_mint_singleUser_postVesting() external {
+    function test_mint_singleUser_postVesting() public {
         Staker setupStaker = new Staker();
 
         // Do a deposit so that totalSupply is non-zero
@@ -1701,7 +1660,7 @@ contract MintTests is RDTSuccessTestBase {
         _assertMint(staker, mintAmount, false);
     }
 
-    function testFuzz_mint_singleUser_postVesting(uint256 initialAmount_, uint256 mintAmount_, uint256 vestingAmount_) external {
+    function testFuzz_mint_singleUser_postVesting(uint256 initialAmount_, uint256 mintAmount_, uint256 vestingAmount_) public {
         Staker setupStaker = new Staker();
 
         initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
@@ -1742,7 +1701,7 @@ contract MintTests is RDTSuccessTestBase {
         bytes32 mintSeed_,
         bytes32 warpSeed_
     )
-        external
+        public
     {
         initialAmount_ = constrictToRange(initialAmount_, 1,      1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1,      1e29);
@@ -1786,7 +1745,7 @@ contract MintTests is RDTSuccessTestBase {
         }
     }
 
-    function testFuzz_mint_multiUser_postVesting(uint256 initialAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, bytes32 seed_) external {
+    function testFuzz_mint_multiUser_postVesting(uint256 initialAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, bytes32 seed_) public {
         initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1, 1e29);
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1, 365 days);
@@ -1939,7 +1898,7 @@ contract MintWithPermitFailureTests is RDTTestBase {
 
 contract MintWithPermitTests is RDTSuccessTestBase {
 
-    function test_mintWithPermit_singleUser_preVesting() external {
+    function test_mintWithPermit_singleUser_preVesting() public {
         uint256 mintAmount = 1000;
 
         rdToken_balanceOf_staker_change = 1000;
@@ -1961,7 +1920,7 @@ contract MintWithPermitTests is RDTSuccessTestBase {
         _assertMintWithPermit(staker, 1, mintAmount, false);
     }
 
-    function testFuzz_mintWithPermit_singleUser_preVesting(uint256 mintAmount_) external {
+    function testFuzz_mintWithPermit_singleUser_preVesting(uint256 mintAmount_) public {
         mintAmount_ = constrictToRange(mintAmount_, 1, 1e29);
 
         rdToken_balanceOf_staker_change = _toInt256(mintAmount_);
@@ -1983,7 +1942,7 @@ contract MintWithPermitTests is RDTSuccessTestBase {
         _assertMintWithPermit(staker, 1, mintAmount_, false);
     }
 
-    function test_mintWithPermit_singleUser_midVesting() external {
+    function test_mintWithPermit_singleUser_midVesting() public {
         Staker setupStaker = new Staker();
 
         // Do a deposit so that totalSupply is non-zero
@@ -2014,7 +1973,7 @@ contract MintWithPermitTests is RDTSuccessTestBase {
         _assertMintWithPermit(staker, 1, 10e18, false);
     }
 
-    function testFuzz_mintWithPermit_singleUser_midVesting(uint256 initialAmount_, uint256 mintAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, uint256 warpTime_) external {
+    function testFuzz_mintWithPermit_singleUser_midVesting(uint256 initialAmount_, uint256 mintAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, uint256 warpTime_) public {
         Staker setupStaker = new Staker();
 
         initialAmount_ = constrictToRange(initialAmount_, 1,         1e6);  // Kept smaller since its just needed to increase totalSupply
@@ -2052,7 +2011,7 @@ contract MintWithPermitTests is RDTSuccessTestBase {
         _assertMintWithPermit(staker, 1, mintAmount_, true);
     }
 
-    function test_mintWithPermit_singleUser_postVesting() external {
+    function test_mintWithPermit_singleUser_postVesting() public {
         Staker setupStaker = new Staker();
 
         // Do a deposit so that totalSupply is non-zero
@@ -2085,7 +2044,7 @@ contract MintWithPermitTests is RDTSuccessTestBase {
         _assertMintWithPermit(staker, 1, mintAmount, false);
     }
 
-    function testFuzz_mintWithPermit_singleUser_postVesting(uint256 initialAmount_, uint256 mintAmount_, uint256 vestingAmount_) external {
+    function testFuzz_mintWithPermit_singleUser_postVesting(uint256 initialAmount_, uint256 mintAmount_, uint256 vestingAmount_) public {
         Staker setupStaker = new Staker();
 
         initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
@@ -2129,7 +2088,7 @@ contract MintWithPermitTests is RDTSuccessTestBase {
         bytes32 mintSeed_,
         bytes32 warpSeed_
     )
-        external
+        public
     {
         initialAmount_ = constrictToRange(initialAmount_, 1,      1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1,      1e29);
@@ -2174,7 +2133,7 @@ contract MintWithPermitTests is RDTSuccessTestBase {
         }
     }
 
-    function testFuzz_mintWithPermit_multiUser_postVesting(uint256 initialAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, bytes32 seed_) external {
+    function testFuzz_mintWithPermit_multiUser_postVesting(uint256 initialAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, bytes32 seed_) public {
         initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1, 1e29);
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1, 365 days);
@@ -2222,7 +2181,7 @@ contract MintWithPermitTests is RDTSuccessTestBase {
 
 contract RedeemCallerNotOwnerTests is RDTSuccessTestBase {
 
-    function test_redeem_callerNotOwner_singleUser_preVesting() external {
+    function test_redeem_callerNotOwner_singleUser_preVesting() public {
         address staker = address(new Staker());
         address caller = address(new Staker());
 
@@ -2248,7 +2207,7 @@ contract RedeemCallerNotOwnerTests is RDTSuccessTestBase {
     }
 
     // TODO: Fuzz approve amount.
-    function testFuzz_redeem_callerNotOwner_singleUser_preVesting(uint256 depositAmount_, uint256 redeemAmount_) external {
+    function testFuzz_redeem_callerNotOwner_singleUser_preVesting(uint256 depositAmount_, uint256 redeemAmount_) public {
         depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
         redeemAmount_   = constrictToRange(redeemAmount_,   1, depositAmount_);
 
@@ -2276,7 +2235,7 @@ contract RedeemCallerNotOwnerTests is RDTSuccessTestBase {
         _assertRedeemCallerNotOwner(caller, staker, redeemAmount_, true);
     }
 
-    function test_redeem_callerNotOwner_singleUser_midVesting() external {
+    function test_redeem_callerNotOwner_singleUser_midVesting() public {
         address staker = address(new Staker());
         address caller = address(new Staker());
 
@@ -2311,7 +2270,7 @@ contract RedeemCallerNotOwnerTests is RDTSuccessTestBase {
         uint256 vestingAmount_,
         uint256 vestingPeriod_,
         uint256 warpTime_
-    ) external {
+    ) public {
         depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
         redeemAmount_   = constrictToRange(redeemAmount_,   1, depositAmount_);
         vestingAmount_  = constrictToRange(vestingAmount_,  1, 1e29);
@@ -2349,7 +2308,7 @@ contract RedeemCallerNotOwnerTests is RDTSuccessTestBase {
         _assertRedeemCallerNotOwner(caller, staker, redeemAmount_, true);
     }
 
-    function test_redeem_callerNotOwner_singleUser_postVesting() external {
+    function test_redeem_callerNotOwner_singleUser_postVesting() public {
         address staker = address(new Staker());
         address caller = address(new Staker());
 
@@ -2383,7 +2342,7 @@ contract RedeemCallerNotOwnerTests is RDTSuccessTestBase {
         uint256 vestingAmount_,
         uint256 vestingPeriod_
     )
-        external
+        public
     {
         depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
         redeemAmount_   = constrictToRange(redeemAmount_,   1, depositAmount_);
@@ -2617,7 +2576,7 @@ contract RedeemRevertOnTransfers is RDTTestBase {
 
 contract RedeemTests is RDTSuccessTestBase {
 
-    function test_redeem_singleUser_preVesting() external {
+    function test_redeem_singleUser_preVesting() public {
         address staker = address(new Staker());
 
         _depositAsset(address(asset), staker, 1000);
@@ -2637,7 +2596,7 @@ contract RedeemTests is RDTSuccessTestBase {
         _assertRedeem(staker, 1000, false);
     }
 
-    function testFuzz_redeem_singleUser_preVesting(uint256 depositAmount_,uint256 redeemAmount_) external {
+    function testFuzz_redeem_singleUser_preVesting(uint256 depositAmount_,uint256 redeemAmount_) public {
         depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
         redeemAmount_   = constrictToRange(redeemAmount_,   1, depositAmount_);
 
@@ -2660,7 +2619,7 @@ contract RedeemTests is RDTSuccessTestBase {
         _assertRedeem(staker, redeemAmount_, true);
     }
 
-    function test_redeem_singleUser_midVesting() external {
+    function test_redeem_singleUser_midVesting() public {
         address staker = address(new Staker());
 
         _depositAsset(address(asset), staker, 100e18);
@@ -2689,7 +2648,7 @@ contract RedeemTests is RDTSuccessTestBase {
         uint256 vestingAmount_,
         uint256 vestingPeriod_,
         uint256 warpTime_
-    ) external {
+    ) public {
         depositAmount_  = constrictToRange(depositAmount_,  1,         1e29);
         redeemAmount_   = constrictToRange(redeemAmount_,   1,         depositAmount_);
         vestingAmount_  = constrictToRange(vestingAmount_,  1,         1e29);
@@ -2722,7 +2681,7 @@ contract RedeemTests is RDTSuccessTestBase {
         _assertRedeem(staker, redeemAmount_, true);
     }
 
-    function test_redeem_singleUser_postVesting() external {
+    function test_redeem_singleUser_postVesting() public {
         address staker = address(new Staker());
 
         _depositAsset(address(asset), staker, 100e18);
@@ -2751,7 +2710,7 @@ contract RedeemTests is RDTSuccessTestBase {
         uint256 vestingAmount_,
         uint256 vestingPeriod_
     )
-        external
+        public
     {
         depositAmount_  = constrictToRange(depositAmount_,  1,         1e29);
         redeemAmount_   = constrictToRange(redeemAmount_,   1,         depositAmount_);
@@ -3062,7 +3021,7 @@ contract RevenueStreamingTests is RDTTestBase {
 
 contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
 
-    function test_withdraw_callerNotOwner_singleUser_preVesting() external {
+    function test_withdraw_callerNotOwner_singleUser_preVesting() public {
         address staker = address(new Staker());
         address caller = address(new Staker());
 
@@ -3088,7 +3047,7 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
     }
 
     // TODO: Fuzz approve amount.
-    function testFuzz_withdraw_callerNotOwner_singleUser_preVesting(uint256 depositAmount_, uint256 withdrawAmount_) external {
+    function testFuzz_withdraw_callerNotOwner_singleUser_preVesting(uint256 depositAmount_, uint256 withdrawAmount_) public {
         depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
         withdrawAmount_ = constrictToRange(withdrawAmount_, 1, depositAmount_);
 
@@ -3116,7 +3075,7 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
         _assertWithdrawCallerNotOwner(caller, staker, withdrawAmount_, true);
     }
 
-    function test_withdraw_callerNotOwner_singleUser_midVesting() external {
+    function test_withdraw_callerNotOwner_singleUser_midVesting() public {
         address staker = address(new Staker());
         address caller = address(new Staker());
 
@@ -3151,7 +3110,7 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
         uint256 vestingAmount_,
         uint256 vestingPeriod_,
         uint256 warpTime_
-    ) external {
+    ) public {
         depositAmount_  = constrictToRange(depositAmount_,  1,         1e29);
         vestingAmount_  = constrictToRange(vestingAmount_,  1,         1e29);
         vestingPeriod_  = constrictToRange(vestingPeriod_,  1 seconds, 100 days);
@@ -3192,7 +3151,7 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
         _assertWithdrawCallerNotOwner(caller, staker, withdrawAmount_, true);
     }
 
-    function test_withdraw_callerNotOwner_singleUser_postVesting() external {
+    function test_withdraw_callerNotOwner_singleUser_postVesting() public {
         address staker = address(new Staker());
         address caller = address(new Staker());
 
@@ -3227,7 +3186,7 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
         uint256 vestingAmount_,
         uint256 vestingPeriod_
     )
-        external
+        public
     {
         depositAmount_  = constrictToRange(depositAmount_, 1,         1e29);
         vestingAmount_  = constrictToRange(vestingAmount_, 1,         1e29);
@@ -3489,7 +3448,7 @@ contract WithdrawRevertOnTransfers is RDTTestBase {
 
 contract WithdrawTests is RDTSuccessTestBase {
 
-    function test_withdraw_singleUser_preVesting() external {
+    function test_withdraw_singleUser_preVesting() public {
         address staker = address(new Staker());
 
         _depositAsset(address(asset), staker, 1000);
@@ -3509,7 +3468,7 @@ contract WithdrawTests is RDTSuccessTestBase {
         _assertWithdraw(staker, 1000, false);
     }
 
-    function testFuzz_withdraw_singleUser_preVesting(uint256 depositAmount_, uint256 withdrawAmount_) external {
+    function testFuzz_withdraw_singleUser_preVesting(uint256 depositAmount_, uint256 withdrawAmount_) public {
         depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
         withdrawAmount_ = constrictToRange(withdrawAmount_, 1, depositAmount_);
 
@@ -3532,7 +3491,7 @@ contract WithdrawTests is RDTSuccessTestBase {
         _assertWithdraw(staker, withdrawAmount_, true);
     }
 
-    function test_withdraw_singleUser_midVesting() external {
+    function test_withdraw_singleUser_midVesting() public {
         address staker = address(new Staker());
 
         _depositAsset(address(asset), staker, 100e18);
@@ -3561,7 +3520,7 @@ contract WithdrawTests is RDTSuccessTestBase {
         uint256 vestingAmount_,
         uint256 vestingPeriod_,
         uint256 warpTime_
-    ) external {
+    ) public {
         depositAmount_  = constrictToRange(depositAmount_,  1,         1e29);
         vestingAmount_  = constrictToRange(vestingAmount_,  1,         1e29);
         vestingPeriod_  = constrictToRange(vestingPeriod_,  1 seconds, 100 days);
@@ -3597,7 +3556,7 @@ contract WithdrawTests is RDTSuccessTestBase {
         _assertWithdraw(staker, withdrawAmount_, true);
     }
 
-    function test_withdraw_singleUser_postVesting() external {
+    function test_withdraw_singleUser_postVesting() public {
         address staker = address(new Staker());
 
         _depositAsset(address(asset), staker, 100e18);
@@ -3626,7 +3585,7 @@ contract WithdrawTests is RDTSuccessTestBase {
         uint256 vestingAmount_,
         uint256 vestingPeriod_
     )
-        external
+        public
     {
         depositAmount_  = constrictToRange(depositAmount_, 1,         1e29);
         vestingAmount_  = constrictToRange(vestingAmount_, 1,         1e29);

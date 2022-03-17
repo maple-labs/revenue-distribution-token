@@ -11,18 +11,9 @@ import { Staker } from "./accounts/Staker.sol";
 
 import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol";
 
-contract ConstructorTest is TestUtils {
-
-    function test_constructor_ownerZeroAddress() public {
-        MockERC20 asset = new MockERC20("MockToken", "MT", 18);
-
-        vm.expectRevert("RDT:C:OWNER_ZERO_ADDRESS");
-        RDT rdToken = new RDT("Revenue Distribution Token", "RDT", address(0), address(asset), 1e30);
-
-        rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
-    }
-
-}
+/*************************/
+/*** Base Test Classes ***/
+/*************************/
 
 contract RDTTestBase is TestUtils {
 
@@ -477,191 +468,9 @@ contract RDTSuccessTestBase is RDTTestBase {
 
 }
 
-contract DepositWithPermitFailureTests is RDTTestBase {
-
-    address staker;
-    address notStaker;
-
-    uint256 stakerPrivateKey    = 1;
-    uint256 notStakerPrivateKey = 2;
-
-    function setUp() public override {
-        super.setUp();
-
-        staker    = vm.addr(stakerPrivateKey);
-        notStaker = vm.addr(notStakerPrivateKey);
-    }
-
-    function test_depositWithPermit_zeroAddress() public {
-        uint256 depositAmount = 1e18;
-        asset.mint(address(staker), depositAmount);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
-
-        vm.startPrank(staker);
-
-        vm.expectRevert(bytes("ERC20:P:MALLEABLE"));
-        rdToken.depositWithPermit(depositAmount, staker, deadline, 17, r, s);
-
-        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-    }
-
-    function test_depositWithPermit_notStakerSignature() public {
-        uint256 depositAmount = 1e18;
-        asset.mint(address(staker), depositAmount);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(notStaker, address(rdToken), depositAmount, deadline, notStakerPrivateKey);
-
-        vm.startPrank(staker);
-
-        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
-        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-
-        ( v, r, s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
-
-        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-
-    }
-
-    function test_depositWithPermit_pastDeadline() public {
-        uint256 depositAmount = 1e18;
-        asset.mint(address(staker), depositAmount);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
-
-        vm.startPrank(staker);
-
-        vm.warp(deadline + 1);
-
-        vm.expectRevert(bytes("ERC20:P:EXPIRED"));
-        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-
-        vm.warp(deadline);
-
-        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-    }
-
-    function test_depositWithPermit_replay() public {
-        uint256 depositAmount = 1e18;
-        asset.mint(address(staker), depositAmount * 2);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
-
-        vm.startPrank(staker);
-
-        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-
-        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
-        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
-    }
-
-}
-
-contract MintWithPermitFailureTests is RDTTestBase {
-
-    address staker;
-    address notStaker;
-
-    uint256 stakerPrivateKey    = 1;
-    uint256 notStakerPrivateKey = 2;
-
-    function setUp() public override {
-        super.setUp();
-
-        staker    = vm.addr(stakerPrivateKey);
-        notStaker = vm.addr(notStakerPrivateKey);
-    }
-
-    function test_mintWithPermit_zeroAddress() public {
-        uint256 mintAmount = 1e18;
-        uint256 maxAssets = rdToken.previewMint(mintAmount);
-
-        asset.mint(address(staker), maxAssets);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
-
-        vm.startPrank(staker);
-
-        vm.expectRevert(bytes("ERC20:P:MALLEABLE"));
-        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, 17, r, s);
-
-        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
-    }
-
-    function test_mintWithPermit_notStakerSignature() public {
-        uint256 mintAmount = 1e18;
-        uint256 maxAssets = rdToken.previewMint(mintAmount);
-
-        asset.mint(address(staker), maxAssets);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(notStaker, address(rdToken), maxAssets, deadline, notStakerPrivateKey);
-
-        vm.startPrank(staker);
-
-        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
-        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
-
-        ( v, r, s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
-
-        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
-
-    }
-
-    function test_mintWithPermit_pastDeadline() public {
-        uint256 mintAmount = 1e18;
-        uint256 maxAssets = rdToken.previewMint(mintAmount);
-
-        asset.mint(address(staker), maxAssets);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
-
-        vm.startPrank(staker);
-
-        vm.warp(deadline + 1);
-
-        vm.expectRevert(bytes("ERC20:P:EXPIRED"));
-        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
-
-        vm.warp(deadline);
-
-        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
-    }
-
-    function test_mintWithPermit_insufficientPermit() public {
-        uint256 mintAmount = 1e18;
-        uint256 maxAssets = rdToken.previewMint(mintAmount);
-
-        asset.mint(address(staker), maxAssets);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets - 1, deadline, stakerPrivateKey);
-
-        vm.startPrank(staker);
-
-        vm.expectRevert(bytes("RDT:MWP:INSUFFICIENT_PERMIT"));
-        rdToken.mintWithPermit(mintAmount, staker, maxAssets - 1, deadline, v, r, s);
-
-        ( v, r, s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
-
-        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
-    }
-
-    function test_mintWithPermit_replay() public {
-        uint256 mintAmount = 1e18;
-        uint256 maxAssets = rdToken.previewMint(mintAmount);
-
-        asset.mint(address(staker), maxAssets * 2);
-
-        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
-
-        vm.startPrank(staker);
-
-        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
-
-        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
-        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
-    }
-
-}
+/*************/
+/*** Tests ***/
+/*************/
 
 contract APRViewTests is RDTTestBase {
 
@@ -770,6 +579,19 @@ contract AuthTests is RDTTestBase {
 
 }
 
+contract ConstructorTest is TestUtils {
+
+    function test_constructor_ownerZeroAddress() public {
+        MockERC20 asset = new MockERC20("MockToken", "MT", 18);
+
+        vm.expectRevert("RDT:C:OWNER_ZERO_ADDRESS");
+        RDT rdToken = new RDT("Revenue Distribution Token", "RDT", address(0), address(asset), 1e30);
+
+        rdToken = new RDT("Revenue Distribution Token", "RDT", address(this), address(asset), 1e30);
+    }
+
+}
+
 contract DepositFailureTests is RDTTestBase {
 
     Staker staker;
@@ -838,701 +660,6 @@ contract DepositFailureTests is RDTTestBase {
         staker.rdToken_deposit(address(rdToken), minDeposit - 1);
 
         staker.rdToken_deposit(address(rdToken), minDeposit);
-    }
-
-}
-
-contract MintFailureTests is RDTTestBase {
-
-    Staker staker;
-
-    function setUp() public override {
-        super.setUp();
-        staker = new Staker();
-    }
-
-    function test_mint_zeroAmount() public {
-
-        asset.mint(address(staker), 1);
-        staker.erc20_approve(address(asset), address(rdToken), 1);
-
-        vm.expectRevert("RDT:M:ZERO_SHARES");
-        staker.rdToken_mint(address(rdToken), 0);
-
-        staker.rdToken_mint(address(rdToken), 1);
-    }
-
-    function test_mint_badApprove(uint256 mintAmount) public {
-
-        mintAmount = constrictToRange(mintAmount, 1, 1e29);
-
-        uint256 depositAmount = rdToken.previewMint(mintAmount);
-
-        asset.mint(address(staker), depositAmount);
-
-        staker.erc20_approve(address(asset), address(rdToken), depositAmount - 1);
-
-        vm.expectRevert("RDT:M:TRANSFER_FROM");
-        staker.rdToken_mint(address(rdToken), mintAmount);
-
-        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
-        staker.rdToken_mint(address(rdToken), mintAmount);
-    }
-
-    function test_mint_insufficientBalance(uint256 mintAmount) public {
-
-        mintAmount = constrictToRange(mintAmount, 1, 1e29);
-
-        uint256 depositAmount = rdToken.previewMint(mintAmount);
-
-        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
-
-        vm.expectRevert("RDT:M:TRANSFER_FROM");
-        staker.rdToken_mint(address(rdToken), mintAmount);
-
-        asset.mint(address(staker), depositAmount);
-
-        staker.rdToken_mint(address(rdToken), mintAmount);
-    }
-
-}
-
-contract WithdrawFailureTests is RDTTestBase {
-
-    Staker staker;
-
-    function setUp() public override {
-        super.setUp();
-        staker = new Staker();
-    }
-
-    function test_withdraw_zeroAmount(uint256 depositAmount) public {
-        _depositAsset(address(asset), address(staker), depositAmount = constrictToRange(depositAmount, 1, 1e29));
-
-        vm.expectRevert("RDT:B:ZERO_SHARES");
-        staker.rdToken_withdraw(address(rdToken), 0);
-
-        staker.rdToken_withdraw(address(rdToken), 1);
-    }
-
-    function test_withdraw_burnUnderflow(uint256 depositAmount) public {
-        _depositAsset(address(asset), address(staker), depositAmount = constrictToRange(depositAmount, 1, 1e29));
-
-        vm.expectRevert(ARITHMETIC_ERROR);
-        staker.rdToken_withdraw(address(rdToken), depositAmount + 1);
-
-        staker.rdToken_withdraw(address(rdToken), depositAmount);
-    }
-
-    function test_withdraw_burnUnderflow_totalAssetsGtTotalSupply_explicitValues() public {
-        uint256 depositAmount = 100e18;
-        uint256 vestingAmount = 10e18;
-        uint256 vestingPeriod = 10 days;
-        uint256 warpTime      = 5 days;
-
-        _depositAsset(address(asset), address(staker), depositAmount);
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
-
-        vm.warp(block.timestamp + warpTime);
-
-        uint256 maxWithdrawAmount = rdToken.previewRedeem(rdToken.balanceOf(address(staker)));  // TODO
-
-        vm.expectRevert(ARITHMETIC_ERROR);
-        staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount + 1);
-
-        staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount);
-    }
-
-    function test_withdraw_callerNotOwner_badApproval() public {
-        Staker shareOwner    = new Staker();
-        Staker notShareOwner = new Staker();
-
-        uint256 depositAmount = 1e18;
-        asset.mint(address(shareOwner), depositAmount);
-
-        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
-        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
-
-        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount - 1);
-        vm.expectRevert("RDT:CALLER_ALLOWANCE");
-        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
-
-        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
-
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), depositAmount);
-
-        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
-
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
-    }
-
-    function test_withdraw_callerNotOwner_infiniteApprovalForCaller() public {
-        Staker shareOwner    = new Staker();
-        Staker notShareOwner = new Staker();
-
-        uint256 depositAmount = 1e18;
-        asset.mint(address(shareOwner), depositAmount);
-
-        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
-        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
-
-        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), type(uint256).max);
-
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
-
-        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
-
-        // Infinite approval stays infinite.
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
-    }
-
-    // TODO: Implement once max* functions are added as per 4626 standard
-    // function test_withdraw_burnUnderflow_totalAssetsGtTotalSupply(uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod, uint256 warpTime) public {
-    //     depositAmount = constrictToRange(depositAmount, 1, 1e29);
-    //     vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
-    //     vestingPeriod = constrictToRange(vestingPeriod, 1, 100 days);
-    //     warpTime      = constrictToRange(vestingAmount, 1, vestingPeriod);
-
-    //     _depositAsset(address(asset), address(staker), depositAmount);
-    //     _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
-
-    //     vm.warp(block.timestamp + warpTime);
-
-    //     uint256 underflowWithdrawAmount = rdToken.previewRedeem(rdToken.balanceOf(address(staker)) + 1);  // TODO
-    //     uint256 maxWithdrawAmount       = rdToken.previewRedeem(rdToken.balanceOf(address(staker)));  // TODO
-
-    //     vm.expectRevert(ARITHMETIC_ERROR);
-    //     staker.rdToken_withdraw(address(rdToken), underflowWithdrawAmount);
-
-    //     staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount);
-    // }
-
-}
-
-contract RedeemFailureTests is RDTTestBase {
-
-    Staker staker;
-
-    function setUp() public override {
-        super.setUp();
-        staker = new Staker();
-    }
-
-    function test_redeem_zeroShares(uint256 depositAmount) public {
-        _depositAsset(address(asset), address(staker), depositAmount = constrictToRange(depositAmount, 1, 1e29));
-
-        vm.expectRevert("RDT:B:ZERO_SHARES");
-        staker.rdToken_redeem(address(rdToken), 0);
-
-        staker.rdToken_redeem(address(rdToken), 1);
-    }
-
-    function test_redeem_burnUnderflow(uint256 depositAmount) public {
-        _depositAsset(address(asset), address(staker), depositAmount = constrictToRange(depositAmount, 1, 1e29));
-
-        vm.expectRevert(ARITHMETIC_ERROR);
-        staker.rdToken_redeem(address(rdToken), depositAmount + 1);
-
-        staker.rdToken_redeem(address(rdToken), depositAmount);
-    }
-
-    function test_redeem_burnUnderflow_totalAssetsGtTotalSupply_explicitValues() public {
-        uint256 depositAmount = 100e18;
-        uint256 vestingAmount = 10e18;
-        uint256 vestingPeriod = 10 days;
-        uint256 warpTime      = 5 days;
-
-        _depositAsset(address(asset), address(staker), depositAmount);
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
-
-        vm.warp(block.timestamp + warpTime);
-
-        vm.expectRevert(ARITHMETIC_ERROR);
-        staker.rdToken_redeem(address(rdToken), 100e18 + 1);
-
-        staker.rdToken_redeem(address(rdToken), 100e18);
-    }
-
-    function test_redeem_callerNotOwner_badApproval() public {
-        Staker shareOwner    = new Staker();
-        Staker notShareOwner = new Staker();
-
-        uint256 depositAmount = 1e18;
-        asset.mint(address(shareOwner), depositAmount);
-
-        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
-        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
-
-        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount - 1);
-        vm.expectRevert("RDT:CALLER_ALLOWANCE");
-        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
-
-        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
-
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), depositAmount);
-
-        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
-
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
-    }
-
-    function test_redeem_callerNotOwner_infiniteApprovalForCaller() public {
-        Staker shareOwner    = new Staker();
-        Staker notShareOwner = new Staker();
-
-        uint256 depositAmount = 1e18;
-        asset.mint(address(shareOwner), depositAmount);
-
-        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
-        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
-
-        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), type(uint256).max);
-
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
-
-        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
-
-        // Infinite approval stays infinite.
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
-    }
-
-}
-
-contract RevenueStreamingTests is RDTTestBase {
-
-    Staker firstStaker;
-
-    uint256 startingAssets;
-
-    function setUp() public override {
-        super.setUp();
-        firstStaker = new Staker();
-
-        // Deposit the minimum amount of the asset to allow the vesting schedule updates to occur.
-        startingAssets = 1;
-        asset.mint(address(firstStaker), startingAssets);
-        firstStaker.erc20_approve(address(asset), address(rdToken), startingAssets);
-        firstStaker.rdToken_deposit(address(rdToken), startingAssets);
-    }
-
-    function test_updateVestingSchedule_zeroSupply() public {
-        firstStaker.rdToken_withdraw(address(rdToken), 1);
-
-        vm.expectRevert("RDT:UVS:ZERO_SUPPLY");
-        rdToken.updateVestingSchedule(100 seconds);
-
-        firstStaker.erc20_approve(address(asset), address(rdToken), 1);
-        firstStaker.rdToken_deposit(address(rdToken), 1);
-
-        rdToken.updateVestingSchedule(100 seconds);
-    }
-
-    /************************************/
-    /*** Single updateVestingSchedule ***/
-    /************************************/
-
-    function test_updateVestingSchedule_single() public {
-        assertEq(rdToken.freeAssets(),          startingAssets);
-        assertEq(rdToken.totalAssets(),         startingAssets);
-        assertEq(rdToken.issuanceRate(),        0);
-        assertEq(rdToken.lastUpdated(),         START);
-        assertEq(rdToken.vestingPeriodFinish(), 0);
-
-        assertEq(asset.balanceOf(address(rdToken)), startingAssets);
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);  // 10 tokens per second
-
-        assertEq(asset.balanceOf(address(rdToken)), startingAssets + 1000);
-
-        assertEq(rdToken.freeAssets(),                           startingAssets);
-        assertEq(rdToken.totalAssets(),                          startingAssets);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
-        assertEq(rdToken.issuanceRate(),                         10e30);  // 10 tokens per second
-        assertEq(rdToken.lastUpdated(),                          START);
-        assertEq(rdToken.vestingPeriodFinish(),                  START + 100 seconds);
-
-        vm.warp(rdToken.vestingPeriodFinish());
-
-        assertEq(rdToken.totalAssets(), startingAssets + 1000);  // All tokens vested
-    }
-
-    function test_updateVestingSchedule_single_roundingDown() public {
-        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 30 seconds);  // 33.3333... tokens per second
-
-        assertEq(rdToken.totalAssets(),  startingAssets);
-        assertEq(rdToken.issuanceRate(), 33333333333333333333333333333333);  // 3.33e30
-
-        // totalAssets should never be more than one full unit off
-        vm.warp(START + 1 seconds);
-        assertEq(rdToken.totalAssets(), startingAssets + 33);  // 33 < 33.33...
-
-        vm.warp(START + 2 seconds);
-        assertEq(rdToken.totalAssets(), startingAssets + 66);  // 66 < 66.66...
-
-        vm.warp(START + 3 seconds);
-        assertEq(rdToken.totalAssets(), startingAssets + 99);  // 99 < 99.99...
-
-        vm.warp(START + 4 seconds);
-        assertEq(rdToken.totalAssets(), startingAssets + 133);  // 133 < 133.33...
-
-        vm.warp(rdToken.vestingPeriodFinish());
-        assertEq(rdToken.totalAssets(), startingAssets + 999);  // 999 < 1000
-    }
-
-    /*************************************************/
-    /*** Multiple updateVestingSchedule, same time ***/
-    /*************************************************/
-
-    function test_updateVestingSchedule_sameTime_shorterVesting() public {
-        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);
-        assertEq(rdToken.issuanceRate(),        10e30);                // 1000 / 100 seconds = 10 tokens per second
-        assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);  // Always updates to latest vesting schedule
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 20 seconds);
-        assertEq(rdToken.issuanceRate(),        100e30);              // (1000 + 1000) / 20 seconds = 100 tokens per second
-        assertEq(rdToken.vestingPeriodFinish(), START + 20 seconds);  // Always updates to latest vesting schedule
-
-        assertEq(rdToken.totalAssets(), startingAssets);
-
-        vm.warp(START + 20 seconds);
-
-        assertEq(rdToken.totalAssets(), startingAssets + 2000);
-    }
-
-    function test_updateVestingSchedule_sameTime_longerVesting_higherRate() public {
-        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);
-        assertEq(rdToken.issuanceRate(),        10e30);                // 1000 / 100 seconds = 10 tokens per second
-        assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);  // Always updates to latest vesting schedule
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), 3000, 200 seconds);
-        assertEq(rdToken.issuanceRate(),        20e30);                // (3000 + 1000) / 200 seconds = 20 tokens per second
-        assertEq(rdToken.vestingPeriodFinish(), START + 200 seconds);  // Always updates to latest vesting schedule
-
-        assertEq(rdToken.totalAssets(), startingAssets);
-
-        vm.warp(START + 200 seconds);
-
-        assertEq(rdToken.totalAssets(), startingAssets + 4000);
-    }
-
-    function test_updateVestingSchedule_sameTime_longerVesting_lowerRate() public {
-        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);
-        assertEq(rdToken.issuanceRate(),        10e30);                // 1000 / 100 seconds = 10 tokens per second
-        assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);  // Always updates to latest vesting schedule
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 500 seconds);
-        assertEq(rdToken.issuanceRate(),        4e30);                 // (1000 + 1000) / 500 seconds = 4 tokens per second
-        assertEq(rdToken.vestingPeriodFinish(), START + 500 seconds);  // Always updates to latest vesting schedule
-
-        assertEq(rdToken.totalAssets(), startingAssets);
-
-        vm.warp(START + 5000 seconds);
-
-        assertEq(rdToken.totalAssets(), startingAssets + 2000);
-    }
-
-    /*******************************************************/
-    /*** Multiple updateVestingSchedule, different times ***/
-    /*******************************************************/
-
-    function test_updateVestingSchedule_diffTime_shorterVesting() public {
-        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);  // 10 tokens per second
-
-        vm.warp(START + 60 seconds);
-
-        assertEq(rdToken.issuanceRate(),        10e30);
-        assertEq(rdToken.totalAssets(),         startingAssets + 600);
-        assertEq(rdToken.freeAssets(),          startingAssets);
-        assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 20 seconds);  // 50 tokens per second
-
-        assertEq(rdToken.issuanceRate(),        70e30);  // (400 + 1000) / 20 seconds = 70 tokens per second
-        assertEq(rdToken.totalAssets(),         startingAssets + 600);
-        assertEq(rdToken.freeAssets(),          startingAssets + 600);
-        assertEq(rdToken.vestingPeriodFinish(), START + 60 seconds + 20 seconds);
-
-        vm.warp(START + 60 seconds + 20 seconds);
-
-        assertEq(rdToken.issuanceRate(), 70e30);
-        assertEq(rdToken.totalAssets(),  startingAssets + 2000);
-        assertEq(rdToken.freeAssets(),   startingAssets + 600);
-    }
-
-    function test_updateVestingSchedule_diffTime_longerVesting_higherRate() public {
-        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);  // 10 tokens per second
-
-        vm.warp(START + 60 seconds);
-
-        assertEq(rdToken.issuanceRate(),        10e30);
-        assertEq(rdToken.totalAssets(),         startingAssets + 600);
-        assertEq(rdToken.freeAssets(),          startingAssets);
-        assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), 3000, 200 seconds);  // 15 tokens per second
-
-        assertEq(rdToken.issuanceRate(), 17e30);  // (400 + 3000) / 200 seconds = 17 tokens per second
-        assertEq(rdToken.totalAssets(),  startingAssets + 600);
-        assertEq(rdToken.freeAssets(),   startingAssets + 600);
-
-        vm.warp(START + 60 seconds + 200 seconds);
-
-        assertEq(rdToken.issuanceRate(), 17e30);
-        assertEq(rdToken.totalAssets(),  startingAssets + 4000);
-        assertEq(rdToken.freeAssets(),   startingAssets + 600);
-    }
-
-    function test_updateVestingSchedule_diffTime_longerVesting_lowerRate() public {
-        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);  // 10 tokens per second
-
-        vm.warp(START + 60 seconds);
-
-        assertEq(rdToken.issuanceRate(), 10e30);
-        assertEq(rdToken.totalAssets(),  startingAssets + 600);
-        assertEq(rdToken.freeAssets(),   startingAssets);
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 200 seconds);  // 5 tokens per second
-
-        assertEq(rdToken.issuanceRate(), 7e30);  // (400 + 1000) / 200 seconds = 7 tokens per second
-        assertEq(rdToken.totalAssets(),  startingAssets + 600);
-        assertEq(rdToken.freeAssets(),   startingAssets + 600);
-
-        vm.warp(START + 60 seconds + 200 seconds);
-
-        assertEq(rdToken.issuanceRate(), 7e30);
-        assertEq(rdToken.totalAssets(),  startingAssets + 2000);
-        assertEq(rdToken.freeAssets(),   startingAssets + 600);
-    }
-
-}
-
-contract EndToEndRevenueStreamingTests is RDTTestBase {
-
-    /********************************/
-    /*** End to end vesting tests ***/
-    /********************************/
-
-    function test_vesting_singleSchedule_explicitValues() public {
-        uint256 depositAmount = 1_000_000e18;
-        uint256 vestingAmount = 100_000e18;
-        uint256 vestingPeriod = 200_000 seconds;
-
-        Staker staker = new Staker();
-
-        asset.mint(address(staker), depositAmount);
-
-        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
-        staker.rdToken_deposit(address(rdToken), depositAmount);
-
-        assertEq(rdToken.freeAssets(),                           1_000_000e18);
-        assertEq(rdToken.totalAssets(),                          1_000_000e18);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
-        assertEq(rdToken.issuanceRate(),                         0);
-        assertEq(rdToken.lastUpdated(),                          START);
-        assertEq(rdToken.vestingPeriodFinish(),                  0);
-
-        vm.warp(START + 1 days);
-
-        assertEq(rdToken.totalAssets(),  1_000_000e18);  // No change
-
-        vm.warp(START);  // Warp back after demonstrating totalAssets is not time-dependent before vesting starts
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
-
-        assertEq(rdToken.freeAssets(),                           1_000_000e18);
-        assertEq(rdToken.totalAssets(),                          1_000_000e18);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
-        assertEq(rdToken.issuanceRate(),                         0.5e18 * 1e30);  // 0.5 tokens per second
-        assertEq(rdToken.lastUpdated(),                          START);
-        assertEq(rdToken.vestingPeriodFinish(),                  START + vestingPeriod);
-
-        // Warp and assert vesting in 10% increments
-        vm.warp(START + 20_000 seconds);  // 10% of vesting schedule
-
-        assertEq(rdToken.balanceOfAssets(address(staker)),       1_010_000e18);
-        assertEq(rdToken.totalAssets(),                          1_010_000e18);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.01e18);
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.90099009900990099e17); // Shares go down, as they are worth more assets.
-
-        vm.warp(START + 40_000 seconds);  // 20% of vesting schedule
-
-        assertEq(rdToken.balanceOfAssets(address(staker)),       1_020_000e18);
-        assertEq(rdToken.totalAssets(),                          1_020_000e18);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.02e18);
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.80392156862745098e17);
-
-        vm.warp(START + 60_000 seconds);  // 30% of vesting schedule
-
-        assertEq(rdToken.balanceOfAssets(address(staker)),       1_030_000e18);
-        assertEq(rdToken.totalAssets(),                          1_030_000e18);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.03e18);
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.70873786407766990e17);
-
-        vm.warp(START + 200_000 seconds);  // End of vesting schedule
-
-        assertEq(rdToken.balanceOfAssets(address(staker)),       1_100_000e18);
-        assertEq(rdToken.totalAssets(),                          1_100_000e18);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.1e18);
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.09090909090909090e17);
-
-        assertEq(asset.balanceOf(address(rdToken)), 1_100_000e18);
-        assertEq(asset.balanceOf(address(staker)),  0);
-        assertEq(rdToken.balanceOf(address(staker)),     1_000_000e18);
-
-        staker.rdToken_redeem(address(rdToken), 1_000_000e18);  // Use `redeem` so rdToken amount can be used to burn 100% of tokens
-
-        assertEq(rdToken.freeAssets(),                           0);
-        assertEq(rdToken.totalAssets(),                          0);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);    // returns to sampleAssetsToConvert when empty
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);    // returns to sampleAssetsToConvert when empty
-        assertEq(rdToken.issuanceRate(),                         0.5e18 * 1e30);            // TODO: Investigate implications of non-zero issuanceRate here
-        assertEq(rdToken.lastUpdated(),                          START + 200_000 seconds);  // This makes issuanceRate * time zero
-        assertEq(rdToken.vestingPeriodFinish(),                  START + 200_000 seconds);
-
-        assertEq(asset.balanceOf(address(rdToken)),   0);
-        assertEq(rdToken.balanceOfAssets(address(staker)), 0);
-
-        assertEq(asset.balanceOf(address(staker)), 1_100_000e18);
-        assertEq(rdToken.balanceOf(address(staker)),    0);
-    }
-
-    function test_vesting_singleSchedule_fuzz(uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod) public {
-        depositAmount = constrictToRange(depositAmount, 1e6,        1e30);                    // 1 billion at WAD precision
-        vestingAmount = constrictToRange(vestingAmount, 1e6,        1e30);                    // 1 billion at WAD precision
-        vestingPeriod = constrictToRange(vestingPeriod, 10 seconds, 100_000 days) / 10 * 10;  // Must be divisible by 10 for for loop 10% increment calculations // TODO: Add a zero case test
-
-        Staker staker = new Staker();
-
-        asset.mint(address(staker), depositAmount);
-
-        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
-        staker.rdToken_deposit(address(rdToken), depositAmount);
-
-        assertEq(rdToken.freeAssets(),                           depositAmount);
-        assertEq(rdToken.totalAssets(),                          depositAmount);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
-        assertEq(rdToken.issuanceRate(),                         0);
-        assertEq(rdToken.lastUpdated(),                          START);
-        assertEq(rdToken.vestingPeriodFinish(),                  0);
-
-        vm.warp(START + 1 days);
-
-        assertEq(rdToken.totalAssets(),  depositAmount);  // No change
-
-        vm.warp(START);  // Warp back after demonstrating totalAssets is not time-dependent before vesting starts
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
-
-        uint256 expectedRate = vestingAmount * 1e30 / vestingPeriod;
-
-        assertEq(rdToken.freeAssets(),                           depositAmount);
-        assertEq(rdToken.totalAssets(),                          depositAmount);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
-        assertEq(rdToken.issuanceRate(),                         expectedRate);
-        assertEq(rdToken.lastUpdated(),                          START);
-        assertEq(rdToken.vestingPeriodFinish(),                  START + vestingPeriod);
-
-        // Warp and assert vesting in 10% increments
-        for (uint256 i = 1; i < 10; ++i) {
-            vm.warp(START + vestingPeriod * i / 10);  // 10% intervals of vesting schedule
-
-            uint256 expectedTotalAssets = depositAmount + expectedRate * (block.timestamp - START) / 1e30;
-
-            assertWithinDiff(rdToken.balanceOfAssets(address(staker)), expectedTotalAssets, 1);
-
-            assertEq(rdToken.totalSupply(),                          depositAmount);
-            assertEq(rdToken.totalAssets(),                          expectedTotalAssets);
-            assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert * expectedTotalAssets / depositAmount);
-            assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert * depositAmount / expectedTotalAssets);
-        }
-
-        vm.warp(START + vestingPeriod);
-
-        uint256 expectedFinalTotal = depositAmount + vestingAmount;
-
-        // TODO: Try assertEq
-        assertWithinDiff(rdToken.balanceOfAssets(address(staker)), expectedFinalTotal, 2);
-
-        assertWithinDiff(rdToken.totalAssets(), expectedFinalTotal, 1);
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert),    sampleSharesToConvert * rdToken.totalAssets() / depositAmount); // Using totalAssets because of rounding
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert),    sampleAssetsToConvert * depositAmount / rdToken.totalAssets());
-
-        assertEq(asset.balanceOf(address(rdToken)), depositAmount + vestingAmount);
-
-        assertEq(asset.balanceOf(address(staker)), 0);
-        assertEq(rdToken.balanceOf(address(staker)),    depositAmount);
-
-        staker.rdToken_redeem(address(rdToken), depositAmount);  // Use `redeem` so rdToken amount can be used to burn 100% of tokens
-
-        assertWithinDiff(rdToken.freeAssets(),  0, 1);
-        assertWithinDiff(rdToken.totalAssets(), 0, 1);
-
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);  // Returns to sampleSharesToConvert zero when empty.
-        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);  // Returns to sampleAssetsToConvert zero when empty.
-        assertEq(rdToken.issuanceRate(),                         expectedRate);           // TODO: Investigate implications of non-zero issuanceRate here
-        assertEq(rdToken.lastUpdated(),                          START + vestingPeriod);  // This makes issuanceRate * time zero
-        assertEq(rdToken.vestingPeriodFinish(),                  START + vestingPeriod);
-
-        assertWithinDiff(asset.balanceOf(address(rdToken)), 0, 2);
-
-        assertEq(rdToken.balanceOfAssets(address(staker)), 0);
-
-        assertWithinDiff(asset.balanceOf(address(staker)),   depositAmount + vestingAmount, 2);
-        assertWithinDiff(rdToken.balanceOf(address(staker)), 0,                             1);
-    }
-
-}
-
-contract RedeemRevertOnTransfers is RDTTestBase {
-
-    MockRevertingERC20 revertingAsset;
-    Staker             staker;
-
-    function setUp() public override {
-        revertingAsset = new MockRevertingERC20("MockToken", "MT", 18);
-        rdToken        = new RDT("Revenue Distribution Token", "RDT", address(this), address(revertingAsset), 1e30);
-        staker         = new Staker();
-
-        vm.warp(START);  // Warp to non-zero timestamp
-    }
-
-    function test_redeem_revertOnTransfer(uint256 depositAmount, uint256 redeemAmount) public {
-        depositAmount = constrictToRange(depositAmount, 1, 1e29);
-        redeemAmount  = constrictToRange(redeemAmount,  1, depositAmount);
-
-        revertingAsset.mint(address(staker), depositAmount);
-
-        staker.erc20_approve(address(revertingAsset), address(rdToken), depositAmount);
-        staker.rdToken_deposit(address(rdToken), depositAmount);
-
-        vm.warp(START + 10 days);
-
-        vm.expectRevert(bytes("RDT:B:TRANSFER"));
-        staker.rdToken_redeem(address(rdToken), depositAmount, address(0), address(staker));
-
-        staker.rdToken_redeem(address(rdToken), depositAmount, address(1), address(staker));
-    }
-
-    function test_withdraw_revertOnTransfer(uint256 depositAmount, uint256 withdrawAmount) public {
-        depositAmount  = constrictToRange(depositAmount,  1, 1e29);
-        withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
-
-        revertingAsset.mint(address(staker), depositAmount);
-
-        staker.erc20_approve(address(revertingAsset), address(rdToken), depositAmount);
-        staker.rdToken_deposit(address(rdToken), depositAmount);
-
-        vm.warp(START + 10 days);
-
-        vm.expectRevert(bytes("RDT:B:TRANSFER"));
-        staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(0), address(staker));
-
-        staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(1), address(staker));
     }
 
 }
@@ -1821,277 +948,82 @@ contract DepositTests is RDTSuccessTestBase {
 
 }
 
-contract MintTests is RDTSuccessTestBase {
+contract DepositWithPermitFailureTests is RDTTestBase {
 
-    function test_mint_singleUser_preVesting() external {
-        uint256 mintAmount = 1000;
+    address staker;
+    address notStaker;
 
-        rdToken_balanceOf_staker_change = 1000;
-        rdToken_totalSupply_change      = 1000;
-        rdToken_freeAssets_change       = 1000;
-        rdToken_totalAssets_change      = 1000;
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = 0;
-        rdToken_lastUpdated_change      = _toInt256(START);  // First deposit updates `lastUpdated`
+    uint256 stakerPrivateKey    = 1;
+    uint256 notStakerPrivateKey = 2;
 
-        asset_balanceOf_staker_change         = -1000;
-        asset_balanceOf_rdToken_change        =  1000;
-        asset_allowance_staker_rdToken_change = -1000;
+    function setUp() public override {
+        super.setUp();
 
-        address staker = address(new Staker());
-
-        _assertMint(staker, mintAmount, false);
+        staker    = vm.addr(stakerPrivateKey);
+        notStaker = vm.addr(notStakerPrivateKey);
     }
 
-    function testFuzz_mint_singleUser_preVesting(uint256 mintAmount_) external {
-        mintAmount_ = constrictToRange(mintAmount_, 1, 1e29);
+    function test_depositWithPermit_zeroAddress() public {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount);
 
-        rdToken_balanceOf_staker_change = _toInt256(mintAmount_);
-        rdToken_totalSupply_change      = _toInt256(mintAmount_);
-        rdToken_freeAssets_change       = _toInt256(mintAmount_);
-        rdToken_totalAssets_change      = _toInt256(mintAmount_);
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = 0;
-        rdToken_lastUpdated_change      = _toInt256(START);  // First deposit updates `lastUpdated`
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
 
-        asset_balanceOf_staker_change         = - _toInt256(mintAmount_);
-        asset_balanceOf_rdToken_change        =   _toInt256(mintAmount_);
-        asset_allowance_staker_rdToken_change = - _toInt256(rdToken.convertToAssets(mintAmount_));
+        vm.startPrank(staker);
 
-        address staker = address(new Staker());
+        vm.expectRevert(bytes("ERC20:P:MALLEABLE"));
+        rdToken.depositWithPermit(depositAmount, staker, deadline, 17, r, s);
 
-        _assertMint(staker, mintAmount_, false);
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
     }
 
-    function test_mint_singleUser_midVesting() external {
-        Staker setupStaker = new Staker();
+    function test_depositWithPermit_notStakerSignature() public {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount);
 
-        // Do a deposit so that totalSupply is non-zero
-        _depositAsset(address(asset), address(setupStaker), 20e18);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(notStaker, address(rdToken), depositAmount, deadline, notStakerPrivateKey);
 
-        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 10 seconds);
+        vm.startPrank(staker);
 
-        vm.warp(START + 5 seconds);
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.25e18); // 1 * (20 + 5) / 20
+        ( v, r, s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
 
-        uint256 mintAmount = 10e18;
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
-        rdToken_balanceOf_staker_change = 10e18;
-        rdToken_totalSupply_change      = 10e18;
-        rdToken_freeAssets_change       = 17.5e18;  // Captures vested amount
-        rdToken_totalAssets_change      = 12.5e18;
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = 0;
-        rdToken_lastUpdated_change      = 5 seconds;
-
-        asset_balanceOf_staker_change         = -12.5e18;
-        asset_balanceOf_rdToken_change        =  12.5e18;
-        asset_allowance_staker_rdToken_change = -12.5e18;
-
-        address staker = address(new Staker());
-
-        _assertMint(staker, mintAmount, false);
     }
 
-    function testFuzz_mint_singleUser_midVesting(uint256 initialAmount_, uint256 mintAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, uint256 warpTime_) external {
-        Staker setupStaker = new Staker();
+    function test_depositWithPermit_pastDeadline() public {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount);
 
-        initialAmount_ = constrictToRange(initialAmount_, 1,         1e6);  // Kept smaller since its just needed to increase totalSupply
-        mintAmount_    = constrictToRange(mintAmount_,    1,         1e29);
-        vestingAmount_ = constrictToRange(vestingAmount_, 1,         1e29);
-        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 seconds, 365 days);
-        warpTime_      = constrictToRange(warpTime_,      1 seconds, vestingPeriod_);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
 
-        // Do a deposit so that totalSupply is non-zero
-        _depositAsset(address(asset), address(setupStaker), initialAmount_);
+        vm.startPrank(staker);
 
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+        vm.warp(deadline + 1);
 
-        vm.warp(START + warpTime_);
+        vm.expectRevert(bytes("ERC20:P:EXPIRED"));
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
-        uint256 expectedAssets = mintAmount_ * rdToken.totalAssets() / rdToken.totalSupply();
-        uint256 vestedAmount   = rdToken.issuanceRate() * warpTime_ / 1e30;
+        vm.warp(deadline);
 
-        rdToken_balanceOf_staker_change = _toInt256(mintAmount_);
-        rdToken_totalSupply_change      = _toInt256(mintAmount_);
-        rdToken_freeAssets_change       = _toInt256(vestedAmount + expectedAssets);  // Captures vested amount
-        rdToken_totalAssets_change      = _toInt256(expectedAssets);
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = 0;
-        rdToken_lastUpdated_change      = _toInt256(warpTime_);
-
-        asset_balanceOf_staker_change         = - _toInt256(expectedAssets);
-        asset_balanceOf_rdToken_change        =   _toInt256(expectedAssets);
-        asset_allowance_staker_rdToken_change = - _toInt256(expectedAssets);
-
-        address staker = address(new Staker());
-
-        _assertMint(staker, mintAmount_, true);
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
     }
 
-    function test_mint_singleUser_postVesting() external {
-        Staker setupStaker = new Staker();
+    function test_depositWithPermit_replay() public {
+        uint256 depositAmount = 1e18;
+        asset.mint(address(staker), depositAmount * 2);
 
-        // Do a deposit so that totalSupply is non-zero
-        _depositAsset(address(asset), address(setupStaker), 20e18);
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), depositAmount, deadline, stakerPrivateKey);
 
-        _transferAndUpdateVesting(address(asset), address(rdToken), 5e18, 10 seconds);  // Vest full 5e18 tokens
+        vm.startPrank(staker);
 
-        vm.warp(START + 11 seconds);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
 
-        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.25e18); // 1 * (20 + 5) / 20
-
-        uint256 mintAmount = 10e18;
-
-        rdToken_balanceOf_staker_change = 10e18;   // 10e18 / 1.25
-        rdToken_totalSupply_change      = 10e18;
-        rdToken_freeAssets_change       = 17.5e18;  // Captures vested amount
-        rdToken_totalAssets_change      = 12.5e18;
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = - _toInt256(rdToken.issuanceRate());  // Gets set to zero
-        rdToken_lastUpdated_change      = 11 seconds;
-
-        asset_balanceOf_staker_change         = - 12.5e18;
-        asset_balanceOf_rdToken_change        =   12.5e18;
-        asset_allowance_staker_rdToken_change = - 12.5e18;
-
-        address staker = address(new Staker());
-
-        _assertMint(staker, mintAmount, false);
-    }
-
-    function testFuzz_mint_singleUser_postVesting(uint256 initialAmount_, uint256 mintAmount_, uint256 vestingAmount_) external {
-        Staker setupStaker = new Staker();
-
-        initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
-        mintAmount_    = constrictToRange(mintAmount_,    1, 1e29);
-        vestingAmount_ = constrictToRange(vestingAmount_, 1, 1e29);
-
-        // Do a deposit so that totalSupply is non-zero
-        _depositAsset(address(asset), address(setupStaker), 20e18);
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, 10 seconds);
-
-        vm.warp(START + 11 seconds);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
-
-        uint256 expectedAssets = mintAmount_ * rdToken.totalAssets() / rdToken.totalSupply();
-
-        rdToken_balanceOf_staker_change = _toInt256(mintAmount_);
-        rdToken_totalSupply_change      = _toInt256(mintAmount_);
-        rdToken_freeAssets_change       = _toInt256(vestingAmount_ + expectedAssets);  // Captures vested amount
-        rdToken_totalAssets_change      = _toInt256(expectedAssets);
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = - _toInt256(rdToken.issuanceRate());  // Gets set to zero
-        rdToken_lastUpdated_change      = 11 seconds;
-
-        asset_balanceOf_staker_change         = - _toInt256(expectedAssets);
-        asset_balanceOf_rdToken_change        =   _toInt256(expectedAssets);
-        asset_allowance_staker_rdToken_change = - _toInt256(expectedAssets);
-
-        address staker = address(new Staker());
-
-        _assertMint(staker, mintAmount_, true);
-    }
-
-    function testFuzz_mint_multiUser_midVesting(
-        uint256 initialAmount_,
-        uint256 vestingAmount_,
-        uint256 vestingPeriod_,
-        bytes32 mintSeed_,
-        bytes32 warpSeed_
-    )
-        external
-    {
-        initialAmount_ = constrictToRange(initialAmount_, 1,      1e29);
-        vestingAmount_ = constrictToRange(vestingAmount_, 1,      1e29);
-        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days, 365 days);
-
-        Staker setupStaker = new Staker();
-
-        // Do a deposit so that totalSupply is non-zero
-        _depositAsset(address(asset), address(setupStaker), 1e18);
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
-
-        for (uint256 i = 1; i < 11; ++i) {
-            uint256 mintAmount = uint256(keccak256(abi.encodePacked(mintSeed_, i)));
-            uint256 warpTime   = uint256(keccak256(abi.encodePacked(warpSeed_, i)));
-
-            mintAmount = constrictToRange(mintAmount, 1, 1e29);
-            warpTime   = constrictToRange(warpTime,   0, vestingPeriod_ / 10); // Needs to be smaller than vestingPeriod_ so we can warp during for loop
-
-            vm.warp(block.timestamp + warpTime);
-
-            uint256 expectedAssets = mintAmount * rdToken.totalAssets() / rdToken.totalSupply();
-            uint256 vestedAmount   = rdToken.issuanceRate() * warpTime / 1e30;
-
-            rdToken_balanceOf_staker_change = _toInt256(mintAmount);
-            rdToken_totalSupply_change      = _toInt256(mintAmount);
-            rdToken_freeAssets_change       = _toInt256(vestedAmount + expectedAssets);  // Captures vested amount
-            rdToken_totalAssets_change      = _toInt256(expectedAssets);
-            rdToken_convertToAssets_change  = 0;
-            rdToken_convertToShares_change  = 0;
-            rdToken_issuanceRate_change     = 0;
-            rdToken_lastUpdated_change      = _toInt256(warpTime);
-
-            asset_balanceOf_staker_change         = - _toInt256(expectedAssets);
-            asset_balanceOf_rdToken_change        =   _toInt256(expectedAssets);
-            asset_allowance_staker_rdToken_change = - _toInt256(expectedAssets);
-
-            address staker = address(new Staker());
-
-            _assertMint(staker, mintAmount, true);
-        }
-    }
-
-    function testFuzz_mint_multiUser_postVesting(uint256 initialAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, bytes32 seed_) external {
-        initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
-        vestingAmount_ = constrictToRange(vestingAmount_, 1, 1e29);
-        vestingPeriod_ = constrictToRange(vestingPeriod_, 1, 365 days);
-
-        Staker setupStaker = new Staker();
-
-        // Do a deposit so that totalSupply is non-zero
-        _depositAsset(address(asset), address(setupStaker), 1e18);
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
-
-        vm.warp(START + vestingPeriod_ + 1);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
-
-        // Do another deposit to set all params to be uniform
-        _depositAsset(address(asset), address(setupStaker), 1e18);
-
-        for (uint256 i = 1; i < 11; ++i) {
-            uint256 mintAmount = uint256(keccak256(abi.encodePacked(seed_, i)));
-
-            mintAmount = constrictToRange(mintAmount, 1, 1e29);
-
-            uint256 expectedAssets = mintAmount * rdToken.totalAssets() / rdToken.totalSupply();
-
-            rdToken_balanceOf_staker_change = _toInt256(mintAmount);
-            rdToken_totalSupply_change      = _toInt256(mintAmount);
-            rdToken_freeAssets_change       = _toInt256(expectedAssets);  // Captures vested amount
-            rdToken_totalAssets_change      = _toInt256(expectedAssets);
-            rdToken_convertToAssets_change  = 0;
-            rdToken_convertToShares_change  = 0;
-            rdToken_issuanceRate_change     = 0;
-            rdToken_lastUpdated_change      = 0;
-
-            asset_balanceOf_staker_change         = - _toInt256(expectedAssets);
-            asset_balanceOf_rdToken_change        =   _toInt256(expectedAssets);
-            asset_allowance_staker_rdToken_change = - _toInt256(expectedAssets);
-
-            address staker = address(new Staker());
-
-            _assertMint(staker, mintAmount, true);
-        }
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
+        rdToken.depositWithPermit(depositAmount, staker, deadline, v, r, s);
     }
 
 }
@@ -2388,6 +1320,623 @@ contract DepositWithPermitTests is RDTSuccessTestBase {
 
 }
 
+contract EndToEndRevenueStreamingTests is RDTTestBase {
+
+    /********************************/
+    /*** End to end vesting tests ***/
+    /********************************/
+
+    function test_vesting_singleSchedule_explicitValues() public {
+        uint256 depositAmount = 1_000_000e18;
+        uint256 vestingAmount = 100_000e18;
+        uint256 vestingPeriod = 200_000 seconds;
+
+        Staker staker = new Staker();
+
+        asset.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), depositAmount);
+
+        assertEq(rdToken.freeAssets(),                           1_000_000e18);
+        assertEq(rdToken.totalAssets(),                          1_000_000e18);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         0);
+        assertEq(rdToken.lastUpdated(),                          START);
+        assertEq(rdToken.vestingPeriodFinish(),                  0);
+
+        vm.warp(START + 1 days);
+
+        assertEq(rdToken.totalAssets(),  1_000_000e18);  // No change
+
+        vm.warp(START);  // Warp back after demonstrating totalAssets is not time-dependent before vesting starts
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
+
+        assertEq(rdToken.freeAssets(),                           1_000_000e18);
+        assertEq(rdToken.totalAssets(),                          1_000_000e18);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         0.5e18 * 1e30);  // 0.5 tokens per second
+        assertEq(rdToken.lastUpdated(),                          START);
+        assertEq(rdToken.vestingPeriodFinish(),                  START + vestingPeriod);
+
+        // Warp and assert vesting in 10% increments
+        vm.warp(START + 20_000 seconds);  // 10% of vesting schedule
+
+        assertEq(rdToken.balanceOfAssets(address(staker)),       1_010_000e18);
+        assertEq(rdToken.totalAssets(),                          1_010_000e18);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.01e18);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.90099009900990099e17); // Shares go down, as they are worth more assets.
+
+        vm.warp(START + 40_000 seconds);  // 20% of vesting schedule
+
+        assertEq(rdToken.balanceOfAssets(address(staker)),       1_020_000e18);
+        assertEq(rdToken.totalAssets(),                          1_020_000e18);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.02e18);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.80392156862745098e17);
+
+        vm.warp(START + 60_000 seconds);  // 30% of vesting schedule
+
+        assertEq(rdToken.balanceOfAssets(address(staker)),       1_030_000e18);
+        assertEq(rdToken.totalAssets(),                          1_030_000e18);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.03e18);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.70873786407766990e17);
+
+        vm.warp(START + 200_000 seconds);  // End of vesting schedule
+
+        assertEq(rdToken.balanceOfAssets(address(staker)),       1_100_000e18);
+        assertEq(rdToken.totalAssets(),                          1_100_000e18);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.1e18);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), 9.09090909090909090e17);
+
+        assertEq(asset.balanceOf(address(rdToken)), 1_100_000e18);
+        assertEq(asset.balanceOf(address(staker)),  0);
+        assertEq(rdToken.balanceOf(address(staker)),     1_000_000e18);
+
+        staker.rdToken_redeem(address(rdToken), 1_000_000e18);  // Use `redeem` so rdToken amount can be used to burn 100% of tokens
+
+        assertEq(rdToken.freeAssets(),                           0);
+        assertEq(rdToken.totalAssets(),                          0);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);    // returns to sampleAssetsToConvert when empty
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);    // returns to sampleAssetsToConvert when empty
+        assertEq(rdToken.issuanceRate(),                         0.5e18 * 1e30);            // TODO: Investigate implications of non-zero issuanceRate here
+        assertEq(rdToken.lastUpdated(),                          START + 200_000 seconds);  // This makes issuanceRate * time zero
+        assertEq(rdToken.vestingPeriodFinish(),                  START + 200_000 seconds);
+
+        assertEq(asset.balanceOf(address(rdToken)),   0);
+        assertEq(rdToken.balanceOfAssets(address(staker)), 0);
+
+        assertEq(asset.balanceOf(address(staker)), 1_100_000e18);
+        assertEq(rdToken.balanceOf(address(staker)),    0);
+    }
+
+    function test_vesting_singleSchedule_fuzz(uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod) public {
+        depositAmount = constrictToRange(depositAmount, 1e6,        1e30);                    // 1 billion at WAD precision
+        vestingAmount = constrictToRange(vestingAmount, 1e6,        1e30);                    // 1 billion at WAD precision
+        vestingPeriod = constrictToRange(vestingPeriod, 10 seconds, 100_000 days) / 10 * 10;  // Must be divisible by 10 for for loop 10% increment calculations // TODO: Add a zero case test
+
+        Staker staker = new Staker();
+
+        asset.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), depositAmount);
+
+        assertEq(rdToken.freeAssets(),                           depositAmount);
+        assertEq(rdToken.totalAssets(),                          depositAmount);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         0);
+        assertEq(rdToken.lastUpdated(),                          START);
+        assertEq(rdToken.vestingPeriodFinish(),                  0);
+
+        vm.warp(START + 1 days);
+
+        assertEq(rdToken.totalAssets(),  depositAmount);  // No change
+
+        vm.warp(START);  // Warp back after demonstrating totalAssets is not time-dependent before vesting starts
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
+
+        uint256 expectedRate = vestingAmount * 1e30 / vestingPeriod;
+
+        assertEq(rdToken.freeAssets(),                           depositAmount);
+        assertEq(rdToken.totalAssets(),                          depositAmount);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         expectedRate);
+        assertEq(rdToken.lastUpdated(),                          START);
+        assertEq(rdToken.vestingPeriodFinish(),                  START + vestingPeriod);
+
+        // Warp and assert vesting in 10% increments
+        for (uint256 i = 1; i < 10; ++i) {
+            vm.warp(START + vestingPeriod * i / 10);  // 10% intervals of vesting schedule
+
+            uint256 expectedTotalAssets = depositAmount + expectedRate * (block.timestamp - START) / 1e30;
+
+            assertWithinDiff(rdToken.balanceOfAssets(address(staker)), expectedTotalAssets, 1);
+
+            assertEq(rdToken.totalSupply(),                          depositAmount);
+            assertEq(rdToken.totalAssets(),                          expectedTotalAssets);
+            assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert * expectedTotalAssets / depositAmount);
+            assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert * depositAmount / expectedTotalAssets);
+        }
+
+        vm.warp(START + vestingPeriod);
+
+        uint256 expectedFinalTotal = depositAmount + vestingAmount;
+
+        // TODO: Try assertEq
+        assertWithinDiff(rdToken.balanceOfAssets(address(staker)), expectedFinalTotal, 2);
+
+        assertWithinDiff(rdToken.totalAssets(), expectedFinalTotal, 1);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert),    sampleSharesToConvert * rdToken.totalAssets() / depositAmount); // Using totalAssets because of rounding
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert),    sampleAssetsToConvert * depositAmount / rdToken.totalAssets());
+
+        assertEq(asset.balanceOf(address(rdToken)), depositAmount + vestingAmount);
+
+        assertEq(asset.balanceOf(address(staker)), 0);
+        assertEq(rdToken.balanceOf(address(staker)),    depositAmount);
+
+        staker.rdToken_redeem(address(rdToken), depositAmount);  // Use `redeem` so rdToken amount can be used to burn 100% of tokens
+
+        assertWithinDiff(rdToken.freeAssets(),  0, 1);
+        assertWithinDiff(rdToken.totalAssets(), 0, 1);
+
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);  // Returns to sampleSharesToConvert zero when empty.
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);  // Returns to sampleAssetsToConvert zero when empty.
+        assertEq(rdToken.issuanceRate(),                         expectedRate);           // TODO: Investigate implications of non-zero issuanceRate here
+        assertEq(rdToken.lastUpdated(),                          START + vestingPeriod);  // This makes issuanceRate * time zero
+        assertEq(rdToken.vestingPeriodFinish(),                  START + vestingPeriod);
+
+        assertWithinDiff(asset.balanceOf(address(rdToken)), 0, 2);
+
+        assertEq(rdToken.balanceOfAssets(address(staker)), 0);
+
+        assertWithinDiff(asset.balanceOf(address(staker)),   depositAmount + vestingAmount, 2);
+        assertWithinDiff(rdToken.balanceOf(address(staker)), 0,                             1);
+    }
+
+}
+
+contract MintFailureTests is RDTTestBase {
+
+    Staker staker;
+
+    function setUp() public override {
+        super.setUp();
+        staker = new Staker();
+    }
+
+    function test_mint_zeroAmount() public {
+
+        asset.mint(address(staker), 1);
+        staker.erc20_approve(address(asset), address(rdToken), 1);
+
+        vm.expectRevert("RDT:M:ZERO_SHARES");
+        staker.rdToken_mint(address(rdToken), 0);
+
+        staker.rdToken_mint(address(rdToken), 1);
+    }
+
+    function test_mint_badApprove(uint256 mintAmount) public {
+
+        mintAmount = constrictToRange(mintAmount, 1, 1e29);
+
+        uint256 depositAmount = rdToken.previewMint(mintAmount);
+
+        asset.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount - 1);
+
+        vm.expectRevert("RDT:M:TRANSFER_FROM");
+        staker.rdToken_mint(address(rdToken), mintAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+        staker.rdToken_mint(address(rdToken), mintAmount);
+    }
+
+    function test_mint_insufficientBalance(uint256 mintAmount) public {
+
+        mintAmount = constrictToRange(mintAmount, 1, 1e29);
+
+        uint256 depositAmount = rdToken.previewMint(mintAmount);
+
+        staker.erc20_approve(address(asset), address(rdToken), depositAmount);
+
+        vm.expectRevert("RDT:M:TRANSFER_FROM");
+        staker.rdToken_mint(address(rdToken), mintAmount);
+
+        asset.mint(address(staker), depositAmount);
+
+        staker.rdToken_mint(address(rdToken), mintAmount);
+    }
+
+}
+
+contract MintTests is RDTSuccessTestBase {
+
+    function test_mint_singleUser_preVesting() external {
+        uint256 mintAmount = 1000;
+
+        rdToken_balanceOf_staker_change = 1000;
+        rdToken_totalSupply_change      = 1000;
+        rdToken_freeAssets_change       = 1000;
+        rdToken_totalAssets_change      = 1000;
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = 0;
+        rdToken_lastUpdated_change      = _toInt256(START);  // First deposit updates `lastUpdated`
+
+        asset_balanceOf_staker_change         = -1000;
+        asset_balanceOf_rdToken_change        =  1000;
+        asset_allowance_staker_rdToken_change = -1000;
+
+        address staker = address(new Staker());
+
+        _assertMint(staker, mintAmount, false);
+    }
+
+    function testFuzz_mint_singleUser_preVesting(uint256 mintAmount_) external {
+        mintAmount_ = constrictToRange(mintAmount_, 1, 1e29);
+
+        rdToken_balanceOf_staker_change = _toInt256(mintAmount_);
+        rdToken_totalSupply_change      = _toInt256(mintAmount_);
+        rdToken_freeAssets_change       = _toInt256(mintAmount_);
+        rdToken_totalAssets_change      = _toInt256(mintAmount_);
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = 0;
+        rdToken_lastUpdated_change      = _toInt256(START);  // First deposit updates `lastUpdated`
+
+        asset_balanceOf_staker_change         = - _toInt256(mintAmount_);
+        asset_balanceOf_rdToken_change        =   _toInt256(mintAmount_);
+        asset_allowance_staker_rdToken_change = - _toInt256(rdToken.convertToAssets(mintAmount_));
+
+        address staker = address(new Staker());
+
+        _assertMint(staker, mintAmount_, false);
+    }
+
+    function test_mint_singleUser_midVesting() external {
+        Staker setupStaker = new Staker();
+
+        // Do a deposit so that totalSupply is non-zero
+        _depositAsset(address(asset), address(setupStaker), 20e18);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 10 seconds);
+
+        vm.warp(START + 5 seconds);
+
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.25e18); // 1 * (20 + 5) / 20
+
+        uint256 mintAmount = 10e18;
+
+        rdToken_balanceOf_staker_change = 10e18;
+        rdToken_totalSupply_change      = 10e18;
+        rdToken_freeAssets_change       = 17.5e18;  // Captures vested amount
+        rdToken_totalAssets_change      = 12.5e18;
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = 0;
+        rdToken_lastUpdated_change      = 5 seconds;
+
+        asset_balanceOf_staker_change         = -12.5e18;
+        asset_balanceOf_rdToken_change        =  12.5e18;
+        asset_allowance_staker_rdToken_change = -12.5e18;
+
+        address staker = address(new Staker());
+
+        _assertMint(staker, mintAmount, false);
+    }
+
+    function testFuzz_mint_singleUser_midVesting(uint256 initialAmount_, uint256 mintAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, uint256 warpTime_) external {
+        Staker setupStaker = new Staker();
+
+        initialAmount_ = constrictToRange(initialAmount_, 1,         1e6);  // Kept smaller since its just needed to increase totalSupply
+        mintAmount_    = constrictToRange(mintAmount_,    1,         1e29);
+        vestingAmount_ = constrictToRange(vestingAmount_, 1,         1e29);
+        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 seconds, 365 days);
+        warpTime_      = constrictToRange(warpTime_,      1 seconds, vestingPeriod_);
+
+        // Do a deposit so that totalSupply is non-zero
+        _depositAsset(address(asset), address(setupStaker), initialAmount_);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+
+        vm.warp(START + warpTime_);
+
+        uint256 expectedAssets = mintAmount_ * rdToken.totalAssets() / rdToken.totalSupply();
+        uint256 vestedAmount   = rdToken.issuanceRate() * warpTime_ / 1e30;
+
+        rdToken_balanceOf_staker_change = _toInt256(mintAmount_);
+        rdToken_totalSupply_change      = _toInt256(mintAmount_);
+        rdToken_freeAssets_change       = _toInt256(vestedAmount + expectedAssets);  // Captures vested amount
+        rdToken_totalAssets_change      = _toInt256(expectedAssets);
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = 0;
+        rdToken_lastUpdated_change      = _toInt256(warpTime_);
+
+        asset_balanceOf_staker_change         = - _toInt256(expectedAssets);
+        asset_balanceOf_rdToken_change        =   _toInt256(expectedAssets);
+        asset_allowance_staker_rdToken_change = - _toInt256(expectedAssets);
+
+        address staker = address(new Staker());
+
+        _assertMint(staker, mintAmount_, true);
+    }
+
+    function test_mint_singleUser_postVesting() external {
+        Staker setupStaker = new Staker();
+
+        // Do a deposit so that totalSupply is non-zero
+        _depositAsset(address(asset), address(setupStaker), 20e18);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), 5e18, 10 seconds);  // Vest full 5e18 tokens
+
+        vm.warp(START + 11 seconds);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
+
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), 1.25e18); // 1 * (20 + 5) / 20
+
+        uint256 mintAmount = 10e18;
+
+        rdToken_balanceOf_staker_change = 10e18;   // 10e18 / 1.25
+        rdToken_totalSupply_change      = 10e18;
+        rdToken_freeAssets_change       = 17.5e18;  // Captures vested amount
+        rdToken_totalAssets_change      = 12.5e18;
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = - _toInt256(rdToken.issuanceRate());  // Gets set to zero
+        rdToken_lastUpdated_change      = 11 seconds;
+
+        asset_balanceOf_staker_change         = - 12.5e18;
+        asset_balanceOf_rdToken_change        =   12.5e18;
+        asset_allowance_staker_rdToken_change = - 12.5e18;
+
+        address staker = address(new Staker());
+
+        _assertMint(staker, mintAmount, false);
+    }
+
+    function testFuzz_mint_singleUser_postVesting(uint256 initialAmount_, uint256 mintAmount_, uint256 vestingAmount_) external {
+        Staker setupStaker = new Staker();
+
+        initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
+        mintAmount_    = constrictToRange(mintAmount_,    1, 1e29);
+        vestingAmount_ = constrictToRange(vestingAmount_, 1, 1e29);
+
+        // Do a deposit so that totalSupply is non-zero
+        _depositAsset(address(asset), address(setupStaker), 20e18);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, 10 seconds);
+
+        vm.warp(START + 11 seconds);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
+
+        uint256 expectedAssets = mintAmount_ * rdToken.totalAssets() / rdToken.totalSupply();
+
+        rdToken_balanceOf_staker_change = _toInt256(mintAmount_);
+        rdToken_totalSupply_change      = _toInt256(mintAmount_);
+        rdToken_freeAssets_change       = _toInt256(vestingAmount_ + expectedAssets);  // Captures vested amount
+        rdToken_totalAssets_change      = _toInt256(expectedAssets);
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = - _toInt256(rdToken.issuanceRate());  // Gets set to zero
+        rdToken_lastUpdated_change      = 11 seconds;
+
+        asset_balanceOf_staker_change         = - _toInt256(expectedAssets);
+        asset_balanceOf_rdToken_change        =   _toInt256(expectedAssets);
+        asset_allowance_staker_rdToken_change = - _toInt256(expectedAssets);
+
+        address staker = address(new Staker());
+
+        _assertMint(staker, mintAmount_, true);
+    }
+
+    function testFuzz_mint_multiUser_midVesting(
+        uint256 initialAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_,
+        bytes32 mintSeed_,
+        bytes32 warpSeed_
+    )
+        external
+    {
+        initialAmount_ = constrictToRange(initialAmount_, 1,      1e29);
+        vestingAmount_ = constrictToRange(vestingAmount_, 1,      1e29);
+        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days, 365 days);
+
+        Staker setupStaker = new Staker();
+
+        // Do a deposit so that totalSupply is non-zero
+        _depositAsset(address(asset), address(setupStaker), 1e18);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+
+        for (uint256 i = 1; i < 11; ++i) {
+            uint256 mintAmount = uint256(keccak256(abi.encodePacked(mintSeed_, i)));
+            uint256 warpTime   = uint256(keccak256(abi.encodePacked(warpSeed_, i)));
+
+            mintAmount = constrictToRange(mintAmount, 1, 1e29);
+            warpTime   = constrictToRange(warpTime,   0, vestingPeriod_ / 10); // Needs to be smaller than vestingPeriod_ so we can warp during for loop
+
+            vm.warp(block.timestamp + warpTime);
+
+            uint256 expectedAssets = mintAmount * rdToken.totalAssets() / rdToken.totalSupply();
+            uint256 vestedAmount   = rdToken.issuanceRate() * warpTime / 1e30;
+
+            rdToken_balanceOf_staker_change = _toInt256(mintAmount);
+            rdToken_totalSupply_change      = _toInt256(mintAmount);
+            rdToken_freeAssets_change       = _toInt256(vestedAmount + expectedAssets);  // Captures vested amount
+            rdToken_totalAssets_change      = _toInt256(expectedAssets);
+            rdToken_convertToAssets_change  = 0;
+            rdToken_convertToShares_change  = 0;
+            rdToken_issuanceRate_change     = 0;
+            rdToken_lastUpdated_change      = _toInt256(warpTime);
+
+            asset_balanceOf_staker_change         = - _toInt256(expectedAssets);
+            asset_balanceOf_rdToken_change        =   _toInt256(expectedAssets);
+            asset_allowance_staker_rdToken_change = - _toInt256(expectedAssets);
+
+            address staker = address(new Staker());
+
+            _assertMint(staker, mintAmount, true);
+        }
+    }
+
+    function testFuzz_mint_multiUser_postVesting(uint256 initialAmount_, uint256 vestingAmount_, uint256 vestingPeriod_, bytes32 seed_) external {
+        initialAmount_ = constrictToRange(initialAmount_, 1, 1e29);
+        vestingAmount_ = constrictToRange(vestingAmount_, 1, 1e29);
+        vestingPeriod_ = constrictToRange(vestingPeriod_, 1, 365 days);
+
+        Staker setupStaker = new Staker();
+
+        // Do a deposit so that totalSupply is non-zero
+        _depositAsset(address(asset), address(setupStaker), 1e18);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+
+        vm.warp(START + vestingPeriod_ + 1);  // To demonstrate `lastUpdated` and `issuanceRate` change, as well as vesting
+
+        // Do another deposit to set all params to be uniform
+        _depositAsset(address(asset), address(setupStaker), 1e18);
+
+        for (uint256 i = 1; i < 11; ++i) {
+            uint256 mintAmount = uint256(keccak256(abi.encodePacked(seed_, i)));
+
+            mintAmount = constrictToRange(mintAmount, 1, 1e29);
+
+            uint256 expectedAssets = mintAmount * rdToken.totalAssets() / rdToken.totalSupply();
+
+            rdToken_balanceOf_staker_change = _toInt256(mintAmount);
+            rdToken_totalSupply_change      = _toInt256(mintAmount);
+            rdToken_freeAssets_change       = _toInt256(expectedAssets);  // Captures vested amount
+            rdToken_totalAssets_change      = _toInt256(expectedAssets);
+            rdToken_convertToAssets_change  = 0;
+            rdToken_convertToShares_change  = 0;
+            rdToken_issuanceRate_change     = 0;
+            rdToken_lastUpdated_change      = 0;
+
+            asset_balanceOf_staker_change         = - _toInt256(expectedAssets);
+            asset_balanceOf_rdToken_change        =   _toInt256(expectedAssets);
+            asset_allowance_staker_rdToken_change = - _toInt256(expectedAssets);
+
+            address staker = address(new Staker());
+
+            _assertMint(staker, mintAmount, true);
+        }
+    }
+
+}
+
+contract MintWithPermitFailureTests is RDTTestBase {
+
+    address staker;
+    address notStaker;
+
+    uint256 stakerPrivateKey    = 1;
+    uint256 notStakerPrivateKey = 2;
+
+    function setUp() public override {
+        super.setUp();
+
+        staker    = vm.addr(stakerPrivateKey);
+        notStaker = vm.addr(notStakerPrivateKey);
+    }
+
+    function test_mintWithPermit_zeroAddress() public {
+        uint256 mintAmount = 1e18;
+        uint256 maxAssets = rdToken.previewMint(mintAmount);
+
+        asset.mint(address(staker), maxAssets);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
+
+        vm.startPrank(staker);
+
+        vm.expectRevert(bytes("ERC20:P:MALLEABLE"));
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, 17, r, s);
+
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
+    }
+
+    function test_mintWithPermit_notStakerSignature() public {
+        uint256 mintAmount = 1e18;
+        uint256 maxAssets = rdToken.previewMint(mintAmount);
+
+        asset.mint(address(staker), maxAssets);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(notStaker, address(rdToken), maxAssets, deadline, notStakerPrivateKey);
+
+        vm.startPrank(staker);
+
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
+
+        ( v, r, s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
+
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
+
+    }
+
+    function test_mintWithPermit_pastDeadline() public {
+        uint256 mintAmount = 1e18;
+        uint256 maxAssets = rdToken.previewMint(mintAmount);
+
+        asset.mint(address(staker), maxAssets);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
+
+        vm.startPrank(staker);
+
+        vm.warp(deadline + 1);
+
+        vm.expectRevert(bytes("ERC20:P:EXPIRED"));
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
+
+        vm.warp(deadline);
+
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
+    }
+
+    function test_mintWithPermit_insufficientPermit() public {
+        uint256 mintAmount = 1e18;
+        uint256 maxAssets = rdToken.previewMint(mintAmount);
+
+        asset.mint(address(staker), maxAssets);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets - 1, deadline, stakerPrivateKey);
+
+        vm.startPrank(staker);
+
+        vm.expectRevert(bytes("RDT:MWP:INSUFFICIENT_PERMIT"));
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets - 1, deadline, v, r, s);
+
+        ( v, r, s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
+
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
+    }
+
+    function test_mintWithPermit_replay() public {
+        uint256 mintAmount = 1e18;
+        uint256 maxAssets = rdToken.previewMint(mintAmount);
+
+        asset.mint(address(staker), maxAssets * 2);
+
+        ( uint8 v, bytes32 r, bytes32 s ) = _getValidPermitSignature(staker, address(rdToken), maxAssets, deadline, stakerPrivateKey);
+
+        vm.startPrank(staker);
+
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
+
+        vm.expectRevert(bytes("ERC20:P:INVALID_SIGNATURE"));
+        rdToken.mintWithPermit(mintAmount, staker, maxAssets, deadline, v, r, s);
+    }
+
+}
+
 contract MintWithPermitTests is RDTSuccessTestBase {
 
     function test_mintWithPermit_singleUser_preVesting() external {
@@ -2667,6 +2216,846 @@ contract MintWithPermitTests is RDTSuccessTestBase {
 
             _assertMintWithPermit(staker, i, mintAmount, true);
         }
+    }
+
+}
+
+contract RedeemCallerNotOwnerTests is RDTSuccessTestBase {
+
+    function test_redeem_callerNotOwner_singleUser_preVesting() external {
+        address staker = address(new Staker());
+        address caller = address(new Staker());
+
+        _depositAsset(address(asset), staker, 1000);
+
+        Staker(staker).erc20_approve(address(rdToken), caller, 1000);
+
+        rdToken_allowance_staker_caller_change = -1000;
+        rdToken_balanceOf_staker_change        = -1000;
+        rdToken_totalSupply_change             = -1000;
+        rdToken_freeAssets_change              = -1000;
+        rdToken_totalAssets_change             = -1000;
+        rdToken_convertToAssets_change         = 0;
+        rdToken_convertToShares_change         = 0;
+        rdToken_issuanceRate_change            = 0;
+        rdToken_lastUpdated_change             = 0;
+
+        asset_balanceOf_caller_change  = 1000;
+        asset_balanceOf_staker_change  = 0;
+        asset_balanceOf_rdToken_change = -1000;
+
+        _assertRedeemCallerNotOwner(caller, staker, 1000, false);
+    }
+
+    // TODO: Fuzz approve amount.
+    function testFuzz_redeem_callerNotOwner_singleUser_preVesting(uint256 depositAmount_, uint256 redeemAmount_) external {
+        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
+        redeemAmount_   = constrictToRange(redeemAmount_,   1, depositAmount_);
+
+        address staker = address(new Staker());
+        address caller = address(new Staker());
+
+        _depositAsset(address(asset), staker, depositAmount_);
+
+        Staker(staker).erc20_approve(address(rdToken), caller, redeemAmount_);
+
+        rdToken_allowance_staker_caller_change = - _toInt256(redeemAmount_);
+        rdToken_balanceOf_staker_change        = - _toInt256(redeemAmount_);
+        rdToken_totalSupply_change             = - _toInt256(redeemAmount_);
+        rdToken_freeAssets_change              = - _toInt256(redeemAmount_);
+        rdToken_totalAssets_change             = - _toInt256(redeemAmount_);
+        rdToken_convertToAssets_change         = 0;
+        rdToken_convertToShares_change         = 0;
+        rdToken_issuanceRate_change            = 0;
+        rdToken_lastUpdated_change             = 0;
+
+        asset_balanceOf_caller_change  = _toInt256(redeemAmount_);
+        asset_balanceOf_staker_change  = 0;
+        asset_balanceOf_rdToken_change = - _toInt256(redeemAmount_);
+
+        _assertRedeemCallerNotOwner(caller, staker, redeemAmount_, true);
+    }
+
+    function test_redeem_callerNotOwner_singleUser_midVesting() external {
+        address staker = address(new Staker());
+        address caller = address(new Staker());
+
+        _depositAsset(address(asset), staker, 100e18);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 200 seconds);
+
+        vm.warp(START + 100 seconds);  // Vest 5e18 tokens
+
+        Staker(staker).erc20_approve(address(rdToken), address(caller), 20e18);
+
+        rdToken_allowance_staker_caller_change = -20e18;
+        rdToken_balanceOf_staker_change        = -20e18;
+        rdToken_totalSupply_change             = -20e18;
+        rdToken_freeAssets_change              = -16e18;  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw (+5 - 21)
+        rdToken_totalAssets_change             = -21e18;  // 20 * 1.05
+        rdToken_convertToAssets_change         = 0;
+        rdToken_convertToShares_change         = 0;
+        rdToken_issuanceRate_change            = 0;
+        rdToken_lastUpdated_change             = 100 seconds;
+
+        asset_balanceOf_caller_change  = 21e18;
+        asset_balanceOf_staker_change  = 0;
+        asset_balanceOf_rdToken_change = -21e18;
+
+        _assertRedeemCallerNotOwner(caller, staker, 20e18, false);
+    }
+
+    // TODO: Fuzz approve amount.
+    function testFuzz_redeem_callerNotOwner_singleUser_midVesting(
+        uint256 depositAmount_,
+        uint256 redeemAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_,
+        uint256 warpTime_
+    ) external {
+        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
+        redeemAmount_   = constrictToRange(redeemAmount_,   1, depositAmount_);
+        vestingAmount_  = constrictToRange(vestingAmount_,  1, 1e29);
+        vestingPeriod_  = constrictToRange(vestingPeriod_,  1, 100 days);
+        warpTime_       = constrictToRange(warpTime_,       1, vestingPeriod_);
+
+        address staker = address(new Staker());
+        address caller = address(new Staker());
+
+        _depositAsset(address(asset), staker, depositAmount_);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+
+        vm.warp(START + warpTime_);
+
+        uint256 expectedWithdrawnFunds = redeemAmount_ * rdToken.totalAssets() / rdToken.totalSupply();
+        uint256 vestedAmount           = rdToken.issuanceRate() * warpTime_ / 1e30;
+
+        Staker(staker).erc20_approve(address(rdToken), caller, redeemAmount_);
+
+        rdToken_allowance_staker_caller_change = - _toInt256(redeemAmount_);
+        rdToken_balanceOf_staker_change        = - _toInt256(redeemAmount_);
+        rdToken_totalSupply_change             = - _toInt256(redeemAmount_);
+        rdToken_totalAssets_change             = - _toInt256(expectedWithdrawnFunds);
+        rdToken_freeAssets_change              =   _toInt256(vestedAmount) - _toInt256(expectedWithdrawnFunds);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
+        rdToken_convertToAssets_change         = 0;
+        rdToken_convertToShares_change         = 0;
+        rdToken_issuanceRate_change            = 0;
+        rdToken_lastUpdated_change             = _toInt256(warpTime_);
+
+        asset_balanceOf_caller_change  = _toInt256(expectedWithdrawnFunds);
+        asset_balanceOf_staker_change  = 0;
+        asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
+
+        _assertRedeemCallerNotOwner(caller, staker, redeemAmount_, true);
+    }
+
+    function test_redeem_callerNotOwner_singleUser_postVesting() external {
+        address staker = address(new Staker());
+        address caller = address(new Staker());
+
+        _depositAsset(address(asset), staker, 100e18);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 200 seconds);
+
+        vm.warp(START + 201 seconds);  // Vest 5e18 tokens
+
+        Staker(staker).erc20_approve(address(rdToken), caller, 20e18);
+
+        rdToken_allowance_staker_caller_change = -20e18;
+        rdToken_balanceOf_staker_change        = -20e18;
+        rdToken_totalSupply_change             = -20e18;
+        rdToken_freeAssets_change              = -12e18;  // freeAssets gets updated to reflects 10e18 vested tokens during withdraw (+10 - 22)
+        rdToken_totalAssets_change             = -22e18;  // 20 * 1.1
+        rdToken_convertToAssets_change         = 0;
+        rdToken_convertToShares_change         = 0;
+        rdToken_issuanceRate_change            = -(0.05e18 * 1e30);  // Gets set to zero.
+        rdToken_lastUpdated_change             = 201 seconds;
+
+        asset_balanceOf_caller_change  = 22e18;
+        asset_balanceOf_staker_change  = 0;
+        asset_balanceOf_rdToken_change = -22e18;
+
+        _assertRedeemCallerNotOwner(caller, staker, 20e18, false);
+    }
+
+    function testFuzz_redeem_callerNotOwner_singleUser_postVesting(
+        uint256 depositAmount_,
+        uint256 redeemAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_
+    )
+        external
+    {
+        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
+        redeemAmount_   = constrictToRange(redeemAmount_,   1, depositAmount_);
+        vestingAmount_  = constrictToRange(vestingAmount_,  1, 1e29);
+        vestingPeriod_  = constrictToRange(vestingPeriod_,  1, 100 days);
+
+        address staker = address(new Staker());
+        address caller = address(new Staker());
+
+        _depositAsset(address(asset), staker, depositAmount_);
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+
+        vm.warp(START + vestingPeriod_ + 1 seconds);
+
+        uint256 expectedWithdrawnFunds = rdToken.previewRedeem(redeemAmount_);
+
+        Staker(staker).erc20_approve(address(rdToken), caller, redeemAmount_);
+
+        rdToken_allowance_staker_caller_change = - _toInt256(redeemAmount_);
+        rdToken_balanceOf_staker_change        = - _toInt256(redeemAmount_);
+        rdToken_totalSupply_change             = - _toInt256(redeemAmount_);
+        rdToken_totalAssets_change             = - _toInt256(expectedWithdrawnFunds);
+        rdToken_freeAssets_change              =   _toInt256(vestingAmount_) - _toInt256(expectedWithdrawnFunds);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
+        rdToken_convertToAssets_change         = 0;
+        rdToken_convertToShares_change         = 0;
+        rdToken_issuanceRate_change            = 0;
+        rdToken_lastUpdated_change             = _toInt256(vestingPeriod_ + 1 seconds);
+
+        asset_balanceOf_caller_change  = _toInt256(expectedWithdrawnFunds);
+        asset_balanceOf_staker_change  = 0;
+        asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
+
+        _assertRedeemCallerNotOwner(caller, staker, redeemAmount_, true);
+    }
+
+    function testFuzz_redeem_callerNotOwner_multiUser_midVesting(
+        uint256 initialAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_,
+        bytes32 depositSeed_,
+        bytes32 redeemSeed_,
+        bytes32 warpSeed_
+    )
+        public
+    {
+        initialAmount_ = constrictToRange(initialAmount_, 1e6,    1e29);
+        vestingAmount_ = constrictToRange(vestingAmount_, 1e6,    1e29);
+        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days, 1e29);
+
+        Staker setupStaker = new Staker();
+
+        // Do a deposit so that totalSupply is non-zero
+        _depositAsset(address(asset), address(setupStaker), 1e18);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+
+        vm.warp(START + vestingPeriod_ + 12 hours);  // Warp into vestingPeriod so exchangeRate is greater than one for all new deposits
+
+        Staker[] memory stakers = new Staker[](10);
+
+        for (uint256 i; i < 10; ++i) {
+            stakers[i] = new Staker();
+
+            uint256 depositAmount = uint256(keccak256(abi.encodePacked(depositSeed_, i)));
+
+            // Get minimum deposit to avoid ZERO_SHARES.
+            uint256 minDeposit = _getMinDeposit(address(rdToken));
+            depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
+
+            _depositAsset(address(asset), address(stakers[i]), depositAmount);
+        }
+
+        for (uint256 i; i < 10; ++i) {
+            address caller = address(new Staker());
+
+            uint256 redeemAmount = uint256(keccak256(abi.encodePacked(redeemSeed_, i)));
+            uint256 warpTime     = uint256(keccak256(abi.encodePacked(warpSeed_,   i)));
+
+            redeemAmount = constrictToRange(redeemAmount, 1, rdToken.balanceOf(address(stakers[i])));
+            warpTime     = constrictToRange(warpTime,     0, (vestingPeriod_ - 12 hours) / 10);
+
+            vm.warp(block.timestamp + warpTime);
+
+            uint256 expectedWithdrawnFunds = rdToken.previewRedeem(redeemAmount);
+            uint256 vestedAmount           = rdToken.issuanceRate() * warpTime / 1e30;
+
+            stakers[i].erc20_approve(address(rdToken), caller, redeemAmount);
+
+            rdToken_allowance_staker_caller_change = - _toInt256(redeemAmount);
+            rdToken_balanceOf_staker_change        = - _toInt256(redeemAmount);
+            rdToken_totalSupply_change             = - _toInt256(redeemAmount);
+            rdToken_totalAssets_change             = - _toInt256(expectedWithdrawnFunds);
+            rdToken_freeAssets_change              =   _toInt256(vestedAmount) - _toInt256(expectedWithdrawnFunds);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
+            rdToken_convertToAssets_change         = 0;
+            rdToken_convertToShares_change         = 0;
+            rdToken_issuanceRate_change            = 0;
+            rdToken_lastUpdated_change             = _toInt256(warpTime);
+
+            asset_balanceOf_caller_change  = _toInt256(expectedWithdrawnFunds);
+            asset_balanceOf_staker_change  = 0;
+            asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
+
+            _assertRedeemCallerNotOwner(caller, address(stakers[i]), redeemAmount, true);
+        }
+    }
+
+    // TODO: testFuzz_redeem_callerNotOwner_multiUser_postVesting
+
+}
+
+contract RedeemFailureTests is RDTTestBase {
+
+    Staker staker;
+
+    function setUp() public override {
+        super.setUp();
+        staker = new Staker();
+    }
+
+    function test_redeem_zeroShares(uint256 depositAmount) public {
+        _depositAsset(address(asset), address(staker), depositAmount = constrictToRange(depositAmount, 1, 1e29));
+
+        vm.expectRevert("RDT:B:ZERO_SHARES");
+        staker.rdToken_redeem(address(rdToken), 0);
+
+        staker.rdToken_redeem(address(rdToken), 1);
+    }
+
+    function test_redeem_burnUnderflow(uint256 depositAmount) public {
+        _depositAsset(address(asset), address(staker), depositAmount = constrictToRange(depositAmount, 1, 1e29));
+
+        vm.expectRevert(ARITHMETIC_ERROR);
+        staker.rdToken_redeem(address(rdToken), depositAmount + 1);
+
+        staker.rdToken_redeem(address(rdToken), depositAmount);
+    }
+
+    function test_redeem_burnUnderflow_totalAssetsGtTotalSupply_explicitValues() public {
+        uint256 depositAmount = 100e18;
+        uint256 vestingAmount = 10e18;
+        uint256 vestingPeriod = 10 days;
+        uint256 warpTime      = 5 days;
+
+        _depositAsset(address(asset), address(staker), depositAmount);
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
+
+        vm.warp(block.timestamp + warpTime);
+
+        vm.expectRevert(ARITHMETIC_ERROR);
+        staker.rdToken_redeem(address(rdToken), 100e18 + 1);
+
+        staker.rdToken_redeem(address(rdToken), 100e18);
+    }
+
+    function test_redeem_callerNotOwner_badApproval() public {
+        Staker shareOwner    = new Staker();
+        Staker notShareOwner = new Staker();
+
+        uint256 depositAmount = 1e18;
+        asset.mint(address(shareOwner), depositAmount);
+
+        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
+        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
+
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount - 1);
+        vm.expectRevert("RDT:CALLER_ALLOWANCE");
+        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
+
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
+
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), depositAmount);
+
+        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
+
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
+    }
+
+    function test_redeem_callerNotOwner_infiniteApprovalForCaller() public {
+        Staker shareOwner    = new Staker();
+        Staker notShareOwner = new Staker();
+
+        uint256 depositAmount = 1e18;
+        asset.mint(address(shareOwner), depositAmount);
+
+        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
+        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
+
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), type(uint256).max);
+
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
+
+        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
+
+        // Infinite approval stays infinite.
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
+    }
+
+}
+
+contract RedeemRevertOnTransfers is RDTTestBase {
+
+    MockRevertingERC20 revertingAsset;
+    Staker             staker;
+
+    function setUp() public override {
+        revertingAsset = new MockRevertingERC20("MockToken", "MT", 18);
+        rdToken        = new RDT("Revenue Distribution Token", "RDT", address(this), address(revertingAsset), 1e30);
+        staker         = new Staker();
+
+        vm.warp(START);  // Warp to non-zero timestamp
+    }
+
+    function test_redeem_revertOnTransfer(uint256 depositAmount, uint256 redeemAmount) public {
+        depositAmount = constrictToRange(depositAmount, 1, 1e29);
+        redeemAmount  = constrictToRange(redeemAmount,  1, depositAmount);
+
+        revertingAsset.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(revertingAsset), address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), depositAmount);
+
+        vm.warp(START + 10 days);
+
+        vm.expectRevert(bytes("RDT:B:TRANSFER"));
+        staker.rdToken_redeem(address(rdToken), depositAmount, address(0), address(staker));
+
+        staker.rdToken_redeem(address(rdToken), depositAmount, address(1), address(staker));
+    }
+
+}
+
+contract RedeemTests is RDTSuccessTestBase {
+
+    function test_redeem_singleUser_preVesting() external {
+        address staker = address(new Staker());
+
+        _depositAsset(address(asset), staker, 1000);
+
+        rdToken_balanceOf_staker_change = -1000;
+        rdToken_totalSupply_change      = -1000;
+        rdToken_freeAssets_change       = -1000;
+        rdToken_totalAssets_change      = -1000;
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = 0;
+        rdToken_lastUpdated_change      = 0;
+
+        asset_balanceOf_staker_change  = 1000;
+        asset_balanceOf_rdToken_change = -1000;
+
+        _assertRedeem(staker, 1000, false);
+    }
+
+    function testFuzz_redeem_singleUser_preVesting(uint256 depositAmount_,uint256 redeemAmount_) external {
+        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
+        redeemAmount_   = constrictToRange(redeemAmount_,   1, depositAmount_);
+
+        address staker = address(new Staker());
+
+        _depositAsset(address(asset), staker, depositAmount_);
+
+        rdToken_balanceOf_staker_change        = - _toInt256(redeemAmount_);
+        rdToken_totalSupply_change             = - _toInt256(redeemAmount_);
+        rdToken_freeAssets_change              = - _toInt256(redeemAmount_);
+        rdToken_totalAssets_change             = - _toInt256(redeemAmount_);
+        rdToken_convertToAssets_change         = 0;
+        rdToken_convertToShares_change         = 0;
+        rdToken_issuanceRate_change            = 0;
+        rdToken_lastUpdated_change             = 0;
+
+        asset_balanceOf_staker_change  =   _toInt256(redeemAmount_);
+        asset_balanceOf_rdToken_change = - _toInt256(redeemAmount_);
+
+        _assertRedeem(staker, redeemAmount_, true);
+    }
+
+    function test_redeem_singleUser_midVesting() external {
+        address staker = address(new Staker());
+
+        _depositAsset(address(asset), staker, 100e18);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 200 seconds);
+
+        vm.warp(block.timestamp + 100 seconds);  // Vest 5e18 tokens
+
+        rdToken_balanceOf_staker_change = -20e18;
+        rdToken_totalSupply_change      = -20e18;
+        rdToken_freeAssets_change       = -16e18;  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw (+5 - 21)
+        rdToken_totalAssets_change      = -21e18;  // 20 * 10.5
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = 0;
+        rdToken_lastUpdated_change      = 100 seconds;
+
+        asset_balanceOf_staker_change  = 21e18;
+        asset_balanceOf_rdToken_change = -21e18;
+
+        _assertRedeem(staker, 20e18, false);
+    }
+
+    function testFuzz_redeem_singleUser_midVesting(
+        uint256 depositAmount_,
+        uint256 redeemAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_,
+        uint256 warpTime_
+    ) external {
+        depositAmount_  = constrictToRange(depositAmount_,  1,         1e29);
+        redeemAmount_   = constrictToRange(redeemAmount_,   1,         depositAmount_);
+        vestingAmount_  = constrictToRange(vestingAmount_,  1,         1e29);
+        vestingPeriod_  = constrictToRange(vestingPeriod_,  1 seconds, 100 days);
+        warpTime_       = constrictToRange(warpTime_,       0,         vestingPeriod_);
+
+        address staker = address(new Staker());
+
+        _depositAsset(address(asset), staker, depositAmount_);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+
+        vm.warp(START + warpTime_);
+
+        uint256 expectedWithdrawnFunds = redeemAmount_ * rdToken.totalAssets() / rdToken.totalSupply();
+        uint256 vestedAmount           = rdToken.issuanceRate() * warpTime_ / 1e30;
+
+        rdToken_balanceOf_staker_change = - _toInt256(redeemAmount_);
+        rdToken_totalSupply_change      = - _toInt256(redeemAmount_);
+        rdToken_totalAssets_change      = - _toInt256(expectedWithdrawnFunds);
+        rdToken_freeAssets_change       =   _toInt256(vestedAmount) - _toInt256(expectedWithdrawnFunds);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = 0;
+        rdToken_lastUpdated_change      = _toInt256(warpTime_);
+
+        asset_balanceOf_staker_change  = _toInt256(expectedWithdrawnFunds);
+        asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
+
+        _assertRedeem(staker, redeemAmount_, true);
+    }
+
+    function test_redeem_singleUser_postVesting() external {
+        address staker = address(new Staker());
+
+        _depositAsset(address(asset), staker, 100e18);
+        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 200 seconds);
+
+        vm.warp(START + 201 seconds);  // Vest 5e18 tokens
+
+        rdToken_balanceOf_staker_change = -20e18;
+        rdToken_totalSupply_change      = -20e18;
+        rdToken_freeAssets_change       = -12e18;  // freeAssets gets updated to reflects 10e18 vested tokens during withdraw (+10 - 22)
+        rdToken_totalAssets_change      = -22e18;  // 20 * 1.1
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = -(0.05e18 * 1e30);  // Gets set to zero.
+        rdToken_lastUpdated_change      = 201 seconds;
+
+        asset_balanceOf_staker_change  = 22e18;
+        asset_balanceOf_rdToken_change = -22e18;
+
+        _assertRedeem(staker, 20e18, false);
+    }
+
+    function testFuzz_redeem_singleUser_postVesting(
+        uint256 depositAmount_,
+        uint256 redeemAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_
+    )
+        external
+    {
+        depositAmount_  = constrictToRange(depositAmount_,  1,         1e29);
+        redeemAmount_   = constrictToRange(redeemAmount_,   1,         depositAmount_);
+        vestingAmount_  = constrictToRange(vestingAmount_,  1,         1e29);
+        vestingPeriod_  = constrictToRange(vestingPeriod_,  1 seconds, 100 days);
+
+        address staker = address(new Staker());
+
+        _depositAsset(address(asset), staker, depositAmount_);
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+
+        vm.warp(START + vestingPeriod_ + 1 seconds);
+
+        uint256 expectedWithdrawnFunds = rdToken.previewRedeem(redeemAmount_);
+
+        rdToken_balanceOf_staker_change = - _toInt256(redeemAmount_);
+        rdToken_totalSupply_change      = - _toInt256(redeemAmount_);
+        rdToken_totalAssets_change      = - _toInt256(expectedWithdrawnFunds);
+        rdToken_freeAssets_change       =   _toInt256(vestingAmount_) - _toInt256(expectedWithdrawnFunds);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
+        rdToken_convertToAssets_change  = 0;
+        rdToken_convertToShares_change  = 0;
+        rdToken_issuanceRate_change     = - _toInt256(rdToken.issuanceRate());
+        rdToken_lastUpdated_change      =   _toInt256(vestingPeriod_ + 1 seconds);
+
+        asset_balanceOf_staker_change  =   _toInt256(expectedWithdrawnFunds);
+        asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
+
+        _assertRedeem(staker, redeemAmount_, true);
+    }
+
+    function testFuzz_redeem_multiUser_midVesting(
+        uint256 initialAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_,
+        bytes32 depositSeed_,
+        bytes32 redeemSeed_,
+        bytes32 warpSeed_
+    )
+        public
+    {
+        initialAmount_ = constrictToRange(initialAmount_, 1e6,    1e29);
+        vestingAmount_ = constrictToRange(vestingAmount_, 1e6,    1e29);
+        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days, 1e29);
+
+        Staker setupStaker = new Staker();
+
+        // Do a deposit so that totalSupply is non-zero
+        _depositAsset(address(asset), address(setupStaker), 1e18);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+
+        vm.warp(START + vestingPeriod_ + 12 hours);  // Warp into vestingPeriod so exchangeRate is greater than zero for all new deposits
+
+        Staker[] memory stakers = new Staker[](10);
+
+        for (uint256 i; i < 10; ++i) {
+            stakers[i] = new Staker();
+
+            uint256 depositAmount = uint256(keccak256(abi.encodePacked(depositSeed_, i)));
+
+            // Get minimum deposit to avoid ZERO_SHARES.
+            uint256 minDeposit = _getMinDeposit(address(rdToken));
+            depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
+
+            _depositAsset(address(asset), address(stakers[i]), depositAmount);
+        }
+
+        for (uint256 i; i < 10; ++i) {
+            uint256 redeemAmount = uint256(keccak256(abi.encodePacked(redeemSeed_, i)));
+            uint256 warpTime     = uint256(keccak256(abi.encodePacked(warpSeed_,   i)));
+
+            redeemAmount = constrictToRange(redeemAmount, 1, rdToken.balanceOf(address(stakers[i])));
+            warpTime     = constrictToRange(warpTime,     0, (vestingPeriod_ - 12 hours) / 10);
+
+            vm.warp(block.timestamp + warpTime);
+
+            uint256 expectedWithdrawnFunds = rdToken.previewRedeem(redeemAmount);
+            uint256 vestedAmount           = rdToken.issuanceRate() * warpTime / 1e30;
+
+            rdToken_balanceOf_staker_change        = - _toInt256(redeemAmount);
+            rdToken_totalSupply_change             = - _toInt256(redeemAmount);
+            rdToken_totalAssets_change             = - _toInt256(expectedWithdrawnFunds);
+            rdToken_freeAssets_change              =   _toInt256(vestedAmount) - _toInt256(expectedWithdrawnFunds);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
+            rdToken_convertToAssets_change         = 0;
+            rdToken_convertToShares_change         = 0;
+            rdToken_issuanceRate_change            = 0;
+            rdToken_lastUpdated_change             = _toInt256(warpTime);
+
+            asset_balanceOf_staker_change  =   _toInt256(expectedWithdrawnFunds);
+            asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
+
+            _assertRedeem(address(stakers[i]), redeemAmount, true);
+        }
+    }
+
+    // testFuzz_redeem_multiUser_postVesting
+
+}
+
+contract RevenueStreamingTests is RDTTestBase {
+
+    Staker firstStaker;
+
+    uint256 startingAssets;
+
+    function setUp() public override {
+        super.setUp();
+        firstStaker = new Staker();
+
+        // Deposit the minimum amount of the asset to allow the vesting schedule updates to occur.
+        startingAssets = 1;
+        asset.mint(address(firstStaker), startingAssets);
+        firstStaker.erc20_approve(address(asset), address(rdToken), startingAssets);
+        firstStaker.rdToken_deposit(address(rdToken), startingAssets);
+    }
+
+    function test_updateVestingSchedule_zeroSupply() public {
+        firstStaker.rdToken_withdraw(address(rdToken), 1);
+
+        vm.expectRevert("RDT:UVS:ZERO_SUPPLY");
+        rdToken.updateVestingSchedule(100 seconds);
+
+        firstStaker.erc20_approve(address(asset), address(rdToken), 1);
+        firstStaker.rdToken_deposit(address(rdToken), 1);
+
+        rdToken.updateVestingSchedule(100 seconds);
+    }
+
+    /************************************/
+    /*** Single updateVestingSchedule ***/
+    /************************************/
+
+    function test_updateVestingSchedule_single() public {
+        assertEq(rdToken.freeAssets(),          startingAssets);
+        assertEq(rdToken.totalAssets(),         startingAssets);
+        assertEq(rdToken.issuanceRate(),        0);
+        assertEq(rdToken.lastUpdated(),         START);
+        assertEq(rdToken.vestingPeriodFinish(), 0);
+
+        assertEq(asset.balanceOf(address(rdToken)), startingAssets);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);  // 10 tokens per second
+
+        assertEq(asset.balanceOf(address(rdToken)), startingAssets + 1000);
+
+        assertEq(rdToken.freeAssets(),                           startingAssets);
+        assertEq(rdToken.totalAssets(),                          startingAssets);
+        assertEq(rdToken.convertToAssets(sampleSharesToConvert), sampleSharesToConvert);
+        assertEq(rdToken.convertToShares(sampleAssetsToConvert), sampleAssetsToConvert);
+        assertEq(rdToken.issuanceRate(),                         10e30);  // 10 tokens per second
+        assertEq(rdToken.lastUpdated(),                          START);
+        assertEq(rdToken.vestingPeriodFinish(),                  START + 100 seconds);
+
+        vm.warp(rdToken.vestingPeriodFinish());
+
+        assertEq(rdToken.totalAssets(), startingAssets + 1000);  // All tokens vested
+    }
+
+    function test_updateVestingSchedule_single_roundingDown() public {
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 30 seconds);  // 33.3333... tokens per second
+
+        assertEq(rdToken.totalAssets(),  startingAssets);
+        assertEq(rdToken.issuanceRate(), 33333333333333333333333333333333);  // 3.33e30
+
+        // totalAssets should never be more than one full unit off
+        vm.warp(START + 1 seconds);
+        assertEq(rdToken.totalAssets(), startingAssets + 33);  // 33 < 33.33...
+
+        vm.warp(START + 2 seconds);
+        assertEq(rdToken.totalAssets(), startingAssets + 66);  // 66 < 66.66...
+
+        vm.warp(START + 3 seconds);
+        assertEq(rdToken.totalAssets(), startingAssets + 99);  // 99 < 99.99...
+
+        vm.warp(START + 4 seconds);
+        assertEq(rdToken.totalAssets(), startingAssets + 133);  // 133 < 133.33...
+
+        vm.warp(rdToken.vestingPeriodFinish());
+        assertEq(rdToken.totalAssets(), startingAssets + 999);  // 999 < 1000
+    }
+
+    /*************************************************/
+    /*** Multiple updateVestingSchedule, same time ***/
+    /*************************************************/
+
+    function test_updateVestingSchedule_sameTime_shorterVesting() public {
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);
+        assertEq(rdToken.issuanceRate(),        10e30);                // 1000 / 100 seconds = 10 tokens per second
+        assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);  // Always updates to latest vesting schedule
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 20 seconds);
+        assertEq(rdToken.issuanceRate(),        100e30);              // (1000 + 1000) / 20 seconds = 100 tokens per second
+        assertEq(rdToken.vestingPeriodFinish(), START + 20 seconds);  // Always updates to latest vesting schedule
+
+        assertEq(rdToken.totalAssets(), startingAssets);
+
+        vm.warp(START + 20 seconds);
+
+        assertEq(rdToken.totalAssets(), startingAssets + 2000);
+    }
+
+    function test_updateVestingSchedule_sameTime_longerVesting_higherRate() public {
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);
+        assertEq(rdToken.issuanceRate(),        10e30);                // 1000 / 100 seconds = 10 tokens per second
+        assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);  // Always updates to latest vesting schedule
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), 3000, 200 seconds);
+        assertEq(rdToken.issuanceRate(),        20e30);                // (3000 + 1000) / 200 seconds = 20 tokens per second
+        assertEq(rdToken.vestingPeriodFinish(), START + 200 seconds);  // Always updates to latest vesting schedule
+
+        assertEq(rdToken.totalAssets(), startingAssets);
+
+        vm.warp(START + 200 seconds);
+
+        assertEq(rdToken.totalAssets(), startingAssets + 4000);
+    }
+
+    function test_updateVestingSchedule_sameTime_longerVesting_lowerRate() public {
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);
+        assertEq(rdToken.issuanceRate(),        10e30);                // 1000 / 100 seconds = 10 tokens per second
+        assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);  // Always updates to latest vesting schedule
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 500 seconds);
+        assertEq(rdToken.issuanceRate(),        4e30);                 // (1000 + 1000) / 500 seconds = 4 tokens per second
+        assertEq(rdToken.vestingPeriodFinish(), START + 500 seconds);  // Always updates to latest vesting schedule
+
+        assertEq(rdToken.totalAssets(), startingAssets);
+
+        vm.warp(START + 5000 seconds);
+
+        assertEq(rdToken.totalAssets(), startingAssets + 2000);
+    }
+
+    /*******************************************************/
+    /*** Multiple updateVestingSchedule, different times ***/
+    /*******************************************************/
+
+    function test_updateVestingSchedule_diffTime_shorterVesting() public {
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);  // 10 tokens per second
+
+        vm.warp(START + 60 seconds);
+
+        assertEq(rdToken.issuanceRate(),        10e30);
+        assertEq(rdToken.totalAssets(),         startingAssets + 600);
+        assertEq(rdToken.freeAssets(),          startingAssets);
+        assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 20 seconds);  // 50 tokens per second
+
+        assertEq(rdToken.issuanceRate(),        70e30);  // (400 + 1000) / 20 seconds = 70 tokens per second
+        assertEq(rdToken.totalAssets(),         startingAssets + 600);
+        assertEq(rdToken.freeAssets(),          startingAssets + 600);
+        assertEq(rdToken.vestingPeriodFinish(), START + 60 seconds + 20 seconds);
+
+        vm.warp(START + 60 seconds + 20 seconds);
+
+        assertEq(rdToken.issuanceRate(), 70e30);
+        assertEq(rdToken.totalAssets(),  startingAssets + 2000);
+        assertEq(rdToken.freeAssets(),   startingAssets + 600);
+    }
+
+    function test_updateVestingSchedule_diffTime_longerVesting_higherRate() public {
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);  // 10 tokens per second
+
+        vm.warp(START + 60 seconds);
+
+        assertEq(rdToken.issuanceRate(),        10e30);
+        assertEq(rdToken.totalAssets(),         startingAssets + 600);
+        assertEq(rdToken.freeAssets(),          startingAssets);
+        assertEq(rdToken.vestingPeriodFinish(), START + 100 seconds);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), 3000, 200 seconds);  // 15 tokens per second
+
+        assertEq(rdToken.issuanceRate(), 17e30);  // (400 + 3000) / 200 seconds = 17 tokens per second
+        assertEq(rdToken.totalAssets(),  startingAssets + 600);
+        assertEq(rdToken.freeAssets(),   startingAssets + 600);
+
+        vm.warp(START + 60 seconds + 200 seconds);
+
+        assertEq(rdToken.issuanceRate(), 17e30);
+        assertEq(rdToken.totalAssets(),  startingAssets + 4000);
+        assertEq(rdToken.freeAssets(),   startingAssets + 600);
+    }
+
+    function test_updateVestingSchedule_diffTime_longerVesting_lowerRate() public {
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 100 seconds);  // 10 tokens per second
+
+        vm.warp(START + 60 seconds);
+
+        assertEq(rdToken.issuanceRate(), 10e30);
+        assertEq(rdToken.totalAssets(),  startingAssets + 600);
+        assertEq(rdToken.freeAssets(),   startingAssets);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), 1000, 200 seconds);  // 5 tokens per second
+
+        assertEq(rdToken.issuanceRate(), 7e30);  // (400 + 1000) / 200 seconds = 7 tokens per second
+        assertEq(rdToken.totalAssets(),  startingAssets + 600);
+        assertEq(rdToken.freeAssets(),   startingAssets + 600);
+
+        vm.warp(START + 60 seconds + 200 seconds);
+
+        assertEq(rdToken.issuanceRate(), 7e30);
+        assertEq(rdToken.totalAssets(),  startingAssets + 2000);
+        assertEq(rdToken.freeAssets(),   startingAssets + 600);
     }
 
 }
@@ -2954,277 +3343,147 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
 
 }
 
-contract RedeemCallerNotOwnerTests is RDTSuccessTestBase {
+contract WithdrawFailureTests is RDTTestBase {
 
-    function test_redeem_callerNotOwner_singleUser_preVesting() external {
-        address staker = address(new Staker());
-        address caller = address(new Staker());
+    Staker staker;
 
-        _depositAsset(address(asset), staker, 1000);
-
-        Staker(staker).erc20_approve(address(rdToken), caller, 1000);
-
-        rdToken_allowance_staker_caller_change = -1000;
-        rdToken_balanceOf_staker_change        = -1000;
-        rdToken_totalSupply_change             = -1000;
-        rdToken_freeAssets_change              = -1000;
-        rdToken_totalAssets_change             = -1000;
-        rdToken_convertToAssets_change         = 0;
-        rdToken_convertToShares_change         = 0;
-        rdToken_issuanceRate_change            = 0;
-        rdToken_lastUpdated_change             = 0;
-
-        asset_balanceOf_caller_change  = 1000;
-        asset_balanceOf_staker_change  = 0;
-        asset_balanceOf_rdToken_change = -1000;
-
-        _assertRedeemCallerNotOwner(caller, staker, 1000, false);
+    function setUp() public override {
+        super.setUp();
+        staker = new Staker();
     }
 
-    // TODO: Fuzz approve amount.
-    function testFuzz_redeem_callerNotOwner_singleUser_preVesting(uint256 depositAmount_, uint256 redeemAmount_) external {
-        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
-        redeemAmount_   = constrictToRange(redeemAmount_,   1, depositAmount_);
+    function test_withdraw_zeroAmount(uint256 depositAmount) public {
+        _depositAsset(address(asset), address(staker), depositAmount = constrictToRange(depositAmount, 1, 1e29));
 
-        address staker = address(new Staker());
-        address caller = address(new Staker());
+        vm.expectRevert("RDT:B:ZERO_SHARES");
+        staker.rdToken_withdraw(address(rdToken), 0);
 
-        _depositAsset(address(asset), staker, depositAmount_);
-
-        Staker(staker).erc20_approve(address(rdToken), caller, redeemAmount_);
-
-        rdToken_allowance_staker_caller_change = - _toInt256(redeemAmount_);
-        rdToken_balanceOf_staker_change        = - _toInt256(redeemAmount_);
-        rdToken_totalSupply_change             = - _toInt256(redeemAmount_);
-        rdToken_freeAssets_change              = - _toInt256(redeemAmount_);
-        rdToken_totalAssets_change             = - _toInt256(redeemAmount_);
-        rdToken_convertToAssets_change         = 0;
-        rdToken_convertToShares_change         = 0;
-        rdToken_issuanceRate_change            = 0;
-        rdToken_lastUpdated_change             = 0;
-
-        asset_balanceOf_caller_change  = _toInt256(redeemAmount_);
-        asset_balanceOf_staker_change  = 0;
-        asset_balanceOf_rdToken_change = - _toInt256(redeemAmount_);
-
-        _assertRedeemCallerNotOwner(caller, staker, redeemAmount_, true);
+        staker.rdToken_withdraw(address(rdToken), 1);
     }
 
-    function test_redeem_callerNotOwner_singleUser_midVesting() external {
-        address staker = address(new Staker());
-        address caller = address(new Staker());
+    function test_withdraw_burnUnderflow(uint256 depositAmount) public {
+        _depositAsset(address(asset), address(staker), depositAmount = constrictToRange(depositAmount, 1, 1e29));
 
-        _depositAsset(address(asset), staker, 100e18);
-        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 200 seconds);
+        vm.expectRevert(ARITHMETIC_ERROR);
+        staker.rdToken_withdraw(address(rdToken), depositAmount + 1);
 
-        vm.warp(START + 100 seconds);  // Vest 5e18 tokens
-
-        Staker(staker).erc20_approve(address(rdToken), address(caller), 20e18);
-
-        rdToken_allowance_staker_caller_change = -20e18;
-        rdToken_balanceOf_staker_change        = -20e18;
-        rdToken_totalSupply_change             = -20e18;
-        rdToken_freeAssets_change              = -16e18;  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw (+5 - 21)
-        rdToken_totalAssets_change             = -21e18;  // 20 * 1.05
-        rdToken_convertToAssets_change         = 0;
-        rdToken_convertToShares_change         = 0;
-        rdToken_issuanceRate_change            = 0;
-        rdToken_lastUpdated_change             = 100 seconds;
-
-        asset_balanceOf_caller_change  = 21e18;
-        asset_balanceOf_staker_change  = 0;
-        asset_balanceOf_rdToken_change = -21e18;
-
-        _assertRedeemCallerNotOwner(caller, staker, 20e18, false);
+        staker.rdToken_withdraw(address(rdToken), depositAmount);
     }
 
-    // TODO: Fuzz approve amount.
-    function testFuzz_redeem_callerNotOwner_singleUser_midVesting(
-        uint256 depositAmount_,
-        uint256 redeemAmount_,
-        uint256 vestingAmount_,
-        uint256 vestingPeriod_,
-        uint256 warpTime_
-    ) external {
-        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
-        redeemAmount_   = constrictToRange(redeemAmount_,   1, depositAmount_);
-        vestingAmount_  = constrictToRange(vestingAmount_,  1, 1e29);
-        vestingPeriod_  = constrictToRange(vestingPeriod_,  1, 100 days);
-        warpTime_       = constrictToRange(warpTime_,       1, vestingPeriod_);
+    function test_withdraw_burnUnderflow_totalAssetsGtTotalSupply_explicitValues() public {
+        uint256 depositAmount = 100e18;
+        uint256 vestingAmount = 10e18;
+        uint256 vestingPeriod = 10 days;
+        uint256 warpTime      = 5 days;
 
-        address staker = address(new Staker());
-        address caller = address(new Staker());
+        _depositAsset(address(asset), address(staker), depositAmount);
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
 
-        _depositAsset(address(asset), staker, depositAmount_);
+        vm.warp(block.timestamp + warpTime);
 
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+        uint256 maxWithdrawAmount = rdToken.previewRedeem(rdToken.balanceOf(address(staker)));  // TODO
 
-        vm.warp(START + warpTime_);
+        vm.expectRevert(ARITHMETIC_ERROR);
+        staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount + 1);
 
-        uint256 expectedWithdrawnFunds = redeemAmount_ * rdToken.totalAssets() / rdToken.totalSupply();
-        uint256 vestedAmount           = rdToken.issuanceRate() * warpTime_ / 1e30;
-
-        Staker(staker).erc20_approve(address(rdToken), caller, redeemAmount_);
-
-        rdToken_allowance_staker_caller_change = - _toInt256(redeemAmount_);
-        rdToken_balanceOf_staker_change        = - _toInt256(redeemAmount_);
-        rdToken_totalSupply_change             = - _toInt256(redeemAmount_);
-        rdToken_totalAssets_change             = - _toInt256(expectedWithdrawnFunds);
-        rdToken_freeAssets_change              =   _toInt256(vestedAmount) - _toInt256(expectedWithdrawnFunds);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
-        rdToken_convertToAssets_change         = 0;
-        rdToken_convertToShares_change         = 0;
-        rdToken_issuanceRate_change            = 0;
-        rdToken_lastUpdated_change             = _toInt256(warpTime_);
-
-        asset_balanceOf_caller_change  = _toInt256(expectedWithdrawnFunds);
-        asset_balanceOf_staker_change  = 0;
-        asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
-
-        _assertRedeemCallerNotOwner(caller, staker, redeemAmount_, true);
+        staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount);
     }
 
-    function test_redeem_callerNotOwner_singleUser_postVesting() external {
-        address staker = address(new Staker());
-        address caller = address(new Staker());
+    function test_withdraw_callerNotOwner_badApproval() public {
+        Staker shareOwner    = new Staker();
+        Staker notShareOwner = new Staker();
 
-        _depositAsset(address(asset), staker, 100e18);
-        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 200 seconds);
+        uint256 depositAmount = 1e18;
+        asset.mint(address(shareOwner), depositAmount);
 
-        vm.warp(START + 201 seconds);  // Vest 5e18 tokens
+        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
+        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
 
-        Staker(staker).erc20_approve(address(rdToken), caller, 20e18);
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount - 1);
+        vm.expectRevert("RDT:CALLER_ALLOWANCE");
+        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
 
-        rdToken_allowance_staker_caller_change = -20e18;
-        rdToken_balanceOf_staker_change        = -20e18;
-        rdToken_totalSupply_change             = -20e18;
-        rdToken_freeAssets_change              = -12e18;  // freeAssets gets updated to reflects 10e18 vested tokens during withdraw (+10 - 22)
-        rdToken_totalAssets_change             = -22e18;  // 20 * 1.1
-        rdToken_convertToAssets_change         = 0;
-        rdToken_convertToShares_change         = 0;
-        rdToken_issuanceRate_change            = -(0.05e18 * 1e30);  // Gets set to zero.
-        rdToken_lastUpdated_change             = 201 seconds;
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
 
-        asset_balanceOf_caller_change  = 22e18;
-        asset_balanceOf_staker_change  = 0;
-        asset_balanceOf_rdToken_change = -22e18;
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), depositAmount);
 
-        _assertRedeemCallerNotOwner(caller, staker, 20e18, false);
+        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
+
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
     }
 
-    function testFuzz_redeem_callerNotOwner_singleUser_postVesting(
-        uint256 depositAmount_,
-        uint256 redeemAmount_,
-        uint256 vestingAmount_,
-        uint256 vestingPeriod_
-    )
-        external
-    {
-        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
-        redeemAmount_   = constrictToRange(redeemAmount_,   1, depositAmount_);
-        vestingAmount_  = constrictToRange(vestingAmount_,  1, 1e29);
-        vestingPeriod_  = constrictToRange(vestingPeriod_,  1, 100 days);
+    function test_withdraw_callerNotOwner_infiniteApprovalForCaller() public {
+        Staker shareOwner    = new Staker();
+        Staker notShareOwner = new Staker();
 
-        address staker = address(new Staker());
-        address caller = address(new Staker());
+        uint256 depositAmount = 1e18;
+        asset.mint(address(shareOwner), depositAmount);
 
-        _depositAsset(address(asset), staker, depositAmount_);
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
+        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
 
-        vm.warp(START + vestingPeriod_ + 1 seconds);
+        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), type(uint256).max);
 
-        uint256 expectedWithdrawnFunds = rdToken.previewRedeem(redeemAmount_);
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
 
-        Staker(staker).erc20_approve(address(rdToken), caller, redeemAmount_);
+        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
 
-        rdToken_allowance_staker_caller_change = - _toInt256(redeemAmount_);
-        rdToken_balanceOf_staker_change        = - _toInt256(redeemAmount_);
-        rdToken_totalSupply_change             = - _toInt256(redeemAmount_);
-        rdToken_totalAssets_change             = - _toInt256(expectedWithdrawnFunds);
-        rdToken_freeAssets_change              =   _toInt256(vestingAmount_) - _toInt256(expectedWithdrawnFunds);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
-        rdToken_convertToAssets_change         = 0;
-        rdToken_convertToShares_change         = 0;
-        rdToken_issuanceRate_change            = 0;
-        rdToken_lastUpdated_change             = _toInt256(vestingPeriod_ + 1 seconds);
-
-        asset_balanceOf_caller_change  = _toInt256(expectedWithdrawnFunds);
-        asset_balanceOf_staker_change  = 0;
-        asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
-
-        _assertRedeemCallerNotOwner(caller, staker, redeemAmount_, true);
+        // Infinite approval stays infinite.
+        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
     }
 
-    function testFuzz_redeem_callerNotOwner_multiUser_midVesting(
-        uint256 initialAmount_,
-        uint256 vestingAmount_,
-        uint256 vestingPeriod_,
-        bytes32 depositSeed_,
-        bytes32 redeemSeed_,
-        bytes32 warpSeed_
-    )
-        public
-    {
-        initialAmount_ = constrictToRange(initialAmount_, 1e6,    1e29);
-        vestingAmount_ = constrictToRange(vestingAmount_, 1e6,    1e29);
-        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days, 1e29);
+    // TODO: Implement once max* functions are added as per 4626 standard
+    // function test_withdraw_burnUnderflow_totalAssetsGtTotalSupply(uint256 depositAmount, uint256 vestingAmount, uint256 vestingPeriod, uint256 warpTime) public {
+    //     depositAmount = constrictToRange(depositAmount, 1, 1e29);
+    //     vestingAmount = constrictToRange(vestingAmount, 1, 1e29);
+    //     vestingPeriod = constrictToRange(vestingPeriod, 1, 100 days);
+    //     warpTime      = constrictToRange(vestingAmount, 1, vestingPeriod);
 
-        Staker setupStaker = new Staker();
+    //     _depositAsset(address(asset), address(staker), depositAmount);
+    //     _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount, vestingPeriod);
 
-        // Do a deposit so that totalSupply is non-zero
-        _depositAsset(address(asset), address(setupStaker), 1e18);
+    //     vm.warp(block.timestamp + warpTime);
 
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+    //     uint256 underflowWithdrawAmount = rdToken.previewRedeem(rdToken.balanceOf(address(staker)) + 1);  // TODO
+    //     uint256 maxWithdrawAmount       = rdToken.previewRedeem(rdToken.balanceOf(address(staker)));  // TODO
 
-        vm.warp(START + vestingPeriod_ + 12 hours);  // Warp into vestingPeriod so exchangeRate is greater than one for all new deposits
+    //     vm.expectRevert(ARITHMETIC_ERROR);
+    //     staker.rdToken_withdraw(address(rdToken), underflowWithdrawAmount);
 
-        Staker[] memory stakers = new Staker[](10);
+    //     staker.rdToken_withdraw(address(rdToken), maxWithdrawAmount);
+    // }
 
-        for (uint256 i; i < 10; ++i) {
-            stakers[i] = new Staker();
+}
 
-            uint256 depositAmount = uint256(keccak256(abi.encodePacked(depositSeed_, i)));
+contract WithdrawRevertOnTransfers is RDTTestBase {
 
-            // Get minimum deposit to avoid ZERO_SHARES.
-            uint256 minDeposit = _getMinDeposit(address(rdToken));
-            depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
+    MockRevertingERC20 revertingAsset;
+    Staker             staker;
 
-            _depositAsset(address(asset), address(stakers[i]), depositAmount);
-        }
+    function setUp() public override {
+        revertingAsset = new MockRevertingERC20("MockToken", "MT", 18);
+        rdToken        = new RDT("Revenue Distribution Token", "RDT", address(this), address(revertingAsset), 1e30);
+        staker         = new Staker();
 
-        for (uint256 i; i < 10; ++i) {
-            address caller = address(new Staker());
-
-            uint256 redeemAmount = uint256(keccak256(abi.encodePacked(redeemSeed_, i)));
-            uint256 warpTime     = uint256(keccak256(abi.encodePacked(warpSeed_,   i)));
-
-            redeemAmount = constrictToRange(redeemAmount, 1, rdToken.balanceOf(address(stakers[i])));
-            warpTime     = constrictToRange(warpTime,     0, (vestingPeriod_ - 12 hours) / 10);
-
-            vm.warp(block.timestamp + warpTime);
-
-            uint256 expectedWithdrawnFunds = rdToken.previewRedeem(redeemAmount);
-            uint256 vestedAmount           = rdToken.issuanceRate() * warpTime / 1e30;
-
-            stakers[i].erc20_approve(address(rdToken), caller, redeemAmount);
-
-            rdToken_allowance_staker_caller_change = - _toInt256(redeemAmount);
-            rdToken_balanceOf_staker_change        = - _toInt256(redeemAmount);
-            rdToken_totalSupply_change             = - _toInt256(redeemAmount);
-            rdToken_totalAssets_change             = - _toInt256(expectedWithdrawnFunds);
-            rdToken_freeAssets_change              =   _toInt256(vestedAmount) - _toInt256(expectedWithdrawnFunds);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
-            rdToken_convertToAssets_change         = 0;
-            rdToken_convertToShares_change         = 0;
-            rdToken_issuanceRate_change            = 0;
-            rdToken_lastUpdated_change             = _toInt256(warpTime);
-
-            asset_balanceOf_caller_change  = _toInt256(expectedWithdrawnFunds);
-            asset_balanceOf_staker_change  = 0;
-            asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
-
-            _assertRedeemCallerNotOwner(caller, address(stakers[i]), redeemAmount, true);
-        }
+        vm.warp(START);  // Warp to non-zero timestamp
     }
 
-    // TODO: testFuzz_redeem_callerNotOwner_multiUser_postVesting
+    function test_withdraw_revertOnTransfer(uint256 depositAmount, uint256 withdrawAmount) public {
+        depositAmount  = constrictToRange(depositAmount,  1, 1e29);
+        withdrawAmount = constrictToRange(withdrawAmount, 1, depositAmount);
+
+        revertingAsset.mint(address(staker), depositAmount);
+
+        staker.erc20_approve(address(revertingAsset), address(rdToken), depositAmount);
+        staker.rdToken_deposit(address(rdToken), depositAmount);
+
+        vm.warp(START + 10 days);
+
+        vm.expectRevert(bytes("RDT:B:TRANSFER"));
+        staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(0), address(staker));
+
+        staker.rdToken_withdraw(address(rdToken), withdrawAmount, address(1), address(staker));
+    }
 
 }
 
@@ -3469,241 +3728,5 @@ contract WithdrawTests is RDTSuccessTestBase {
     }
 
     // TODO: testFuzz_withdraw_multiUser_postVesting
-
-}
-
-contract RedeemTests is RDTSuccessTestBase {
-
-    function test_redeem_singleUser_preVesting() external {
-        address staker = address(new Staker());
-
-        _depositAsset(address(asset), staker, 1000);
-
-        rdToken_balanceOf_staker_change = -1000;
-        rdToken_totalSupply_change      = -1000;
-        rdToken_freeAssets_change       = -1000;
-        rdToken_totalAssets_change      = -1000;
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = 0;
-        rdToken_lastUpdated_change      = 0;
-
-        asset_balanceOf_staker_change  = 1000;
-        asset_balanceOf_rdToken_change = -1000;
-
-        _assertRedeem(staker, 1000, false);
-    }
-
-    function testFuzz_redeem_singleUser_preVesting(uint256 depositAmount_,uint256 redeemAmount_) external {
-        depositAmount_  = constrictToRange(depositAmount_,  1, 1e29);
-        redeemAmount_   = constrictToRange(redeemAmount_,   1, depositAmount_);
-
-        address staker = address(new Staker());
-
-        _depositAsset(address(asset), staker, depositAmount_);
-
-        rdToken_balanceOf_staker_change        = - _toInt256(redeemAmount_);
-        rdToken_totalSupply_change             = - _toInt256(redeemAmount_);
-        rdToken_freeAssets_change              = - _toInt256(redeemAmount_);
-        rdToken_totalAssets_change             = - _toInt256(redeemAmount_);
-        rdToken_convertToAssets_change         = 0;
-        rdToken_convertToShares_change         = 0;
-        rdToken_issuanceRate_change            = 0;
-        rdToken_lastUpdated_change             = 0;
-
-        asset_balanceOf_staker_change  =   _toInt256(redeemAmount_);
-        asset_balanceOf_rdToken_change = - _toInt256(redeemAmount_);
-
-        _assertRedeem(staker, redeemAmount_, true);
-    }
-
-    function test_redeem_singleUser_midVesting() external {
-        address staker = address(new Staker());
-
-        _depositAsset(address(asset), staker, 100e18);
-        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 200 seconds);
-
-        vm.warp(block.timestamp + 100 seconds);  // Vest 5e18 tokens
-
-        rdToken_balanceOf_staker_change = -20e18;
-        rdToken_totalSupply_change      = -20e18;
-        rdToken_freeAssets_change       = -16e18;  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw (+5 - 21)
-        rdToken_totalAssets_change      = -21e18;  // 20 * 10.5
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = 0;
-        rdToken_lastUpdated_change      = 100 seconds;
-
-        asset_balanceOf_staker_change  = 21e18;
-        asset_balanceOf_rdToken_change = -21e18;
-
-        _assertRedeem(staker, 20e18, false);
-    }
-
-    function testFuzz_redeem_singleUser_midVesting(
-        uint256 depositAmount_,
-        uint256 redeemAmount_,
-        uint256 vestingAmount_,
-        uint256 vestingPeriod_,
-        uint256 warpTime_
-    ) external {
-        depositAmount_  = constrictToRange(depositAmount_,  1,         1e29);
-        redeemAmount_   = constrictToRange(redeemAmount_,   1,         depositAmount_);
-        vestingAmount_  = constrictToRange(vestingAmount_,  1,         1e29);
-        vestingPeriod_  = constrictToRange(vestingPeriod_,  1 seconds, 100 days);
-        warpTime_       = constrictToRange(warpTime_,       0,         vestingPeriod_);
-
-        address staker = address(new Staker());
-
-        _depositAsset(address(asset), staker, depositAmount_);
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
-
-        vm.warp(START + warpTime_);
-
-        uint256 expectedWithdrawnFunds = redeemAmount_ * rdToken.totalAssets() / rdToken.totalSupply();
-        uint256 vestedAmount           = rdToken.issuanceRate() * warpTime_ / 1e30;
-
-        rdToken_balanceOf_staker_change = - _toInt256(redeemAmount_);
-        rdToken_totalSupply_change      = - _toInt256(redeemAmount_);
-        rdToken_totalAssets_change      = - _toInt256(expectedWithdrawnFunds);
-        rdToken_freeAssets_change       =   _toInt256(vestedAmount) - _toInt256(expectedWithdrawnFunds);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = 0;
-        rdToken_lastUpdated_change      = _toInt256(warpTime_);
-
-        asset_balanceOf_staker_change  = _toInt256(expectedWithdrawnFunds);
-        asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
-
-        _assertRedeem(staker, redeemAmount_, true);
-    }
-
-    function test_redeem_singleUser_postVesting() external {
-        address staker = address(new Staker());
-
-        _depositAsset(address(asset), staker, 100e18);
-        _transferAndUpdateVesting(address(asset), address(rdToken), 10e18, 200 seconds);
-
-        vm.warp(START + 201 seconds);  // Vest 5e18 tokens
-
-        rdToken_balanceOf_staker_change = -20e18;
-        rdToken_totalSupply_change      = -20e18;
-        rdToken_freeAssets_change       = -12e18;  // freeAssets gets updated to reflects 10e18 vested tokens during withdraw (+10 - 22)
-        rdToken_totalAssets_change      = -22e18;  // 20 * 1.1
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = -(0.05e18 * 1e30);  // Gets set to zero.
-        rdToken_lastUpdated_change      = 201 seconds;
-
-        asset_balanceOf_staker_change  = 22e18;
-        asset_balanceOf_rdToken_change = -22e18;
-
-        _assertRedeem(staker, 20e18, false);
-    }
-
-    function testFuzz_redeem_singleUser_postVesting(
-        uint256 depositAmount_,
-        uint256 redeemAmount_,
-        uint256 vestingAmount_,
-        uint256 vestingPeriod_
-    )
-        external
-    {
-        depositAmount_  = constrictToRange(depositAmount_,  1,         1e29);
-        redeemAmount_   = constrictToRange(redeemAmount_,   1,         depositAmount_);
-        vestingAmount_  = constrictToRange(vestingAmount_,  1,         1e29);
-        vestingPeriod_  = constrictToRange(vestingPeriod_,  1 seconds, 100 days);
-
-        address staker = address(new Staker());
-
-        _depositAsset(address(asset), staker, depositAmount_);
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
-
-        vm.warp(START + vestingPeriod_ + 1 seconds);
-
-        uint256 expectedWithdrawnFunds = rdToken.previewRedeem(redeemAmount_);
-
-        rdToken_balanceOf_staker_change = - _toInt256(redeemAmount_);
-        rdToken_totalSupply_change      = - _toInt256(redeemAmount_);
-        rdToken_totalAssets_change      = - _toInt256(expectedWithdrawnFunds);
-        rdToken_freeAssets_change       =   _toInt256(vestingAmount_) - _toInt256(expectedWithdrawnFunds);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
-        rdToken_convertToAssets_change  = 0;
-        rdToken_convertToShares_change  = 0;
-        rdToken_issuanceRate_change     = - _toInt256(rdToken.issuanceRate());
-        rdToken_lastUpdated_change      =   _toInt256(vestingPeriod_ + 1 seconds);
-
-        asset_balanceOf_staker_change  =   _toInt256(expectedWithdrawnFunds);
-        asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
-
-        _assertRedeem(staker, redeemAmount_, true);
-    }
-
-    function testFuzz_redeem_multiUser_midVesting(
-        uint256 initialAmount_,
-        uint256 vestingAmount_,
-        uint256 vestingPeriod_,
-        bytes32 depositSeed_,
-        bytes32 redeemSeed_,
-        bytes32 warpSeed_
-    )
-        public
-    {
-        initialAmount_ = constrictToRange(initialAmount_, 1e6,    1e29);
-        vestingAmount_ = constrictToRange(vestingAmount_, 1e6,    1e29);
-        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days, 1e29);
-
-        Staker setupStaker = new Staker();
-
-        // Do a deposit so that totalSupply is non-zero
-        _depositAsset(address(asset), address(setupStaker), 1e18);
-
-        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
-
-        vm.warp(START + vestingPeriod_ + 12 hours);  // Warp into vestingPeriod so exchangeRate is greater than zero for all new deposits
-
-        Staker[] memory stakers = new Staker[](10);
-
-        for (uint256 i; i < 10; ++i) {
-            stakers[i] = new Staker();
-
-            uint256 depositAmount = uint256(keccak256(abi.encodePacked(depositSeed_, i)));
-
-            // Get minimum deposit to avoid ZERO_SHARES.
-            uint256 minDeposit = _getMinDeposit(address(rdToken));
-            depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
-
-            _depositAsset(address(asset), address(stakers[i]), depositAmount);
-        }
-
-        for (uint256 i; i < 10; ++i) {
-            uint256 redeemAmount = uint256(keccak256(abi.encodePacked(redeemSeed_, i)));
-            uint256 warpTime     = uint256(keccak256(abi.encodePacked(warpSeed_,   i)));
-
-            redeemAmount = constrictToRange(redeemAmount, 1, rdToken.balanceOf(address(stakers[i])));
-            warpTime     = constrictToRange(warpTime,     0, (vestingPeriod_ - 12 hours) / 10);
-
-            vm.warp(block.timestamp + warpTime);
-
-            uint256 expectedWithdrawnFunds = rdToken.previewRedeem(redeemAmount);
-            uint256 vestedAmount           = rdToken.issuanceRate() * warpTime / 1e30;
-
-            rdToken_balanceOf_staker_change        = - _toInt256(redeemAmount);
-            rdToken_totalSupply_change             = - _toInt256(redeemAmount);
-            rdToken_totalAssets_change             = - _toInt256(expectedWithdrawnFunds);
-            rdToken_freeAssets_change              =   _toInt256(vestedAmount) - _toInt256(expectedWithdrawnFunds);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
-            rdToken_convertToAssets_change         = 0;
-            rdToken_convertToShares_change         = 0;
-            rdToken_issuanceRate_change            = 0;
-            rdToken_lastUpdated_change             = _toInt256(warpTime);
-
-            asset_balanceOf_staker_change  =   _toInt256(expectedWithdrawnFunds);
-            asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
-
-            _assertRedeem(address(stakers[i]), redeemAmount, true);
-        }
-    }
-
-    // testFuzz_redeem_multiUser_postVesting
 
 }

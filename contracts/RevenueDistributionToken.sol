@@ -25,7 +25,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     address public override pendingOwner;  // Pending owner of the contract, able to accept ownership.
 
     uint256 public override freeAssets;           // Amount of assets unlocked regardless of time passed.
-    uint256 public override issuanceRate;         // asset/second rate dependent on aggregate vesting schedule (needs increased precision).
+    uint256 public override issuanceRate;         // asset/second rate dependent on aggregate vesting schedule.
     uint256 public override lastUpdated;          // Timestamp of when issuance equation was last updated.
     uint256 public override vestingPeriodFinish;  // Timestamp when current vesting schedule ends.
 

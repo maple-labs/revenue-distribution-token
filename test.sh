@@ -11,10 +11,11 @@ done
 
 export FOUNDRY_PROFILE=$profile
 
-if [ -z "$test" ]; then match="[src/test/*.t.sol]"; else match=$test; fi
-
 echo Using profile: $FOUNDRY_PROFILE
 
-rm -rf out
-
-forge test --match "$test"
+if [ -z "$test" ];
+then
+    forge test --match-path "$PWD/contracts/test/*";
+else
+    forge test --match "$test";
+fi

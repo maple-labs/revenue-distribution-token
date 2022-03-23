@@ -2504,7 +2504,7 @@ contract RedeemFailureTests is RDTTestBase {
         shareOwner.rdToken_deposit(address(rdToken), depositAmount);
 
         shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount - 1);
-        vm.expectRevert("RDT:CALLER_ALLOWANCE");
+        vm.expectRevert(ARITHMETIC_ERROR);
         notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
 
         shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
@@ -2514,26 +2514,6 @@ contract RedeemFailureTests is RDTTestBase {
         notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
 
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
-    }
-
-    function test_redeem_callerNotOwner_infiniteApprovalForCaller() public {
-        Staker shareOwner    = new Staker();
-        Staker notShareOwner = new Staker();
-
-        uint256 depositAmount = 1e18;
-        asset.mint(address(shareOwner), depositAmount);
-
-        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
-        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
-
-        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), type(uint256).max);
-
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
-
-        notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
-
-        // Infinite approval stays infinite.
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
     }
 
 }
@@ -3355,7 +3335,7 @@ contract WithdrawFailureTests is RDTTestBase {
         shareOwner.rdToken_deposit(address(rdToken), depositAmount);
 
         shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount - 1);
-        vm.expectRevert("RDT:CALLER_ALLOWANCE");
+        vm.expectRevert(ARITHMETIC_ERROR);
         notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
 
         shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
@@ -3365,26 +3345,6 @@ contract WithdrawFailureTests is RDTTestBase {
         notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
 
         assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), 0);
-    }
-
-    function test_withdraw_callerNotOwner_infiniteApprovalForCaller() public {
-        Staker shareOwner    = new Staker();
-        Staker notShareOwner = new Staker();
-
-        uint256 depositAmount = 1e18;
-        asset.mint(address(shareOwner), depositAmount);
-
-        shareOwner.erc20_approve(address(asset), address(rdToken), depositAmount);
-        shareOwner.rdToken_deposit(address(rdToken), depositAmount);
-
-        shareOwner.erc20_approve(address(rdToken), address(notShareOwner), type(uint256).max);
-
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
-
-        notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(notShareOwner), address(shareOwner));
-
-        // Infinite approval stays infinite.
-        assertEq(rdToken.allowance(address(shareOwner), address(notShareOwner)), type(uint256).max);
     }
 
     // TODO: Implement once max* functions are added as per 4626 standard

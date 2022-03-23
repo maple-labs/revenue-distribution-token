@@ -255,14 +255,19 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function totalAssets() public view override returns (uint256 totalManagedAssets_) {
-        if (issuanceRate == 0) return freeAssets;
+        uint256 issuanceRate_ = issuanceRate;
+        
+        if (issuanceRate_ == 0) return freeAssets;
+
+        uint256 vestingPeriodFinish_ = vestingPeriodFinish;
+        uint256 lastUpdated_         = lastUpdated; 
 
         uint256 vestingTimePassed =
-            block.timestamp > vestingPeriodFinish ?
-                vestingPeriodFinish - lastUpdated :
-                block.timestamp - lastUpdated;
+            block.timestamp > vestingPeriodFinish_ ?
+                vestingPeriodFinish_ - lastUpdated_ :
+                block.timestamp - lastUpdated_;
 
-        return ((issuanceRate * vestingTimePassed) / precision) + freeAssets;
+        return ((issuanceRate_ * vestingTimePassed) / precision) + freeAssets;
     }
 
     /**************************/

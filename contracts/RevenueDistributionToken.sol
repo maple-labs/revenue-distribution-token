@@ -75,7 +75,6 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         emit PendingOwnerSet(msg.sender, pendingOwner_);
     }
 
-    // TODO: Revisit returns
     function updateVestingSchedule(uint256 vestingPeriod_) external override returns (uint256 issuanceRate_, uint256 freeAssets_) {
         require(msg.sender == owner, "RDT:UVS:NOT_OWNER");
         require(totalSupply != 0,    "RDT:UVS:ZERO_SUPPLY");
@@ -273,7 +272,6 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     function _reduceCallerAllowance(address caller_, address owner_, uint256 shares_) internal {
         uint256 callerAllowance = allowance[owner_][caller_];  // Cache to stack.
 
-        // TODO: investigate whether leave this `require()` in for clarity from error message, or let the safe math check in `callerAllowance - shares_` handle the underflow.
         require(callerAllowance >= shares_, "RDT:CALLER_ALLOWANCE");
 
         if (callerAllowance == type(uint256).max) return;

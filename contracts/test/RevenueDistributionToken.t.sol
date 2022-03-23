@@ -559,6 +559,17 @@ contract DepositFailureTests is RDTTestBase {
         staker = new Staker();
     }
 
+    function test_deposit_zeroReceiver() public {
+
+        asset.mint(address(staker), 1);
+        staker.erc20_approve(address(asset), address(rdToken), 1);
+
+        vm.expectRevert("RDT:M:ZERO_RECEIVER");
+        staker.rdToken_deposit(address(rdToken), 1, address(0));
+
+        staker.rdToken_deposit(address(rdToken), 1, address(staker));
+    }
+
     function test_deposit_zeroAssets() public {
 
         asset.mint(address(staker), 1);
@@ -1466,6 +1477,17 @@ contract MintFailureTests is RDTTestBase {
     function setUp() public override virtual {
         super.setUp();
         staker = new Staker();
+    }
+
+        function test_mint_zeroReceiver() public {
+
+        asset.mint(address(staker), 1);
+        staker.erc20_approve(address(asset), address(rdToken), 1);
+
+        vm.expectRevert("RDT:M:ZERO_RECEIVER");
+        staker.rdToken_mint(address(rdToken), 1, address(0));
+
+        staker.rdToken_mint(address(rdToken), 1, address(staker));
     }
 
     function test_mint_zeroAmount() public {
@@ -2544,7 +2566,7 @@ contract RedeemRevertOnTransfers is RDTTestBase {
     Staker             staker;
 
     function setUp() public override virtual {
-        revertingAsset = new MockRevertingERC20("MockToken", "MT", 18);
+        revertingAsset = new MockRevertingERC20("MockToken", "MT", 18, address(123));
         rdToken        = new RDT("Revenue Distribution Token", "RDT", address(this), address(revertingAsset), 1e30);
         staker         = new Staker();
 
@@ -2562,8 +2584,9 @@ contract RedeemRevertOnTransfers is RDTTestBase {
 
         vm.warp(START + 10 days);
 
+        address revertingDestination = revertingAsset.revertingDestination();
         vm.expectRevert(bytes("RDT:B:TRANSFER"));
-        staker.rdToken_redeem(address(rdToken), depositAmount_, address(0), address(staker));
+        staker.rdToken_redeem(address(rdToken), depositAmount_, revertingDestination, address(staker));
 
         staker.rdToken_redeem(address(rdToken), depositAmount_, address(1), address(staker));
     }
@@ -3416,7 +3439,7 @@ contract WithdrawRevertOnTransfers is RDTTestBase {
     Staker             staker;
 
     function setUp() public override virtual {
-        revertingAsset = new MockRevertingERC20("MockToken", "MT", 18);
+        revertingAsset = new MockRevertingERC20("MockToken", "MT", 18, address(123));
         rdToken        = new RDT("Revenue Distribution Token", "RDT", address(this), address(revertingAsset), 1e30);
         staker         = new Staker();
 
@@ -3434,8 +3457,9 @@ contract WithdrawRevertOnTransfers is RDTTestBase {
 
         vm.warp(START + 10 days);
 
+        address revertingDestination = revertingAsset.revertingDestination();
         vm.expectRevert(bytes("RDT:B:TRANSFER"));
-        staker.rdToken_withdraw(address(rdToken), withdrawAmount_, address(0), address(staker));
+        staker.rdToken_withdraw(address(rdToken), withdrawAmount_, revertingDestination, address(staker));
 
         staker.rdToken_withdraw(address(rdToken), withdrawAmount_, address(1), address(staker));
     }

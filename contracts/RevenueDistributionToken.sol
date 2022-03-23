@@ -159,7 +159,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         emit Deposit(caller_, receiver_, assets_, shares_);
 
-        require(ERC20Helper.transferFrom(address(asset), caller_, address(this), assets_), "RDT:M:TRANSFER_FROM");
+        require(ERC20Helper.transferFrom(asset, caller_, address(this), assets_), "RDT:M:TRANSFER_FROM");
     }
 
     function _burn(uint256 shares_, uint256 assets_, address receiver_, address owner_, address caller_) internal {
@@ -178,7 +178,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
 
-        require(ERC20Helper.transfer(address(asset), receiver_, assets_), "RDT:B:TRANSFER");
+        require(ERC20Helper.transfer(asset, receiver_, assets_), "RDT:B:TRANSFER");
     }
 
     function _updateIssuanceParams() internal {

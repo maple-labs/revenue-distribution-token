@@ -274,8 +274,6 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         require(callerAllowance >= shares_, "RDT:CALLER_ALLOWANCE");
 
-        if (callerAllowance == type(uint256).max) return;
-
         allowance[owner_][caller_] = callerAllowance - shares_;
     }
 

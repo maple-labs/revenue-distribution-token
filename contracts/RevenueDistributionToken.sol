@@ -163,7 +163,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function _burn(uint256 shares_, uint256 assets_, address receiver_, address owner_, address caller_) internal {
-        require(receiver_ != address(0), "RDT:M:ZERO_RECEIVER");
+        require(receiver_ != address(0), "RDT:B:ZERO_RECEIVER");
         require(shares_   != uint256(0), "RDT:B:ZERO_SHARES");
         require(assets_   != uint256(0), "RDT:B:ZERO_ASSETS");
 

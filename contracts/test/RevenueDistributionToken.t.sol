@@ -560,7 +560,6 @@ contract DepositFailureTests is RDTTestBase {
     }
 
     function test_deposit_zeroReceiver() public {
-
         asset.mint(address(staker), 1);
         staker.erc20_approve(address(asset), address(rdToken), 1);
 
@@ -571,7 +570,6 @@ contract DepositFailureTests is RDTTestBase {
     }
 
     function test_deposit_zeroAssets() public {
-
         asset.mint(address(staker), 1);
         staker.erc20_approve(address(asset), address(rdToken), 1);
 
@@ -582,7 +580,6 @@ contract DepositFailureTests is RDTTestBase {
     }
 
     function test_deposit_badApprove(uint256 depositAmount_) public {
-
         depositAmount_ = constrictToRange(depositAmount_, 1, 1e29);
 
         asset.mint(address(staker), depositAmount_);
@@ -597,7 +594,6 @@ contract DepositFailureTests is RDTTestBase {
     }
 
     function test_deposit_insufficientBalance(uint256 depositAmount_) public {
-
         depositAmount_ = constrictToRange(depositAmount_, 1, 1e29);
 
         asset.mint(address(staker), depositAmount_);
@@ -1479,8 +1475,7 @@ contract MintFailureTests is RDTTestBase {
         staker = new Staker();
     }
 
-        function test_mint_zeroReceiver() public {
-
+    function test_mint_zeroReceiver() public {
         asset.mint(address(staker), 1);
         staker.erc20_approve(address(asset), address(rdToken), 1);
 

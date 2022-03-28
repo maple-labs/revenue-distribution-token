@@ -10,14 +10,17 @@ contract MockRevertingERC20 {
 
     uint256 public totalSupply;
 
+    address public revertingDestination;
+
     mapping(address => uint256) public balanceOf;
 
     mapping(address => mapping(address => uint256)) public allowance;
 
-    constructor(string memory name_, string memory symbol_, uint8 decimals_) {
-        name     = name_;
-        symbol   = symbol_;
-        decimals = decimals_;
+    constructor(string memory name_, string memory symbol_, uint8 decimals_, address revertingDestination_) {
+        name                 = name_;
+        symbol               = symbol_;
+        decimals             = decimals_;
+        revertingDestination = revertingDestination_;
     }
 
     /**************************/
@@ -38,7 +41,6 @@ contract MockRevertingERC20 {
     }
 
     function transfer(address recipient_, uint256 amount_) external returns (bool success_) {
-        require(recipient_ != address(0), "INVALID");
         _transfer(msg.sender, recipient_, amount_);
         return true;
     }
@@ -58,6 +60,7 @@ contract MockRevertingERC20 {
     }
 
     function _transfer(address owner_, address recipient_, uint256 amount_) internal {
+        require(recipient_ != revertingDestination, "INVALID");
         balanceOf[owner_]     -= amount_;
         balanceOf[recipient_] += amount_;
     }

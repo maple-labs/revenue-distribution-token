@@ -13,8 +13,16 @@ contract Staker is ERC20User {
         shares_ = IRDT(token_).deposit(assets_, address(this));
     }
 
+    function rdToken_deposit(address token_, uint256 assets_, address receiver_) external returns (uint256 shares_) {
+        shares_ = IRDT(token_).deposit(assets_, receiver_);
+    }
+
     function rdToken_mint(address token_, uint256 shares_) external returns (uint256 assets_) {
         assets_ = IRDT(token_).mint(shares_, address(this));
+    }
+
+    function rdToken_mint(address token_, uint256 shares_, address receiver_) external returns (uint256 assets_) {
+        assets_ = IRDT(token_).mint(shares_, receiver_);
     }
 
     function rdToken_redeem(address token_, uint256 shares_) external returns (uint256 assets_) {
@@ -22,15 +30,15 @@ contract Staker is ERC20User {
     }
 
     function rdToken_redeem(address token_, uint256 shares_, address recipient_, address owner_) external returns (uint256 assets_) {
-        return IRDT(token_).redeem(shares_, recipient_, owner_);
+        assets_ = IRDT(token_).redeem(shares_, recipient_, owner_);
     }
 
     function rdToken_withdraw(address token_, uint256 assets_) external returns (uint256 shares_) {
-        return IRDT(token_).withdraw(assets_, address(this), address(this));
+        shares_ = IRDT(token_).withdraw(assets_, address(this), address(this));
     }
 
     function rdToken_withdraw(address token_, uint256 assets_, address recipient_, address owner_) external returns (uint256 shares_) {
-        return IRDT(token_).withdraw(assets_, recipient_, owner_);
+        shares_ = IRDT(token_).withdraw(assets_, recipient_, owner_);
     }
 
 }

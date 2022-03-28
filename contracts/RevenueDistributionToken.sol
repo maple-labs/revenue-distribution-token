@@ -168,7 +168,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         require(assets_   != uint256(0), "RDT:B:ZERO_ASSETS");
 
         if (caller_ != owner_) {
-            _reduceCallerAllowance(caller_, owner_, shares_);
+            _decreaseAllowance(owner_, caller_, shares_);
         }
 
         _burn(owner_, shares_);
@@ -275,16 +275,6 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /**************************/
     /*** Internal Functions ***/
     /**************************/
-
-    function _reduceCallerAllowance(address caller_, address owner_, uint256 shares_) internal {
-        uint256 callerAllowance = allowance[owner_][caller_];  // Cache to stack.
-
-        require(callerAllowance >= shares_, "RDT:CALLER_ALLOWANCE");
-
-        if (callerAllowance == type(uint256).max) return;
-
-        allowance[owner_][caller_] = callerAllowance - shares_;
-    }
 
     function _divRoundUp(uint256 numerator_, uint256 divisor_) internal pure returns (uint256 result_) {
        return (numerator_ / divisor_) + (numerator_ % divisor_ > 0 ? 1 : 0);

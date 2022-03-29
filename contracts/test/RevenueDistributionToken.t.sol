@@ -2521,7 +2521,7 @@ contract RedeemFailureTests is RDTTestBase {
         shareOwner.rdToken_deposit(address(rdToken), depositAmount);
 
         shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount - 1);
-        vm.expectRevert("RDT:CALLER_ALLOWANCE");
+        vm.expectRevert(ARITHMETIC_ERROR);
         notShareOwner.rdToken_redeem(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
 
         shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);
@@ -3373,7 +3373,7 @@ contract WithdrawFailureTests is RDTTestBase {
         shareOwner.rdToken_deposit(address(rdToken), depositAmount);
 
         shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount - 1);
-        vm.expectRevert("RDT:CALLER_ALLOWANCE");
+        vm.expectRevert(ARITHMETIC_ERROR);
         notShareOwner.rdToken_withdraw(address(rdToken), depositAmount, address(shareOwner), address(shareOwner));
 
         shareOwner.erc20_approve(address(rdToken), address(notShareOwner), depositAmount);

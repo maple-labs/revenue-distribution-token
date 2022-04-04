@@ -75,7 +75,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         emit PendingOwnerSet(msg.sender, pendingOwner_);
     }
 
-    function updateVestingSchedule(uint256 vestingPeriod_) external override returns (uint256 issuanceRate_, uint256 freeAssets_) {
+    function updateVestingSchedule(uint256 vestingPeriod_) external virtual override returns (uint256 issuanceRate_, uint256 freeAssets_) {
         require(msg.sender == owner, "RDT:UVS:NOT_OWNER");
         require(totalSupply != 0,    "RDT:UVS:ZERO_SUPPLY");
 
@@ -190,21 +190,21 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** View Functions ***/
     /**********************/
 
-    function APR() external view override returns (uint256 apr_) {
+    function APR() external view virtual override returns (uint256 apr_) {
         return (issuanceRate * 365 days * 1e6) / (totalSupply * precision);
     }
 
-    function balanceOfAssets(address account_) public view override returns (uint256 balanceOfAssets_) {
+    function balanceOfAssets(address account_) public view virtual override returns (uint256 balanceOfAssets_) {
         return convertToAssets(balanceOf[account_]);
     }
 
-    function convertToAssets(uint256 shares_) public view override returns (uint256 assets_) {
+    function convertToAssets(uint256 shares_) public view virtual override returns (uint256 assets_) {
         uint256 supply = totalSupply;  // Cache to stack.
 
         assets_ = supply == 0 ? shares_ : (shares_ * totalAssets()) / supply;
     }
 
-    function convertToShares(uint256 assets_) public view override returns (uint256 shares_) {
+    function convertToShares(uint256 assets_) public view virtual override returns (uint256 shares_) {
         uint256 supply = totalSupply;  // Cache to stack.
 
         shares_ = supply == 0 ? assets_ : (assets_ * supply) / totalAssets();
@@ -256,7 +256,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         shares_ = supply == 0 ? assets_ : _divRoundUp(assets_ * supply, totalAssets());
     }
 
-    function totalAssets() public view override returns (uint256 totalManagedAssets_) {
+    function totalAssets() public view virtual override returns (uint256 totalManagedAssets_) {
         uint256 issuanceRate_ = issuanceRate;
         
         if (issuanceRate_ == 0) return freeAssets;

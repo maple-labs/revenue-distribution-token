@@ -58,7 +58,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** Administrative Functions ***/
     /********************************/
 
-    function acceptOwnership() external override {
+    function acceptOwnership() external virtual override {
         require(msg.sender == pendingOwner, "RDT:AO:NOT_PO");
 
         emit OwnershipAccepted(owner, msg.sender);
@@ -67,7 +67,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         pendingOwner = address(0);
     }
 
-    function setPendingOwner(address pendingOwner_) external override {
+    function setPendingOwner(address pendingOwner_) external virtual override {
         require(msg.sender == owner, "RDT:SPO:NOT_OWNER");
 
         pendingOwner = pendingOwner_;

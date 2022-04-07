@@ -2824,7 +2824,35 @@ contract RedeemTests is RDTSuccessTestBase {
 
 }
 
-contract RevenueStreamingTests is RDTTestBase {
+contract UpdateVestingScheduleFailureTests is RDTTestBase {
+
+    Staker firstStaker;
+
+    uint256 startingAssets;
+
+    function setUp() public override virtual {
+        super.setUp();
+        firstStaker = new Staker();
+
+        // Deposit the minimum amount of the asset to allow the vesting schedule updates to occur.
+        startingAssets = 1;
+        asset.mint(address(firstStaker), startingAssets);
+        firstStaker.erc20_approve(address(asset), address(rdToken), startingAssets);
+    }
+
+    function test_updateVestingSchedule_zeroSupply() public {
+        vm.expectRevert("RDT:UVS:ZERO_SUPPLY");
+        rdToken.updateVestingSchedule(100 seconds);
+
+        firstStaker.erc20_approve(address(asset), address(rdToken), 1);
+        firstStaker.rdToken_deposit(address(rdToken), 1);
+
+        rdToken.updateVestingSchedule(100 seconds);
+    }
+
+}
+
+contract UpdateVestingScheduleTests is RDTTestBase {
 
     Staker firstStaker;
 
@@ -2839,18 +2867,6 @@ contract RevenueStreamingTests is RDTTestBase {
         asset.mint(address(firstStaker), startingAssets);
         firstStaker.erc20_approve(address(asset), address(rdToken), startingAssets);
         firstStaker.rdToken_deposit(address(rdToken), startingAssets);
-    }
-
-    function test_updateVestingSchedule_zeroSupply() public {
-        firstStaker.rdToken_withdraw(address(rdToken), 1);
-
-        vm.expectRevert("RDT:UVS:ZERO_SUPPLY");
-        rdToken.updateVestingSchedule(100 seconds);
-
-        firstStaker.erc20_approve(address(asset), address(rdToken), 1);
-        firstStaker.rdToken_deposit(address(rdToken), 1);
-
-        rdToken.updateVestingSchedule(100 seconds);
     }
 
     /************************************/

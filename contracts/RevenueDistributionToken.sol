@@ -190,10 +190,6 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     /*** View Functions ***/
     /**********************/
 
-    function APR() external view virtual override returns (uint256 apr_) {
-        return (issuanceRate * 365 days * 1e6) / (totalSupply * precision);
-    }
-
     function balanceOfAssets(address account_) public view virtual override returns (uint256 balanceOfAssets_) {
         return convertToAssets(balanceOf[account_]);
     }
@@ -258,11 +254,11 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
     function totalAssets() public view virtual override returns (uint256 totalManagedAssets_) {
         uint256 issuanceRate_ = issuanceRate;
-        
+
         if (issuanceRate_ == 0) return freeAssets;
 
         uint256 vestingPeriodFinish_ = vestingPeriodFinish;
-        uint256 lastUpdated_         = lastUpdated; 
+        uint256 lastUpdated_         = lastUpdated;
 
         uint256 vestingTimePassed =
             block.timestamp > vestingPeriodFinish_ ?

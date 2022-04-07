@@ -11,51 +11,6 @@ import { Staker }  from "./accounts/Staker.sol";
 
 import { RevenueDistributionToken as RDT } from "../RevenueDistributionToken.sol";
 
-contract APRViewTests is TestUtils {
-
-    uint256 constant START = 10_000_000;
-
-    MockERC20 asset;
-    Owner     owner;
-    RDT       rdToken;
-    Staker    staker;
-
-    function setUp() public {
-        asset   = new MockERC20("MockToken", "MT", 18);
-        owner   = new Owner();
-        rdToken = new RDT("Revenue Distribution Token", "RDT", address(owner), address(asset), 1e30);
-        staker  = new Staker();
-        vm.warp(START);
-    }
-
-    function test_APR(uint256 mintAmount_, uint256 vestingAmount_, uint256 vestingPeriod_) public {
-        mintAmount_    = constrictToRange(mintAmount_,    0.0001e18, 1e29);
-        vestingAmount_ = constrictToRange(mintAmount_,    0.0001e18, 1e29);
-        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days,    10_000 days);
-
-        asset.mint(address(staker), mintAmount_);
-
-        staker.erc20_approve(address(asset), address(rdToken), mintAmount_);
-        staker.rdToken_mint(address(rdToken), mintAmount_);
-
-        asset.mint(address(owner), vestingAmount_);
-
-        owner.erc20_transfer(address(asset), address(rdToken), vestingAmount_);
-        owner.rdToken_updateVestingSchedule(address(rdToken), vestingPeriod_);
-
-        uint256 apr = rdToken.APR();
-
-        vm.warp(START + vestingPeriod_);
-
-        staker.rdToken_redeem(address(rdToken), mintAmount_);  // Redeem entire balance
-
-        uint256 aprProjectedEarnings = mintAmount_ * apr * vestingPeriod_ / 365 days / 1e6;
-
-        assertWithinPrecision(asset.balanceOf(address(staker)), mintAmount_ + aprProjectedEarnings, 4);
-    }
-
-}
-
 contract ConvertViewTests is TestUtils {
 
     MockERC20 asset;

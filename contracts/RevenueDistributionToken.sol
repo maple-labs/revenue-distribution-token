@@ -88,7 +88,7 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         // Update timestamp and period finish.
         vestingPeriodFinish = (lastUpdated = block.timestamp) + vestingPeriod_;
 
-        emit IssuanceParamsUpdated(freeAssets_, block.timestamp, issuanceRate_);
+        emit IssuanceParamsUpdated(freeAssets_, issuanceRate_);
         emit VestingScheduleUpdated(msg.sender, vestingPeriodFinish);
     }
 
@@ -156,10 +156,10 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         uint256 freeAssetsCache = freeAssets = totalAssets() + assets_;
 
-        ( uint256 lastUpdated_, uint256 issuanceRate_ ) = _updateIssuanceParams();
+        uint256 issuanceRate_ = _updateIssuanceParams();
 
         emit Deposit(caller_, receiver_, assets_, shares_);
-        emit IssuanceParamsUpdated(freeAssetsCache, lastUpdated_, issuanceRate_);
+        emit IssuanceParamsUpdated(freeAssetsCache, issuanceRate_);
 
         require(ERC20Helper.transferFrom(asset, caller_, address(this), assets_), "RDT:M:TRANSFER_FROM");
     }
@@ -177,17 +177,16 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         uint256 freeAssetsCache = freeAssets = totalAssets() - assets_;
 
-        ( uint256 lastUpdated_, uint256 issuanceRate_ ) = _updateIssuanceParams();
+        uint256 issuanceRate_ = _updateIssuanceParams();
 
         emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
-        emit IssuanceParamsUpdated(freeAssetsCache, lastUpdated_, issuanceRate_);
+        emit IssuanceParamsUpdated(freeAssetsCache, issuanceRate_);
 
         require(ERC20Helper.transfer(asset, receiver_, assets_), "RDT:B:TRANSFER");
     }
 
-    function _updateIssuanceParams() internal returns (uint256 lastUpdated_, uint256 issuanceRate_) {
-        lastUpdated_  = lastUpdated  = block.timestamp;
-        issuanceRate_ = issuanceRate = lastUpdated_ > vestingPeriodFinish ? 0 : issuanceRate;
+    function _updateIssuanceParams() internal returns (uint256 issuanceRate_) {
+        return issuanceRate = (lastUpdated  = block.timestamp) > vestingPeriodFinish ? 0 : issuanceRate;
     }
 
     /**********************/

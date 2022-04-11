@@ -15,10 +15,9 @@ interface IRevenueDistributionToken is IERC20, IERC4626 {
     /**
      *  @dev   Issuance parameters have been updated after a `_mint` or `_burn`.
      *  @param freeAssets_   Resulting `freeAssets` (y-intercept) value after accounting update.
-     *  @param lastUpdated_  Timestamp of when accounting was last updated (x = 0).
      *  @param issuanceRate_ The new issuance rate of `asset` until `vestingPeriodFinish_`.
      */
-    event IssuanceParamsUpdated(uint256 freeAssets_, uint256 lastUpdated_, uint256 issuanceRate_);
+    event IssuanceParamsUpdated(uint256 freeAssets_, uint256 issuanceRate_);
 
     /**
      *  @dev   `newOwner_` has accepted the transferral of RDT ownership from `previousOwner_`.

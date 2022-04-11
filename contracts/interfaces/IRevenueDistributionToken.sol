@@ -38,10 +38,17 @@ interface IRevenueDistributionToken is IERC20, IERC4626 {
      *  @dev   `owner_` has updated the RDT vesting schedule to end at `vestingPeriodFinish_`, with an issuance rate of `issuanceRate_`.
      *  @param owner_               The current RDT owner.
      *  @param freeAssets_          Resulting `freeAssets` (y-intercept) value after vesting update.
-     *  @param vestingPeriodFinish_ When the unvested balance will finish vesting.
      *  @param issuanceRate_        The new issuance rate of `asset` until `vestingPeriodFinish_`.
+     *  @param lastUpdated_         Timestamp of when accounting was last updated (x = 0).
+     *  @param vestingPeriodFinish_ When the unvested balance will finish vesting.
      */
-    event VestingScheduleUpdated(address indexed owner_, uint256 freeAssets_, uint256 vestingPeriodFinish_, uint256 issuanceRate_);
+    event VestingScheduleUpdated(
+        address indexed owner_,
+        uint256 freeAssets_,
+        uint256 issuanceRate_,
+        uint256 lastUpdated_,
+        uint256 vestingPeriodFinish_
+    );
 
     /***********************/
     /*** State Variables ***/

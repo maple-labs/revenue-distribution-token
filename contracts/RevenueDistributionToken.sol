@@ -88,7 +88,8 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         // Update timestamp and period finish.
         vestingPeriodFinish = (lastUpdated = block.timestamp) + vestingPeriod_;
 
-        emit VestingScheduleUpdated(msg.sender, freeAssets_, issuanceRate_, lastUpdated, vestingPeriodFinish);
+        emit IssuanceParamsUpdated(freeAssets_, block.timestamp, issuanceRate_);
+        emit VestingScheduleUpdated(msg.sender, vestingPeriodFinish);
     }
 
     /************************/

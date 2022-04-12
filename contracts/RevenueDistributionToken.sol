@@ -88,7 +88,8 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
         // Update timestamp and period finish.
         vestingPeriodFinish = (lastUpdated = block.timestamp) + vestingPeriod_;
 
-        emit VestingScheduleUpdated(msg.sender, vestingPeriodFinish, issuanceRate);
+        emit IssuanceParamsUpdated(freeAssets_, issuanceRate_);
+        emit VestingScheduleUpdated(msg.sender, vestingPeriodFinish);
     }
 
     /************************/
@@ -153,11 +154,12 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         _mint(receiver_, shares_);
 
-        freeAssets = totalAssets() + assets_;
+        uint256 freeAssetsCache = freeAssets = totalAssets() + assets_;
 
-        _updateIssuanceParams();
+        uint256 issuanceRate_ = _updateIssuanceParams();
 
         emit Deposit(caller_, receiver_, assets_, shares_);
+        emit IssuanceParamsUpdated(freeAssetsCache, issuanceRate_);
 
         require(ERC20Helper.transferFrom(asset, caller_, address(this), assets_), "RDT:M:TRANSFER_FROM");
     }
@@ -173,17 +175,18 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
 
         _burn(owner_, shares_);
 
-        freeAssets = totalAssets() - assets_;
+        uint256 freeAssetsCache = freeAssets = totalAssets() - assets_;
 
-        _updateIssuanceParams();
+        uint256 issuanceRate_ = _updateIssuanceParams();
 
         emit Withdraw(caller_, receiver_, owner_, assets_, shares_);
+        emit IssuanceParamsUpdated(freeAssetsCache, issuanceRate_);
 
         require(ERC20Helper.transfer(asset, receiver_, assets_), "RDT:B:TRANSFER");
     }
 
-    function _updateIssuanceParams() internal {
-        issuanceRate = (lastUpdated = block.timestamp) > vestingPeriodFinish ? 0 : issuanceRate;
+    function _updateIssuanceParams() internal returns (uint256 issuanceRate_) {
+        return issuanceRate = (lastUpdated = block.timestamp) > vestingPeriodFinish ? 0 : issuanceRate;
     }
 
     /**********************/

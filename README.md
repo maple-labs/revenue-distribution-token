@@ -2,8 +2,6 @@
 
 ![Foundry CI](https://github.com/maple-labs/revenue-distribution-token/actions/workflows/push-to-main.yml/badge.svg) [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-**DISCLAIMER: This code has NOT been externally audited and is actively being developed. Please do not use in production without taking the appropriate steps to ensure maximum security.**
-
 RevenueDistributionToken (RDT) is a token implementing the [ERC4626 Tokenized Vault standard](https://eips.ethereum.org/EIPS/eip-4626) featuring a linear revenue issuance mechanism, intended to distribute protocol revenue to staked users.
 
 Each new revenue distribution updates the issuance rate, issuing the unvested revenue along with the new revenue over the newly specified vesting schedule. The diagram below visualizes the vesting mechanism across revenue deposits:
@@ -39,6 +37,22 @@ This project was built using [Foundry](https://github.com/gakonst/Foundry).
 
 ## Acknowledgements
 Authors of the [EIP-4626 standard](https://eips.ethereum.org/EIPS/eip-4626), who worked towards standardizing the common tokenized vault use case in DeFi and therefore shaped the interface of the Revenue Distribution Token.
+
+## Audit Reports
+| Auditor | Report link |
+|---|---|
+| Trail of Bits | [ToB Report - March 14, 2022](https://docs.google.com/viewer?url=https://github.com/maple-labs/maple-core/files/8507237/Maple.Finance.-.Final.Report.-.Fixes.pdf) |
+| Code 4rena | [C4 Report - March 14, 2022](https://code4rena.com/reports/2022-03-maple/) |
+
+## Bug Bounty
+
+For all information related to the ongoing bug bounty for these contracts run by [Immunefi](https://immunefi.com/), please visit this [site](https://immunefi.com/bounty/maple/). 
+
+| Severity of Finding | Payout |
+|---|---|
+| Critical | $50,000 |
+| High | $25,000 |
+| Medium | $1,000 |
 
 ## About Maple
 [Maple Finance](https://maple.finance) is a decentralized corporate credit market. Maple provides capital to institutional borrowers through globally accessible fixed-income yield opportunities.

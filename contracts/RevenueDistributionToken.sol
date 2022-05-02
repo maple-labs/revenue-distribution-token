@@ -6,6 +6,8 @@ import { ERC20Helper } from "../modules/erc20-helper/src/ERC20Helper.sol";
 
 import { IRevenueDistributionToken } from "./interfaces/IRevenueDistributionToken.sol";
 
+import { console } from "../modules/contract-test-utils/contracts/log.sol";
+
 /*
     ██████╗ ██████╗ ████████╗
     ██╔══██╗██╔══██╗╚══██╔══╝
@@ -186,6 +188,13 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function _updateIssuanceParams() internal returns (uint256 issuanceRate_) {
+        console.log(" ");
+        console.log("UPDATE ISSUANCE PARAMS");
+        console.log("----------------------");
+        if(vestingPeriodFinish != 0) {
+            console.log("block.timestamp    ", (block.timestamp - 1622400000) * 100 / 86400);
+            console.log("vestingPeriodFinish", (vestingPeriodFinish - 1622400000) * 100 / 86400);
+        }
         return issuanceRate = (lastUpdated = block.timestamp) > vestingPeriodFinish ? 0 : issuanceRate;
     }
 
@@ -267,6 +276,17 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
             block.timestamp > vestingPeriodFinish_ ?
                 vestingPeriodFinish_ - lastUpdated_ :
                 block.timestamp - lastUpdated_;
+
+        console.log(" ");
+        console.log("TOTAL ASSETS");
+        console.log("------------");
+        console.log("vestingPeriodFinish", (vestingPeriodFinish - 1622400000) * 100 / 86400);
+        console.log("lastUpdated        ", (lastUpdated - 1622400000) * 100 / 86400);
+        console.log("vestingTimePassed  ", vestingTimePassed * 100 / 86400);
+        console.log("issuanceRate_      ", issuanceRate_ * 100 / precision);
+        console.log("freeAssets         ", freeAssets * 100 / 1e6);
+        console.log("totalAssets        ", (((issuanceRate_ * vestingTimePassed) / precision) + freeAssets) * 100 / 1e6);
+
 
         return ((issuanceRate_ * vestingTimePassed) / precision) + freeAssets;
     }

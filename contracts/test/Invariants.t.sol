@@ -11,13 +11,16 @@ import { Warper }                 from "./accounts/Warper.sol";
 
 import { MutableRDT } from "./utils/MutableRDT.sol";
 
-// Invariant 1: totalAssets <= underlying balance of contract (with rounding)
-// Invariant 2: ∑balanceOfAssets == totalAssets (with rounding)
-// Invariant 3: totalSupply <= totalAssets
-// Invariant 4: convertToAssets(totalSupply) == totalAssets (with rounding)
-// Invariant 5: exchangeRate >= `precision`
-// Invariant 6: freeAssets <= totalAssets
-// Invariant 7: balanceOfAssets >= balanceOf
+// Invariant 1:  totalAssets <= underlying balance of contract (with rounding)
+// Invariant 2:  ∑ balanceOfAssets == totalAssets (with rounding)
+// Invariant 3:  totalSupply <= totalAssets
+// Invariant 4:  convertToAssets(totalSupply) == totalAssets (with rounding)
+// Invariant 5:  exchangeRate >= `precision`
+// Invariant 6:  freeAssets <= totalAssets
+// Invariant 7:  balanceOfAssets >= balanceOf
+// Invariant 8:  freeAssets <= underlying balance
+// Invariant 9:  issuanceRate == 0 (if post vesting)
+// Invariant 10: issuanceRate > 0 (if mid vesting)
 
 contract RDTInvariants is TestUtils, InvariantTest {
 
@@ -34,7 +37,7 @@ contract RDTInvariants is TestUtils, InvariantTest {
         _erc20User     = new InvariantERC20User(address(_rdToken), address(_underlying));
         _stakerManager = new InvariantStakerManager(address(_rdToken), address(_underlying));
         _owner         = new InvariantOwner(address(_rdToken), address(_underlying));
-        _warper        = new Warper();
+        _warper        = new Warper(address(_rdToken));
 
         // Required to prevent `acceptOwner` from being a target function
         // TODO: Investigate hevm.store error: `hevm: internal error: unexpected failure code`
@@ -102,6 +105,22 @@ contract RDTInvariants is TestUtils, InvariantTest {
         for (uint256 i; i < _stakerManager.getStakerCount(); ++i) {
             address staker = address(_stakerManager.stakers(i));
             assertTrue(_rdToken.balanceOfAssets(staker) >= _rdToken.balanceOf(staker));
+        }
+    }
+
+    function invariant_freeAssets_lte_underlyingBalance() public {
+        assertTrue(_rdToken.freeAssets() <= _underlying.balanceOf(address(_rdToken)));
+    }
+
+    function invariant_issuanceRate_eq_zero_ifPostVesting() public {
+        if (block.timestamp > _rdToken.vestingPeriodFinish() && _rdToken.lastUpdated() > _rdToken.vestingPeriodFinish()) {
+            assertTrue(_rdToken.issuanceRate() == 0);
+        }
+    }
+
+    function invariant_issuanceRate_gt_zero_ifMidVesting() public {
+        if (block.timestamp <= _rdToken.vestingPeriodFinish()) {
+            assertTrue(_rdToken.issuanceRate() > 0);
         }
     }
 

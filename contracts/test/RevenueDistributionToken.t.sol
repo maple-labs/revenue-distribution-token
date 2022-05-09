@@ -2432,7 +2432,7 @@ contract RedeemCallerNotOwnerTests is RDTSuccessTestBase {
             uint256 warpTime     = uint256(keccak256(abi.encodePacked(warpSeed_,   i)));
 
             redeemAmount = constrictToRange(redeemAmount, 1, rdToken.balanceOf(address(stakers[i])));
-            warpTime     = constrictToRange(warpTime,     0, vestingPeriod_ / (iterations_ + 1));
+            warpTime     = constrictToRange(warpTime,     0, (vestingPeriod_ - initWarpTime) / (iterations_ + 1));
 
             vm.warp(block.timestamp + warpTime);
 
@@ -2800,7 +2800,7 @@ contract RedeemTests is RDTSuccessTestBase {
             uint256 warpTime     = uint256(keccak256(abi.encodePacked(warpSeed_,   i)));
 
             redeemAmount = constrictToRange(redeemAmount, 1, rdToken.balanceOf(address(stakers[i])));
-            warpTime     = constrictToRange(warpTime,     0, vestingPeriod_ / (iterations_ + 1));  // +1 To ensure we remain within mid-vesting.
+            warpTime     = constrictToRange(warpTime,     0, (vestingPeriod_ - initWarpTime) / (iterations_ + 1));  // +1 To ensure we remain within mid-vesting.
 
             vm.warp(block.timestamp + warpTime);
 
@@ -3369,7 +3369,7 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
                 withdrawAmount = constrictToRange(withdrawAmount, 1, maxWithdrawAmount);
             }
 
-            warpTime = constrictToRange(warpTime, 0, vestingPeriod_ / (iterations_ + 1));
+            warpTime = constrictToRange(warpTime, 0, (vestingPeriod_ - initWarpTime) / (iterations_ + 1));
 
             vm.warp(block.timestamp + warpTime);
 
@@ -3842,7 +3842,7 @@ contract WithdrawTests is RDTSuccessTestBase {
                 withdrawAmount = constrictToRange(withdrawAmount, 1, maxWithdrawAmount);
             }
 
-            warpTime = constrictToRange(warpTime, 0, vestingPeriod_ / (iterations_ + 1)); // +1 To ensure we remain within mid-vesting.
+            warpTime = constrictToRange(warpTime, 0, (vestingPeriod_ - initWarpTime) / (iterations_ + 1)); // +1 To ensure we remain within mid-vesting.
 
             vm.warp(block.timestamp + warpTime);
 

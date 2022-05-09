@@ -2765,6 +2765,76 @@ contract RedeemTests is RDTSuccessTestBase {
     )
         public
     {
+        uint256 iterations = 10;
+
+        initialAmount_ = constrictToRange(initialAmount_, 1e6, 1e29);
+        vestingAmount_ = constrictToRange(vestingAmount_, 1e6, 1e29);
+        
+        uint256 initWarpTime;
+        initWarpTime   = constrictToRange(initWarpTime,   1 seconds,             100 days);
+        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days + initWarpTime, 1e29);
+
+        Staker setupStaker = new Staker();
+
+        // Do a deposit so that totalSupply is non-zero
+        _depositAsset(address(asset), address(setupStaker), 1e18);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+
+        vm.warp(START + initWarpTime);
+         
+        Staker[] memory stakers = new Staker[](iterations);
+
+        for (uint256 i; i < iterations; ++i) {
+            stakers[i] = new Staker();
+
+            uint256 depositAmount = uint256(keccak256(abi.encodePacked(depositSeed_, i)));
+
+            // Get minimum deposit to avoid ZERO_SHARES.
+            uint256 minDeposit = _getMinDeposit(address(rdToken));
+            depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
+
+            _depositAsset(address(asset), address(stakers[i]), depositAmount);
+        }
+
+        for (uint256 i; i < iterations; ++i) {
+            uint256 redeemAmount = uint256(keccak256(abi.encodePacked(redeemSeed_, i)));
+            uint256 warpTime     = uint256(keccak256(abi.encodePacked(warpSeed_,   i)));
+
+            redeemAmount = constrictToRange(redeemAmount, 1, rdToken.balanceOf(address(stakers[i])));
+            warpTime     = constrictToRange(warpTime,     0, vestingPeriod_ / (iterations + 1));  // +1 To ensure we remain within mid-vesting.
+
+            vm.warp(block.timestamp + warpTime);
+
+            uint256 expectedWithdrawnFunds = rdToken.previewRedeem(redeemAmount);
+            uint256 vestedAmount           = rdToken.issuanceRate() * warpTime / 1e30;
+
+            rdToken_balanceOf_staker_change = - _toInt256(redeemAmount);
+            rdToken_totalSupply_change      = - _toInt256(redeemAmount);
+            rdToken_totalAssets_change      = - _toInt256(expectedWithdrawnFunds);
+            rdToken_freeAssets_change       =   _toInt256(vestedAmount) - _toInt256(expectedWithdrawnFunds);
+            rdToken_convertToAssets_change  = 0;
+            rdToken_convertToShares_change  = 0;
+            rdToken_issuanceRate_change     = 0;
+            rdToken_lastUpdated_change      = _toInt256(warpTime);
+
+            asset_balanceOf_staker_change  =   _toInt256(expectedWithdrawnFunds);
+            asset_balanceOf_rdToken_change = - _toInt256(expectedWithdrawnFunds);
+
+            _assertRedeem(address(stakers[i]), redeemAmount, true);
+        }
+    }
+
+    function testFuzz_redeem_multiUser_postVesting(
+        uint256 initialAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_,
+        bytes32 depositSeed_,
+        bytes32 redeemSeed_,
+        bytes32 warpSeed_
+    )
+        public
+    {
         initialAmount_ = constrictToRange(initialAmount_, 1e6,    1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1e6,    1e29);
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days, 1e29);
@@ -2819,8 +2889,6 @@ contract RedeemTests is RDTSuccessTestBase {
             _assertRedeem(address(stakers[i]), redeemAmount, true);
         }
     }
-
-    // testFuzz_redeem_multiUser_postVesting
 
 }
 

@@ -43,6 +43,11 @@ contract InvariantOwner is TestUtils {
     }
 
     function rdToken_updateVestingSchedule(uint256 vestingPeriod_) external {
+        // If there is nothing to vest, don't do anything.
+        if (_underlying.balanceOf(address(_rdToken)) == _rdToken.totalAssets()) {
+            return;
+        }
+
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1, 10_000 days);
 
         _rdToken.updateVestingSchedule(vestingPeriod_);

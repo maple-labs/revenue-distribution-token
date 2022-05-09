@@ -113,13 +113,13 @@ contract RDTInvariants is TestUtils, InvariantTest {
     }
 
     function invariant_issuanceRate_eq_zero_ifPostVesting() public {
-        if (block.timestamp >= _rdToken.vestingPeriodFinish() && _rdToken.lastUpdated() >= _rdToken.vestingPeriodFinish()) {
+        if (block.timestamp > _rdToken.vestingPeriodFinish() && _rdToken.lastUpdated() > _rdToken.vestingPeriodFinish()) {
             assertTrue(_rdToken.issuanceRate() == 0);
         }
     }
 
     function invariant_issuanceRate_gt_zero_ifMidVesting() public {
-        if (block.timestamp < _rdToken.vestingPeriodFinish()) {
+        if (block.timestamp <= _rdToken.vestingPeriodFinish()) {
             assertTrue(_rdToken.issuanceRate() > 0);
         }
     }

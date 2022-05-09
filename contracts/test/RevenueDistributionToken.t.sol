@@ -3132,7 +3132,7 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
 
         _depositAsset(address(asset), address(staker), 1000);
 
-        Staker(staker).erc20_approve(address(rdToken), address(caller), 1000);
+        staker.erc20_approve(address(rdToken), address(caller), 1000);
 
         rdToken_allowance_staker_caller_change = -1000;
         rdToken_balanceOf_staker_change        = -1000;
@@ -3158,7 +3158,7 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
 
         _depositAsset(address(asset), address(staker), depositAmount_);
 
-        Staker(staker).erc20_approve(address(rdToken), address(caller), withdrawAmount_);
+        staker.erc20_approve(address(rdToken), address(caller), withdrawAmount_);
 
         rdToken_allowance_staker_caller_change = - _toInt256(withdrawAmount_);
         rdToken_balanceOf_staker_change        = - _toInt256(withdrawAmount_);
@@ -3183,7 +3183,7 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
 
         vm.warp(START + 100 seconds);  // Vest 5e18 tokens
 
-        Staker(staker).erc20_approve(address(rdToken), address(caller), 19.047619047619047620e18);
+        staker.erc20_approve(address(rdToken), address(caller), 19.047619047619047620e18);
 
         rdToken_allowance_staker_caller_change = -19.047619047619047620e18;
         rdToken_balanceOf_staker_change        = -19.047619047619047620e18;  // 20 / 1.05
@@ -3228,7 +3228,7 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
         uint256 expectedSharesBurned = rdToken.previewWithdraw(withdrawAmount_);
         uint256 vestedAmount         = rdToken.issuanceRate() * warpTime_ / 1e30;
 
-        Staker(staker).erc20_approve(address(rdToken), address(caller), expectedSharesBurned);
+        staker.erc20_approve(address(rdToken), address(caller), expectedSharesBurned);
 
         rdToken_allowance_staker_caller_change = - _toInt256(expectedSharesBurned);
         rdToken_balanceOf_staker_change        = - _toInt256(expectedSharesBurned);
@@ -3253,7 +3253,7 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
 
         vm.warp(START + 201 seconds);  // Vest 5e18 tokens
 
-        Staker(staker).erc20_approve(address(rdToken), address(caller), 18.181818181818181819e18);
+        staker.erc20_approve(address(rdToken), address(caller), 18.181818181818181819e18);
 
         rdToken_allowance_staker_caller_change = -18.181818181818181819e18;
         rdToken_balanceOf_staker_change        = -18.181818181818181819e18;  // 20 / 1.1
@@ -3296,7 +3296,7 @@ contract WithdrawCallerNotOwnerTests is RDTSuccessTestBase {
 
         uint256 expectedSharesBurned = rdToken.previewWithdraw(withdrawAmount_);
 
-        Staker(staker).erc20_approve(address(rdToken), address(caller), expectedSharesBurned);
+        staker.erc20_approve(address(rdToken), address(caller), expectedSharesBurned);
 
         rdToken_allowance_staker_caller_change = - _toInt256(expectedSharesBurned);
         rdToken_balanceOf_staker_change        = - _toInt256(expectedSharesBurned);

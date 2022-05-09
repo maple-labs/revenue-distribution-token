@@ -58,7 +58,7 @@ contract InvariantOwner is TestUtils {
     function erc20_transfer(uint256 amount_) external {
         uint256 startingBalance = _underlying.balanceOf(address(_rdToken));
 
-        amount_ = constrictToRange(amount_, 1, 1e29);  // 100 billion at WAD precision (1 less than 1e30 to avoid precision issues)
+        amount_ = constrictToRange(amount_, 1e18, 1e29);  // 100 billion at WAD precision (1 less than 1e30 to avoid precision issues)
 
         _underlying.mint(address(this), amount_);
         _underlying.transfer(address(_rdToken), amount_);

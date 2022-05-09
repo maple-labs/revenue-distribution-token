@@ -32,7 +32,7 @@ contract RDT_ERC20PermitTest is ERC20PermitTest {
     }
 
     function test_domainSeparator() public override {
-        assertEq(_token.DOMAIN_SEPARATOR(), 0xa0948b5dcf9f99364e925fbc7ed09b4fa9c2ca703920db5c3c2453442cc5dd0d);
+        assertEq(_token.DOMAIN_SEPARATOR(), 0x0365f9ff9ad9eb5882a196869a0b88aa974d4bec7b6d908aa145e4973fe7315a);
     }
 
 }

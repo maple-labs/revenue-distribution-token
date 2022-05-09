@@ -11,7 +11,7 @@ verbosity = 3            # The verbosity of tests
 fuzz_runs = 100
 
 [deep]
-fuzz_runs = 5000
+fuzz_runs = 500
 
 [super_deep]
 fuzz_runs = 50000

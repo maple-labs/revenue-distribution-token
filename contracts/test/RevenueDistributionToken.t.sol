@@ -3720,6 +3720,82 @@ contract WithdrawTests is RDTSuccessTestBase {
     }
 
     function testFuzz_withdraw_multiUser_midVesting(
+        uint256 iterations_,
+        uint256 initialAmount_,
+        uint256 vestingAmount_,
+        uint256 vestingPeriod_,
+        bytes32 depositSeed_,
+        bytes32 withdrawSeed_,
+        bytes32 warpSeed_
+    )
+        public
+    {
+        iterations_    = constrictToRange(iterations_,    10,  20);
+        initialAmount_ = constrictToRange(initialAmount_, 1e6, 1e29);
+        vestingAmount_ = constrictToRange(vestingAmount_, 1e6, 1e29);
+        
+        uint256 initWarpTime;
+        initWarpTime   = constrictToRange(initWarpTime,   1 seconds,             100 days);
+        vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days + initWarpTime, 1e29);
+
+        Staker setupStaker = new Staker();
+
+        // Do a deposit so that totalSupply is non-zero
+        _depositAsset(address(asset), address(setupStaker), 1e18);
+
+        _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
+
+        // Warp into middle of vestingPeriod so exchangeRate is greater than zero for all new deposits
+        vm.warp(START + initWarpTime);
+
+        Staker[] memory stakers = new Staker[](iterations_);
+
+        for (uint256 i; i < iterations_; ++i) {
+            stakers[i] = new Staker();
+
+            uint256 depositAmount = uint256(keccak256(abi.encodePacked(depositSeed_, i)));
+
+            // Get minimum deposit to avoid ZERO_SHARES.
+            uint256 minDeposit = _getMinDeposit(address(rdToken));
+            depositAmount      = constrictToRange(depositAmount, minDeposit, 1e29 + 1);  // + 1 since we round up in min deposit.
+
+            _depositAsset(address(asset), address(stakers[i]), depositAmount);
+        }
+
+        for (uint256 i; i < iterations_; ++i) {
+            uint256 withdrawAmount = uint256(keccak256(abi.encodePacked(withdrawSeed_, i)));
+            uint256 warpTime       = uint256(keccak256(abi.encodePacked(warpSeed_,     i)));
+
+            // Scoped to prevent stack too deep.
+            {
+                uint256 maxWithdrawAmount = rdToken.balanceOf(address(stakers[i])) * rdToken.totalAssets() / rdToken.totalSupply();
+                withdrawAmount = constrictToRange(withdrawAmount, 1, maxWithdrawAmount);
+            }
+
+            warpTime = constrictToRange(warpTime, 0, vestingPeriod_ / (iterations_ + 1)); // +1 To ensure we remain within mid-vesting.
+
+            vm.warp(block.timestamp + warpTime);
+
+            uint256 expectedSharesBurned = rdToken.previewWithdraw(withdrawAmount);
+            uint256 vestedAmount         = rdToken.issuanceRate() * warpTime / 1e30;
+
+            rdToken_balanceOf_staker_change = - _toInt256(expectedSharesBurned);
+            rdToken_totalSupply_change      = - _toInt256(expectedSharesBurned);
+            rdToken_totalAssets_change      = - _toInt256(withdrawAmount);
+            rdToken_freeAssets_change       =   _toInt256(vestedAmount) - _toInt256(withdrawAmount);  // freeAssets gets updated to reflects 5e18 vested tokens during withdraw
+            rdToken_convertToAssets_change  = 0;
+            rdToken_convertToShares_change  = 0;
+            rdToken_issuanceRate_change     = 0;
+            rdToken_lastUpdated_change      = _toInt256(warpTime);
+
+            asset_balanceOf_staker_change  =   _toInt256(withdrawAmount);
+            asset_balanceOf_rdToken_change = - _toInt256(withdrawAmount);
+
+            _assertWithdraw(address(stakers[i]), withdrawAmount, true);
+        }
+    }
+
+    function testFuzz_withdraw_multiUser_postVesting(
         uint256 initialAmount_,
         uint256 vestingAmount_,
         uint256 vestingPeriod_,
@@ -3785,7 +3861,5 @@ contract WithdrawTests is RDTSuccessTestBase {
             _assertWithdraw(address(stakers[i]), withdrawAmount, true);
         }
     }
-
-    // TODO: testFuzz_withdraw_multiUser_postVesting
 
 }

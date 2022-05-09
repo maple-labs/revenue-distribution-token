@@ -2756,6 +2756,7 @@ contract RedeemTests is RDTSuccessTestBase {
     }
 
     function testFuzz_redeem_multiUser_midVesting(
+        uint256 iterations_,
         uint256 initialAmount_,
         uint256 vestingAmount_,
         uint256 vestingPeriod_,
@@ -2765,8 +2766,7 @@ contract RedeemTests is RDTSuccessTestBase {
     )
         public
     {
-        uint256 iterations = 10;
-
+        iterations_    = constrictToRange(iterations_,    10,  20);
         initialAmount_ = constrictToRange(initialAmount_, 1e6, 1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1e6, 1e29);
         
@@ -2784,9 +2784,9 @@ contract RedeemTests is RDTSuccessTestBase {
         // Warp into middle of vestingPeriod so exchangeRate is greater than zero for all new deposits
         vm.warp(START + initWarpTime);
          
-        Staker[] memory stakers = new Staker[](iterations);
+        Staker[] memory stakers = new Staker[](iterations_);
 
-        for (uint256 i; i < iterations; ++i) {
+        for (uint256 i; i < iterations_; ++i) {
             stakers[i] = new Staker();
 
             uint256 depositAmount = uint256(keccak256(abi.encodePacked(depositSeed_, i)));
@@ -2798,12 +2798,12 @@ contract RedeemTests is RDTSuccessTestBase {
             _depositAsset(address(asset), address(stakers[i]), depositAmount);
         }
 
-        for (uint256 i; i < iterations; ++i) {
+        for (uint256 i; i < iterations_; ++i) {
             uint256 redeemAmount = uint256(keccak256(abi.encodePacked(redeemSeed_, i)));
             uint256 warpTime     = uint256(keccak256(abi.encodePacked(warpSeed_,   i)));
 
             redeemAmount = constrictToRange(redeemAmount, 1, rdToken.balanceOf(address(stakers[i])));
-            warpTime     = constrictToRange(warpTime,     0, vestingPeriod_ / (iterations + 1));  // +1 To ensure we remain within mid-vesting.
+            warpTime     = constrictToRange(warpTime,     0, vestingPeriod_ / (iterations_ + 1));  // +1 To ensure we remain within mid-vesting.
 
             vm.warp(block.timestamp + warpTime);
 

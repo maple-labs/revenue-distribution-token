@@ -17,6 +17,7 @@ export DAPP_SOLC_VERSION=0.8.7
 
 export DAPP_SRC="contracts"
 export DAPP_LIB="modules"
+export DAPP_TEST_TIMESTAMP="1652117293"
 
 if [ -z "$test" ]; then match="[src/test/*.t.sol]"; else match=$test; fi
 

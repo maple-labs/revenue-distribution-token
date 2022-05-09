@@ -2781,6 +2781,7 @@ contract RedeemTests is RDTSuccessTestBase {
 
         _transferAndUpdateVesting(address(asset), address(rdToken), vestingAmount_, vestingPeriod_);
 
+        // Warp into middle of vestingPeriod so exchangeRate is greater than zero for all new deposits
         vm.warp(START + initWarpTime);
          
         Staker[] memory stakers = new Staker[](iterations);

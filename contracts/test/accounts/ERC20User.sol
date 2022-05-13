@@ -2,6 +2,7 @@
 pragma solidity ^0.8.7;
 
 import { TestUtils } from "../../../modules/contract-test-utils/contracts/test.sol";
+import { console }   from "../../../modules/contract-test-utils/contracts/log.sol";
 
 import { MockERC20 } from "../../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
@@ -17,13 +18,44 @@ contract InvariantERC20User is TestUtils {
         underlying = MockERC20(underlying_);
     }
 
+    // function erc20_transfer(uint256 amount_) external {
+    //     uint256 startingBalance = underlying.balanceOf(address(rdToken));
+
+    //     amount_ = constrictToRange(amount_, 1, 1e29);  // 100 billion at WAD precision (1 less than 1e30 to avoid precision issues)
+
+    //     underlying.mint(address(this), amount_);
+    //     underlying.transfer(rdToken, amount_);
+
+    //     assertEq(underlying.balanceOf(address(rdToken)), startingBalance + amount_);  // Ensure successful transfer
+    //     // revert();
+    // }
+
     function erc20_transfer(uint256 amount_) external {
         uint256 startingBalance = underlying.balanceOf(address(rdToken));
 
         amount_ = constrictToRange(amount_, 1, 1e29);  // 100 billion at WAD precision (1 less than 1e30 to avoid precision issues)
 
-        underlying.mint(address(this), amount_);
-        underlying.transfer(rdToken, amount_);
+        bool ok;
+
+        ( ok, ) = address(underlying).call(abi.encodeWithSignature("mint(address,uint256)", address(this), amount_));
+
+        if (!ok) {
+            console.log("erc20_transfer REVERT");
+        } else {
+            console.log("erc20_transfer SUCCESS");
+        }
+
+        console.log("mint(address,uint256)", address(this), amount_);
+
+        ( ok, ) = address(underlying).call(abi.encodeWithSignature("transfer(address,uint256)", rdToken, amount_));
+
+        if (!ok) {
+            console.log("erc20_transfer REVERT");
+        } else {
+            console.log("erc20_transfer SUCCESS");
+        }
+
+        console.log("transfer(address,uint256)", rdToken, amount_);
 
         assertEq(underlying.balanceOf(address(rdToken)), startingBalance + amount_);  // Ensure successful transfer
     }

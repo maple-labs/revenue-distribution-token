@@ -2,6 +2,7 @@
 pragma solidity ^0.8.7;
 
 import { TestUtils } from "../../../modules/contract-test-utils/contracts/test.sol";
+import { console }   from "../../../modules/contract-test-utils/contracts/log.sol";
 
 import { IERC20 }    from "../../../modules/erc20/contracts/interfaces/IERC20.sol";
 import { MockERC20 } from "../../../modules/erc20/contracts/test/mocks/MockERC20.sol";
@@ -42,6 +43,36 @@ contract InvariantOwner is TestUtils {
         _underlying = MockERC20(underlying_);
     }
 
+    // function rdToken_updateVestingSchedule(uint256 vestingPeriod_) external {
+    //     // If there is nothing to vest, don't do anything.
+    //     if (_underlying.balanceOf(address(_rdToken)) == _rdToken.totalAssets()) {
+    //         return;
+    //     }
+
+    //     vestingPeriod_ = constrictToRange(vestingPeriod_, 1, 10_000 days);
+
+    //     _rdToken.updateVestingSchedule(vestingPeriod_);
+
+    //     assertEq(_rdToken.vestingPeriodFinish(), block.timestamp + vestingPeriod_);
+
+    //     console.log("TEST");
+    //     // revert();
+    // }
+
+    // function erc20_transfer(uint256 amount_) external {
+    //     uint256 startingBalance = _underlying.balanceOf(address(_rdToken));
+
+    //     amount_ = constrictToRange(amount_, 1e18, 1e29);  // 100 billion at WAD precision (1 less than 1e30 to avoid precision issues)
+
+    //     _underlying.mint(address(this), amount_);
+    //     _underlying.transfer(address(_rdToken), amount_);
+
+    //     assertEq(_underlying.balanceOf(address(_rdToken)), startingBalance + amount_);  // Ensure successful transfer
+
+    //     console.log("TEST");
+    //     // revert();
+    // }
+
     function rdToken_updateVestingSchedule(uint256 vestingPeriod_) external {
         // If there is nothing to vest, don't do anything.
         if (_underlying.balanceOf(address(_rdToken)) == _rdToken.totalAssets()) {
@@ -50,7 +81,15 @@ contract InvariantOwner is TestUtils {
 
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1, 10_000 days);
 
-        _rdToken.updateVestingSchedule(vestingPeriod_);
+        ( bool ok, ) = address(_rdToken).call(abi.encodeWithSignature("updateVestingSchedule(uint256)", vestingPeriod_));
+
+        if (!ok) {
+            console.log("rdToken_updateVestingSchedule REVERT");
+        } else {
+            console.log("rdToken_updateVestingSchedule SUCCESS");
+        }
+
+        console.log("updateVestingSchedule(uint256)", vestingPeriod_);
 
         assertEq(_rdToken.vestingPeriodFinish(), block.timestamp + vestingPeriod_);
     }
@@ -58,10 +97,29 @@ contract InvariantOwner is TestUtils {
     function erc20_transfer(uint256 amount_) external {
         uint256 startingBalance = _underlying.balanceOf(address(_rdToken));
 
-        amount_ = constrictToRange(amount_, 1e18, 1e29);  // 100 billion at WAD precision (1 less than 1e30 to avoid precision issues)
+        amount_ = constrictToRange(amount_, 1, 1e29);  // 100 billion at WAD precision (1 less than 1e30 to avoid precision issues)
 
-        _underlying.mint(address(this), amount_);
-        _underlying.transfer(address(_rdToken), amount_);
+        bool ok;
+
+        ( ok, ) = address(_underlying).call(abi.encodeWithSignature("mint(address,uint256)", address(this), amount_));
+
+        if (!ok) {
+            console.log("erc20_transfer REVERT");
+        } else {
+            console.log("erc20_transfer SUCCESS");
+        }
+
+        console.log("mint(address,uint256)", address(this), amount_);
+
+        ( ok, ) = address(_underlying).call(abi.encodeWithSignature("transfer(address,uint256)", address(_rdToken), amount_));
+
+        if (!ok) {
+            console.log("erc20_transfer REVERT");
+        } else {
+            console.log("erc20_transfer SUCCESS");
+        }
+
+        console.log("transfer(address,uint256)", address(_rdToken), amount_);
 
         assertEq(_underlying.balanceOf(address(_rdToken)), startingBalance + amount_);  // Ensure successful transfer
     }

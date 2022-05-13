@@ -11,7 +11,7 @@ do
 done
 
 runs=$([ -z "$runs" ] && echo "1" || echo "$runs")
-depth=$([ -z "$depth" ] && echo "200" || echo "$depth")
+depth=$([ -z "$depth" ] && echo "10000" || echo "$depth")
 
 export DAPP_SOLC_VERSION=0.8.7
 

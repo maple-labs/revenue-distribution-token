@@ -5,7 +5,9 @@ solc_version = '0.8.7'   # Override for the solc version (setting this ignores `
 offline = true           # Disable downloading of missing solc version(s)
 optimizer = true         # Enable or disable the solc optimizer
 optimizer_runs = 200     # The number of optimizer runs
-verbosity = 3            # The verbosity of tests
+verbosity = 4            # The verbosity of tests
+invariant_depth = 1
+fuzz_runs = 100
 
 [local]
 fuzz_runs = 100

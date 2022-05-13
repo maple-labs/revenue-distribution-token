@@ -13,10 +13,4 @@ export FOUNDRY_PROFILE=$profile
 
 echo Using profile: $FOUNDRY_PROFILE
 
-if [ -z "$test" ];
-then
-    forge test --match-path "contracts/test/*" --gas-report;
-else
-    forge test --match "$test" --gas-report;
-    # ../foundry/target/debug/forge test --match "$test" --gase
-fi
+../foundry/target/debug/forge test --match "invariant_rdt_totalAssets_lte_underlyingBalance" --lib-paths "modules";

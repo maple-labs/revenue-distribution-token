@@ -63,11 +63,11 @@ contract RDTInvariants is TestUtils, InvariantTest {
         _stakerManager.createStaker();
     }
 
-    function invariant_totalAssets_lte_underlyingBalance() public {
+    function invariant_rdt_totalAssets_lte_underlyingBalance() public {
         assertTrue(_rdToken.totalAssets() <= _underlying.balanceOf(address(_rdToken)));
     }
 
-    function invariant_sumBalanceOfAssets_eq_totalAssets() public {
+    function invariant_rdt_sumBalanceOfAssets_eq_totalAssets() public {
         // Only relevant if deposits exist
         if (_rdToken.totalSupply() > 0) {
             uint256 sumBalanceOfAssets;
@@ -82,43 +82,43 @@ contract RDTInvariants is TestUtils, InvariantTest {
         }
     }
 
-    function invariant_totalSupply_lte_totalAssets() public {
+    function invariant_rdt_totalSupply_lte_totalAssets() public {
         assertTrue(_rdToken.totalSupply() <= _rdToken.totalAssets());
     }
 
-    function invariant_totalSupply_times_exchangeRate_eq_totalAssets() public {
+    function invariant_rdt_totalSupply_times_exchangeRate_eq_totalAssets() public {
         if (_rdToken.totalSupply() > 0) {
             assertWithinDiff(_rdToken.convertToAssets(_rdToken.totalSupply()), _rdToken.totalAssets(), 1);  // One division
         }
     }
 
     // TODO: figure out if there's a replacement for this one involving convertTo* functions. I think Invariant 3: totalSupply <= totalAssets covers this.
-    // function invariant_exchangeRate_gte_precision() public {
+    // function invariant_rdt_exchangeRate_gte_precision() public {
     //     assertTrue(_rdToken.exchangeRate() >= _rdToken.precision());
     // }
 
-    function invariant_freeAssets_lte_totalAssets() public {
+    function invariant_rdt_freeAssets_lte_totalAssets() public {
         assertTrue(_rdToken.freeAssets() <= _rdToken.totalAssets());
     }
 
-    function invariant_balanceOfAssets_gte_balanceOf() public {
+    function invariant_rdt_balanceOfAssets_gte_balanceOf() public {
         for (uint256 i; i < _stakerManager.getStakerCount(); ++i) {
             address staker = address(_stakerManager.stakers(i));
             assertTrue(_rdToken.balanceOfAssets(staker) >= _rdToken.balanceOf(staker));
         }
     }
 
-    function invariant_freeAssets_lte_underlyingBalance() public {
+    function invariant_rdt_freeAssets_lte_underlyingBalance() public {
         assertTrue(_rdToken.freeAssets() <= _underlying.balanceOf(address(_rdToken)));
     }
 
-    function invariant_issuanceRate_eq_zero_ifPostVesting() public {
+    function invariant_rdt_issuanceRate_eq_zero_ifPostVesting() public {
         if (block.timestamp > _rdToken.vestingPeriodFinish() && _rdToken.lastUpdated() > _rdToken.vestingPeriodFinish()) {
             assertTrue(_rdToken.issuanceRate() == 0);
         }
     }
 
-    function invariant_issuanceRate_gt_zero_ifMidVesting() public {
+    function invariant_rdt_issuanceRate_gt_zero_ifMidVesting() public {
         if (block.timestamp <= _rdToken.vestingPeriodFinish()) {
             assertTrue(_rdToken.issuanceRate() > 0);
         }

@@ -265,28 +265,35 @@ contract RevenueDistributionToken is IRevenueDistributionToken, ERC20 {
     }
 
     function totalAssets() public view virtual override returns (uint256 totalManagedAssets_) {
+        console.log(" ");
+        console.log("TOTAL ASSETS");
+        console.log("------------");
+
         uint256 issuanceRate_ = issuanceRate;
 
-        if (issuanceRate_ == 0) return freeAssets;
+        console.log("issuanceRate        ", issuanceRate_);
+        console.log("freeAssets          ", freeAssets / 1e6);
+
+        if (issuanceRate_ == 0) {
+            console.log("totalAssets         ", freeAssets);
+            return freeAssets;
+        }
 
         uint256 vestingPeriodFinish_ = vestingPeriodFinish;
         uint256 lastUpdated_         = lastUpdated;
+
+        console.log("block.timestamp     ", block.timestamp);
+        console.log("vestingPeriodFinish ", vestingPeriodFinish_);
+        console.log("lastUpdated         ", lastUpdated_);
 
         uint256 vestingTimePassed =
             block.timestamp > vestingPeriodFinish_ ?
                 vestingPeriodFinish_ - lastUpdated_ :
                 block.timestamp - lastUpdated_;
 
+        console.log("vestingTimePassed   ", vestingTimePassed);
+        console.log("totalAssets         ", ((issuanceRate_ * vestingTimePassed) / precision) + freeAssets);
         console.log(" ");
-        console.log("TOTAL ASSETS");
-        console.log("------------");
-        console.log("vestingPeriodFinish", (vestingPeriodFinish - 1622400000) * 100 / 86400);
-        console.log("lastUpdated        ", (lastUpdated - 1622400000) * 100 / 86400);
-        console.log("vestingTimePassed  ", vestingTimePassed * 100 / 86400);
-        console.log("issuanceRate_      ", issuanceRate_ * 100 / precision);
-        console.log("freeAssets         ", freeAssets * 100 / 1e6);
-        console.log("totalAssets        ", (((issuanceRate_ * vestingTimePassed) / precision) + freeAssets) * 100 / 1e6);
-
 
         return ((issuanceRate_ * vestingTimePassed) / precision) + freeAssets;
     }

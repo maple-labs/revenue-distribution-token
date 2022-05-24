@@ -14,4 +14,4 @@ fuzz_runs = 100
 fuzz_runs = 500
 
 [super_deep]
-fuzz_runs = 50000
+fuzz_runs = 30000

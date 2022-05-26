@@ -2470,6 +2470,7 @@ contract RedeemCallerNotOwnerTests is RDTSuccessTestBase {
     )
         public
     {
+        iterations_    = constrictToRange(iterations_,    10,     20);
         initialAmount_ = constrictToRange(initialAmount_, 1e6,    1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1e6,    1e29);
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days, 1e29);
@@ -2836,7 +2837,7 @@ contract RedeemTests is RDTSuccessTestBase {
         iterations_    = constrictToRange(iterations_,    10,  20);
         initialAmount_ = constrictToRange(initialAmount_, 1e6, 1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1e6, 1e29);
-        
+
         uint256 initWarpTime;
         initWarpTime   = constrictToRange(initWarpTime,   1 seconds,             100 days);
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days + initWarpTime, 1e29);
@@ -2850,7 +2851,7 @@ contract RedeemTests is RDTSuccessTestBase {
 
         // Warp into middle of vestingPeriod so exchangeRate is greater than zero for all new deposits
         vm.warp(START + initWarpTime);
-         
+
         Staker[] memory stakers = new Staker[](iterations_);
 
         for (uint256 i; i < iterations_; ++i) {
@@ -3873,7 +3874,7 @@ contract WithdrawTests is RDTSuccessTestBase {
         iterations_    = constrictToRange(iterations_,    10,  20);
         initialAmount_ = constrictToRange(initialAmount_, 1e6, 1e29);
         vestingAmount_ = constrictToRange(vestingAmount_, 1e6, 1e29);
-        
+
         uint256 initWarpTime;
         initWarpTime   = constrictToRange(initWarpTime,   1 seconds,             100 days);
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1 days + initWarpTime, 1e29);

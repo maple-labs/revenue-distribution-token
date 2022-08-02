@@ -83,7 +83,7 @@ contract InvariantStaker is TestUtils {
     function withdraw(uint256 assets_) external {
         uint256 startingBalance = _underlying.balanceOf(address(this));
 
-        if (startingBalance > 0) {
+        if (startingBalance > 0 && _rdToken.balanceOfAssets(address(this)) > 0) {
             uint256 withdrawAmount = constrictToRange(assets_, 1, _rdToken.balanceOfAssets(address(this)));
 
             _rdToken.withdraw(withdrawAmount, address(this), address(this));

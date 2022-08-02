@@ -6,6 +6,8 @@ offline = true           # Disable downloading of missing solc version(s)
 optimizer = true         # Enable or disable the solc optimizer
 optimizer_runs = 200     # The number of optimizer runs
 verbosity = 3            # The verbosity of tests
+invariant_call_override = false
+invariant_fail_on_revert = true
 
 [local]
 fuzz_runs = 100

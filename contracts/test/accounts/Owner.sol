@@ -48,6 +48,10 @@ contract InvariantOwner is TestUtils {
             return;
         }
 
+        if (_rdToken.totalSupply() == 0) {
+            return;
+        }
+
         vestingPeriod_ = constrictToRange(vestingPeriod_, 1, 10_000 days);
 
         _rdToken.updateVestingSchedule(vestingPeriod_);

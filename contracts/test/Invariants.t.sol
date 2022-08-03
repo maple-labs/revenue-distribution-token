@@ -62,6 +62,9 @@ contract RDTInvariants is TestUtils, InvariantTest {
         // Create one staker to prevent underflow on index calculations
         _stakerManager.createStaker();
         _stakerManager.deposit(1, 0);
+
+        excludeContract(address(_underlying));
+        excludeContract(address(_rdToken));
     }
 
     function invariant_totalAssets_lte_underlyingBalance() public {

@@ -4,10 +4,10 @@ pragma solidity ^0.8.7;
 import { InvariantTest, TestUtils } from "../../modules/contract-test-utils/contracts/test.sol";
 import { MockERC20 }                from "../../modules/erc20/contracts/test/mocks/MockERC20.sol";
 
-import { InvariantERC20User }     from "./accounts/ERC20User.sol";
-import { InvariantOwner }         from "./accounts/Owner.sol";
-import { InvariantStakerManager } from "./accounts/Staker.sol";
-import { Warper }                 from "./accounts/Warper.sol";
+import { InvariantERC20TransferUser } from "./accounts/ERC20User.sol";
+import { InvariantOwner }             from "./accounts/Owner.sol";
+import { InvariantStakerManager }     from "./accounts/Staker.sol";
+import { Warper }                     from "./accounts/Warper.sol";
 
 import { MutableRDT } from "./utils/MutableRDT.sol";
 
@@ -24,17 +24,17 @@ import { MutableRDT } from "./utils/MutableRDT.sol";
 
 contract RDTInvariants is TestUtils, InvariantTest {
 
-    InvariantERC20User     internal _erc20User;
-    InvariantOwner         internal _owner;
-    InvariantStakerManager internal _stakerManager;
-    MockERC20              internal _underlying;
-    MutableRDT             internal _rdToken;
-    Warper                 internal _warper;
+    InvariantERC20TransferUser internal _erc20User;
+    InvariantOwner             internal _owner;
+    InvariantStakerManager     internal _stakerManager;
+    MockERC20                  internal _underlying;
+    MutableRDT                 internal _rdToken;
+    Warper                     internal _warper;
 
     function setUp() public virtual {
         _underlying    = new MockERC20("MockToken", "MT", 18);
         _rdToken       = new MutableRDT("Revenue Distribution Token", "RDT", address(this), address(_underlying), 1e30);
-        _erc20User     = new InvariantERC20User(address(_rdToken), address(_underlying));
+        _erc20User     = new InvariantERC20TransferUser(address(_rdToken), address(_underlying));
         _stakerManager = new InvariantStakerManager(address(_rdToken), address(_underlying));
         _owner         = new InvariantOwner(address(_rdToken), address(_underlying));
         _warper        = new Warper(address(_rdToken));

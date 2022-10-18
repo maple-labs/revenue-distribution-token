@@ -44,20 +44,20 @@ contract RDTInvariants is TestUtils, InvariantTest {
         _rdToken.setOwner(address(_owner));
 
         // Performs random transfers of underlying into contract
-        addTargetContract(address(_erc20User));
+        targetContract(address(_erc20User));
 
         // Performs random transfers of underlying into contract
         // Performs random updateVestingSchedule calls
-        addTargetContract(address(_owner));
+        targetContract(address(_owner));
 
         // Performs random instantiations of new staker users
         // Performs random deposit calls from a random instantiated staker
         // Performs random withdraw calls from a random instantiated staker
         // Performs random redeem calls from a random instantiated staker
-        addTargetContract(address(_stakerManager));
+        targetContract(address(_stakerManager));
 
         // Performs random warps forward in time
-        addTargetContract(address(_warper));
+        targetContract(address(_warper));
 
         // Create one staker to prevent underflow on index calculations
         _stakerManager.createStaker();
@@ -65,6 +65,8 @@ contract RDTInvariants is TestUtils, InvariantTest {
 
         excludeContract(address(_underlying));
         excludeContract(address(_rdToken));
+
+        targetSender(address(0xdeed));
     }
 
     function invariant_totalAssets_lte_underlyingBalance() public {

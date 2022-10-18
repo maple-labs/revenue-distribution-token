@@ -30,8 +30,6 @@ contract RDTTestBase is TestUtils {
     uint256 constant sampleAssetsToConvert = 1e18;
     uint256 constant sampleSharesToConvert = 1e18;
 
-    bytes constant ARITHMETIC_ERROR = abi.encodeWithSignature("Panic(uint256)", 0x11);
-
     uint256 constant START = 10_000_000;
 
     function setUp() public virtual {

@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.7;
 
-import { IERC20 } from "../../modules/erc20/contracts/interfaces/IERC20.sol";
+import {IERC20} from "../../modules/erc20/contracts/interfaces/IERC20.sol";
 
 /// @title A standard for tokenized Vaults with a single underlying ERC-20 token.
 interface IERC4626 is IERC20 {
-
     /**************/
     /*** Events ***/
     /**************/
@@ -18,7 +17,12 @@ interface IERC4626 is IERC20 {
      *  @param assets_ The amount of assets deposited.
      *  @param shares_ The amount of shares minted.
      */
-    event Deposit(address indexed caller_, address indexed owner_, uint256 assets_, uint256 shares_);
+    event Deposit(
+        address indexed caller_,
+        address indexed owner_,
+        uint256 assets_,
+        uint256 shares_
+    );
 
     /**
      *  @dev   `caller_` has exchanged `shares_`, owned by `owner_`, for `assets_`, and transferred them to `receiver_`.
@@ -29,7 +33,13 @@ interface IERC4626 is IERC20 {
      *  @param assets_   The amount of assets withdrawn.
      *  @param shares_   The amount of shares burned.
      */
-    event Withdraw(address indexed caller_, address indexed receiver_, address indexed owner_, uint256 assets_, uint256 shares_);
+    event Withdraw(
+        address indexed caller_,
+        address indexed receiver_,
+        address indexed owner_,
+        uint256 assets_,
+        uint256 shares_
+    );
 
     /***********************/
     /*** State Variables ***/
@@ -55,7 +65,10 @@ interface IERC4626 is IERC20 {
      *  @param  receiver_ The receiver of the shares.
      *  @return shares_   The amount of shares minted.
      */
-    function deposit(uint256 assets_, address receiver_) external returns (uint256 shares_);
+    function deposit(
+        uint256 assets_,
+        address receiver_
+    ) external returns (uint256 shares_);
 
     /**
      *  @dev    Mints `shares_` to `receiver_` by depositing `assets_` into the Vault.
@@ -65,7 +78,10 @@ interface IERC4626 is IERC20 {
      *  @param  receiver_ The receiver of the shares.
      *  @return assets_   The amount of assets deposited.
      */
-    function mint(uint256 shares_, address receiver_) external returns (uint256 assets_);
+    function mint(
+        uint256 shares_,
+        address receiver_
+    ) external returns (uint256 assets_);
 
     /**
      *  @dev    Burns `shares_` from `owner_` and sends `assets_` to `receiver_`.
@@ -76,7 +92,11 @@ interface IERC4626 is IERC20 {
      *  @param  owner_    The owner of the shares.
      *  @return assets_   The amount of assets sent to the receiver.
      */
-    function redeem(uint256 shares_, address receiver_, address owner_) external returns (uint256 assets_);
+    function redeem(
+        uint256 shares_,
+        address receiver_,
+        address owner_
+    ) external returns (uint256 assets_);
 
     /**
      *  @dev    Burns `shares_` from `owner_` and sends `assets_` to `receiver_`.
@@ -87,7 +107,11 @@ interface IERC4626 is IERC20 {
      *  @param  owner_    The owner of the assets.
      *  @return shares_   The amount of shares burned from the owner.
      */
-    function withdraw(uint256 assets_, address receiver_, address owner_) external returns (uint256 shares_);
+    function withdraw(
+        uint256 assets_,
+        address receiver_,
+        address owner_
+    ) external returns (uint256 shares_);
 
     /**********************/
     /*** View Functions ***/
@@ -102,7 +126,9 @@ interface IERC4626 is IERC20 {
      *  @param  shares_ The amount of shares to convert.
      *  @return assets_ The amount of equivalent assets.
      */
-    function convertToAssets(uint256 shares_) external view returns (uint256 assets_);
+    function convertToAssets(
+        uint256 shares_
+    ) external view returns (uint256 assets_);
 
     /**
      *  @dev    The amount of `shares_` the `assets_` are currently equivalent to.
@@ -113,7 +139,9 @@ interface IERC4626 is IERC20 {
      *  @param  assets_ The amount of assets to convert.
      *  @return shares_ The amount of equivalent shares.
      */
-    function convertToShares(uint256 assets_) external view returns (uint256 shares_);
+    function convertToShares(
+        uint256 assets_
+    ) external view returns (uint256 shares_);
 
     /**
      *  @dev    Maximum amount of `assets_` that can be deposited on behalf of the `receiver_` through a `deposit` call.
@@ -122,7 +150,9 @@ interface IERC4626 is IERC20 {
      *  @param  receiver_ The receiver of the assets.
      *  @return assets_   The maximum amount of assets that can be deposited.
      */
-    function maxDeposit(address receiver_) external view returns (uint256 assets_);
+    function maxDeposit(
+        address receiver_
+    ) external view returns (uint256 assets_);
 
     /**
      *  @dev    Maximum amount of `shares_` that can be minted on behalf of the `receiver_` through a `mint` call.
@@ -149,7 +179,9 @@ interface IERC4626 is IERC20 {
      *  @param  owner_  The owner of the assets.
      *  @return assets_ The maximum amount of assets that can be withdrawn.
      */
-    function maxWithdraw(address owner_) external view returns (uint256 assets_);
+    function maxWithdraw(
+        address owner_
+    ) external view returns (uint256 assets_);
 
     /**
      *  @dev    Allows an on-chain or off-chain user to simulate the effects of their deposit at the current block, given current on-chain conditions.
@@ -159,7 +191,9 @@ interface IERC4626 is IERC20 {
      *  @param  assets_ The amount of assets to deposit.
      *  @return shares_ The amount of shares that would be minted.
      */
-    function previewDeposit(uint256 assets_) external view returns (uint256 shares_);
+    function previewDeposit(
+        uint256 assets_
+    ) external view returns (uint256 shares_);
 
     /**
      *  @dev    Allows an on-chain or off-chain user to simulate the effects of their mint at the current block, given current on-chain conditions.
@@ -169,7 +203,9 @@ interface IERC4626 is IERC20 {
      *  @param  shares_ The amount of shares to mint.
      *  @return assets_ The amount of assets that would be deposited.
      */
-    function previewMint(uint256 shares_) external view returns (uint256 assets_);
+    function previewMint(
+        uint256 shares_
+    ) external view returns (uint256 assets_);
 
     /**
      *  @dev    Allows an on-chain or off-chain user to simulate the effects of their redemption at the current block, given current on-chain conditions.
@@ -179,7 +215,9 @@ interface IERC4626 is IERC20 {
      *  @param  shares_ The amount of shares to redeem.
      *  @return assets_ The amount of assets that would be withdrawn.
      */
-    function previewRedeem(uint256 shares_) external view returns (uint256 assets_);
+    function previewRedeem(
+        uint256 shares_
+    ) external view returns (uint256 assets_);
 
     /**
      *  @dev    Allows an on-chain or off-chain user to simulate the effects of their withdrawal at the current block, given current on-chain conditions.
@@ -189,7 +227,9 @@ interface IERC4626 is IERC20 {
      *  @param  assets_ The amount of assets to withdraw.
      *  @return shares_ The amount of shares that would be redeemed.
      */
-    function previewWithdraw(uint256 assets_) external view returns (uint256 shares_);
+    function previewWithdraw(
+        uint256 assets_
+    ) external view returns (uint256 shares_);
 
     /**
      *  @dev    Total amount of the underlying asset that is managed by the Vault.
@@ -198,5 +238,4 @@ interface IERC4626 is IERC20 {
      *  @return totalAssets_ The total amount of assets the Vault manages.
      */
     function totalAssets() external view returns (uint256 totalAssets_);
-
 }

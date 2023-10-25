@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.7;
 
-import { IERC20 } from "../../modules/erc20/contracts/interfaces/IERC20.sol";
+import {IERC20} from "../../modules/erc20/contracts/interfaces/IERC20.sol";
 
-import { IERC4626 } from "./IERC4626.sol";
+import {IERC4626} from "./IERC4626.sol";
 
 /// @title A token that represents ownership of future revenues distributed linearly over time.
 interface IRevenueDistributionToken is IERC20, IERC4626 {
-
     /**************/
     /*** Events ***/
     /**************/
@@ -24,21 +23,30 @@ interface IRevenueDistributionToken is IERC20, IERC4626 {
      *  @param previousOwner_ The previous RDT owner.
      *  @param newOwner_      The new RDT owner.
      */
-    event OwnershipAccepted(address indexed previousOwner_, address indexed newOwner_);
+    event OwnershipAccepted(
+        address indexed previousOwner_,
+        address indexed newOwner_
+    );
 
     /**
      *  @dev   `owner_` has set the new pending owner of RDT to `pendingOwner_`.
      *  @param owner_        The current RDT owner.
      *  @param pendingOwner_ The new pending RDT owner.
      */
-    event PendingOwnerSet(address indexed owner_, address indexed pendingOwner_);
+    event PendingOwnerSet(
+        address indexed owner_,
+        address indexed pendingOwner_
+    );
 
     /**
      *  @dev   `owner_` has updated the RDT vesting schedule to end at `vestingPeriodFinish_`.
      *  @param owner_               The current RDT owner.
      *  @param vestingPeriodFinish_ When the unvested balance will finish vesting.
      */
-    event VestingScheduleUpdated(address indexed owner_, uint256 vestingPeriodFinish_);
+    event VestingScheduleUpdated(
+        address indexed owner_,
+        uint256 vestingPeriodFinish_
+    );
 
     /***********************/
     /*** State Variables ***/
@@ -80,7 +88,10 @@ interface IRevenueDistributionToken is IERC20, IERC4626 {
     /**
      *  @dev The end of the current vesting schedule.
      */
-    function vestingPeriodFinish() external view returns (uint256 vestingPeriodFinish_);
+    function vestingPeriodFinish()
+        external
+        view
+        returns (uint256 vestingPeriodFinish_);
 
     /********************************/
     /*** Administrative Functions ***/
@@ -104,7 +115,9 @@ interface IRevenueDistributionToken is IERC20, IERC4626 {
      *  @return issuanceRate_  The new issuance rate.
      *  @return freeAssets_    The new amount of underlying assets that are unlocked.
      */
-    function updateVestingSchedule(uint256 vestingPeriod_) external returns (uint256 issuanceRate_, uint256 freeAssets_);
+    function updateVestingSchedule(
+        uint256 vestingPeriod_
+    ) external returns (uint256 issuanceRate_, uint256 freeAssets_);
 
     /************************/
     /*** Staker Functions ***/
@@ -120,7 +133,14 @@ interface IRevenueDistributionToken is IERC20, IERC4626 {
      *  @param  s_        ECDSA signature s component.
      *  @return shares_   The amount of shares minted.
      */
-    function depositWithPermit(uint256 assets_, address receiver_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external returns (uint256 shares_);
+    function depositWithPermit(
+        uint256 assets_,
+        address receiver_,
+        uint256 deadline_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
+    ) external returns (uint256 shares_);
 
     /**
      *  @dev    Does a ERC4626 `mint` with a ERC-2612 `permit`.
@@ -133,8 +153,15 @@ interface IRevenueDistributionToken is IERC20, IERC4626 {
      *  @param  s_         ECDSA signature s component.
      *  @return assets_    The amount of shares deposited.
      */
-    function mintWithPermit(uint256 shares_, address receiver_, uint256 maxAssets_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external returns (uint256 assets_);
-
+    function mintWithPermit(
+        uint256 shares_,
+        address receiver_,
+        uint256 maxAssets_,
+        uint256 deadline_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
+    ) external returns (uint256 assets_);
 
     /**********************/
     /*** View Functions ***/
@@ -145,6 +172,7 @@ interface IRevenueDistributionToken is IERC20, IERC4626 {
      *  @param  account_ Address of the account.
      *  @return assets_  Amount of assets owned.
      */
-    function balanceOfAssets(address account_) external view returns (uint256 assets_);
-
+    function balanceOfAssets(
+        address account_
+    ) external view returns (uint256 assets_);
 }
